@@ -117,7 +117,25 @@ class ChordSpec:
     slash_degree: str | None = None
 
 
-ROOTS = ("C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B")
+ROOTS = (
+    "C",
+    "C#",
+    "Db",
+    "D",
+    "D#",
+    "Eb",
+    "E",
+    "F",
+    "F#",
+    "Gb",
+    "G",
+    "G#",
+    "Ab",
+    "A",
+    "A#",
+    "Bb",
+    "B",
+)
 LETTER_TO_PC = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
 LETTER_ORDER = ("C", "D", "E", "F", "G", "A", "B")
 MAJOR_DEGREE_SEMITONES = {
