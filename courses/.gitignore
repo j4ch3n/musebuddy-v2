@@ -1,7 +1,10 @@
+# data
+data/
+*/data/
+
 # Generated output
 output/
 */output/
-chord_dictionary/output/
 
 # Python bytecode and caches
 __pycache__/
