@@ -30,16 +30,13 @@ export function useSequencerPlayback({ bpm, pattern }: UseSequencerPlaybackOptio
   const scheduledNodesRef = useRef<ScheduledNode[]>([]);
   const patternRef = useRef(pattern);
   const bpmRef = useRef(bpm);
+  const previousBpmRef = useRef(bpm);
   const [currentStepIndex, setCurrentStepIndex] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
     patternRef.current = pattern;
   }, [pattern]);
-
-  useEffect(() => {
-    bpmRef.current = bpm;
-  }, [bpm]);
 
   const getAudioContext = useCallback(() => {
     if (!audioContextRef.current) {
@@ -142,6 +139,19 @@ export function useSequencerPlayback({ bpm, pattern }: UseSequencerPlaybackOptio
     scheduleThrough(audioContext, startTime + LOOKAHEAD_SECONDS);
   }, [getAudioContext, scheduleThrough, stopScheduledNodes]);
 
+  const restartPlayback = useCallback(async () => {
+    const audioContext = getAudioContext();
+
+    await audioContext.resume();
+    stopScheduledNodes();
+
+    const startTime = audioContext.currentTime + 0.08;
+    startTimeRef.current = startTime;
+    scheduledUntilRef.current = startTime;
+    setCurrentStepIndex(0);
+    scheduleThrough(audioContext, startTime + LOOKAHEAD_SECONDS);
+  }, [getAudioContext, scheduleThrough, stopScheduledNodes]);
+
   const togglePlayback = useCallback(() => {
     if (isPlaying) {
       stopPlayback();
@@ -170,6 +180,19 @@ export function useSequencerPlayback({ bpm, pattern }: UseSequencerPlaybackOptio
       clearInterval(intervalId);
     };
   }, [isPlaying, scheduleThrough]);
+
+  useEffect(() => {
+    const didChangeBpm = previousBpmRef.current !== bpm;
+
+    bpmRef.current = bpm;
+    previousBpmRef.current = bpm;
+
+    if (!isPlaying || !didChangeBpm) {
+      return;
+    }
+
+    void restartPlayback();
+  }, [bpm, isPlaying, restartPlayback]);
 
   useEffect(() => {
     if (!isPlaying) {

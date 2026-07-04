@@ -5,6 +5,7 @@ import { View } from 'react-native';
 import {
   generateRandomRhythmPattern,
   RhythmPlayerControls,
+  RhythmSpeedControl,
   RhythmViewer,
   useSequencerPlayback,
   type RhythmPattern,
@@ -17,8 +18,9 @@ import { PrimaryTrainingButton, TrainingScreenShell } from './training-screen-sh
 export function RhythmTrainingPage() {
   const router = useRouter();
   const [pattern, setPattern] = useState<RhythmPattern>(dailyTrainingConfig.rhythmTraining.pattern);
+  const [bpm, setBpm] = useState(DEFAULT_BPM);
   const { currentStepIndex, isPlaying, stopPlayback, togglePlayback } = useSequencerPlayback({
-    bpm: DEFAULT_BPM,
+    bpm,
     pattern,
   });
   const handleRandomPattern = useCallback(() => {
@@ -30,6 +32,7 @@ export function RhythmTrainingPage() {
       eyebrow="Step 2 of 3"
       footer={
         <View style={{ gap: 14 }}>
+          <RhythmSpeedControl onChange={setBpm} value={bpm} />
           <RhythmPlayerControls
             isPlaying={isPlaying}
             onRandomPattern={handleRandomPattern}

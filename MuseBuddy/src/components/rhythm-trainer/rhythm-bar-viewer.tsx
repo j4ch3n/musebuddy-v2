@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
-import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
+import { museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 
 import type { RhythmStep } from './types';
 
@@ -59,12 +59,8 @@ function StepPart({ isCurrent, step, stepIndex }: StepPartProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: museBuddyColors.surface,
-    borderColor: museBuddyColors.ink,
-    borderCurve: 'continuous',
-    borderRadius: museBuddyRadii.medium,
-    borderWidth: museBuddyBorders.bold,
-    boxShadow: `0 6px 0 ${museBuddyColors.ink}`,
+    backgroundColor: museBuddyColors.surfaceMuted,
+    borderRadius: museBuddyRadii.small,
     minHeight: 82,
     padding: 12,
   },

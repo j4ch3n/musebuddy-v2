@@ -1,5 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
+import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
+
 import { NoteBarViewer } from './note-bar-viewer';
 import { splitRhythmPatternBars } from './rhythm-pattern';
 import { RhythmBarViewer } from './rhythm-bar-viewer';
@@ -45,6 +47,14 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   barGroup: {
-    gap: 8,
+    backgroundColor: museBuddyColors.surface,
+    borderColor: museBuddyColors.ink,
+    borderCurve: 'continuous',
+    borderRadius: museBuddyRadii.large,
+    borderWidth: museBuddyBorders.bold,
+    boxShadow: `0 8px 0 ${museBuddyColors.ink}`,
+    gap: 10,
+    overflow: 'hidden',
+    padding: 12,
   },
 });

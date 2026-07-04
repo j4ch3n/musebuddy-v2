@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import NoteBarSheet from './note-bar-sheet.dom';
 import { convertRhythmBarToVexflowEvents } from './note-bar-vexflow';
 import type { RhythmStep } from './types';
-import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
+import { museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 
 type NoteBarViewerProps = {
   currentStepIndex: number | null;
@@ -30,12 +30,8 @@ export function NoteBarViewer({ currentStepIndex, steps }: NoteBarViewerProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: museBuddyColors.surface,
-    borderColor: museBuddyColors.ink,
-    borderCurve: 'continuous',
+    backgroundColor: museBuddyColors.white,
     borderRadius: museBuddyRadii.medium,
-    borderWidth: museBuddyBorders.bold,
-    boxShadow: `0 5px 0 ${museBuddyColors.ink}`,
     height: 124,
     justifyContent: 'center',
     overflow: 'hidden',
