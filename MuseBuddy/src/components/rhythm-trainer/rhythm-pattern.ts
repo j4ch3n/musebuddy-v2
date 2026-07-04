@@ -34,28 +34,35 @@ export function splitRhythmPatternBars(pattern: RhythmPattern): RhythmStep[][] {
 export function collectRhythmEvents(steps: readonly RhythmStep[]): RhythmEvent[] {
   const events: RhythmEvent[] = [];
   let stepIndex = 0;
+  let hasActiveAttack = false;
 
   while (stepIndex < steps.length) {
     const step = steps[stepIndex];
-    const kind = step === null ? 'rest' : 'attack';
+    const kind = isRhythmAttack(step) ? 'attack' : 'rest';
     const startStep = stepIndex;
-    const attack = step;
+    const attack = isRhythmAttack(step) ? step : null;
+    hasActiveAttack = kind === 'attack';
 
     stepIndex += 1;
 
     while (stepIndex < steps.length) {
       const nextStep = steps[stepIndex];
-      const nextKind = nextStep === null ? 'rest' : 'attack';
+      const nextKind =
+        isRhythmAttack(nextStep) || (nextStep === 'h' && hasActiveAttack) ? 'attack' : 'rest';
 
       if (nextKind !== kind) {
         break;
+      }
+
+      if (isRhythmAttack(nextStep)) {
+        hasActiveAttack = true;
       }
 
       stepIndex += 1;
     }
 
     events.push({
-      attack: kind === 'attack' ? attack : null,
+      attack,
       kind,
       startStep,
       stepCount: stepIndex - startStep,
@@ -63,6 +70,10 @@ export function collectRhythmEvents(steps: readonly RhythmStep[]): RhythmEvent[]
   }
 
   return events;
+}
+
+function isRhythmAttack(step: RhythmStep): step is RhythmAttack {
+  return step === 's' || step === 'w';
 }
 
 export function generateRandomRhythmPattern(length: number = ONE_BAR_STEP_COUNT): RhythmStep[] {

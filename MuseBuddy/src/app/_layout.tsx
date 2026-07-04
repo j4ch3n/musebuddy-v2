@@ -6,6 +6,7 @@ import { TamaguiProvider } from 'tamagui';
 
 import StorybookUIRoot from '../../.rnstorybook';
 import tamaguiConfig from '../../tamagui.config';
+import { TrainingSessionProvider } from '../contexts/training-session-context';
 
 const isStorybookEnabled = process.env.EXPO_PUBLIC_STORYBOOK_ENABLED === 'true';
 
@@ -26,13 +27,19 @@ export default function RootLayout() {
 
   return (
     <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="session-goal" options={{ gestureEnabled: false }} />
-        <Stack.Screen name="chord-learning" options={{ gestureEnabled: false }} />
-        <Stack.Screen name="rhythm-training" options={{ gestureEnabled: false }} />
-        <Stack.Screen name="pattern-training" options={{ gestureEnabled: false }} />
-        <Stack.Screen name="jam-session" options={{ gestureEnabled: false }} />
-      </Stack>
+      <TrainingSessionProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen
+            name="prepare-training-session-splash"
+            options={{ gestureEnabled: false }}
+          />
+          <Stack.Screen name="session-goal" options={{ gestureEnabled: false }} />
+          <Stack.Screen name="chord-learning" options={{ gestureEnabled: false }} />
+          <Stack.Screen name="rhythm-training" options={{ gestureEnabled: false }} />
+          <Stack.Screen name="pattern-training" options={{ gestureEnabled: false }} />
+          <Stack.Screen name="jam-session" options={{ gestureEnabled: false }} />
+        </Stack>
+      </TrainingSessionProvider>
       <StatusBar style="dark" />
     </TamaguiProvider>
   );

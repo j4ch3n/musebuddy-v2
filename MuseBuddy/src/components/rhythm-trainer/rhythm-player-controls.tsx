@@ -4,7 +4,7 @@ import { Button } from '@/ui';
 
 type RhythmPlayerControlsProps = {
   isPlaying: boolean;
-  onRandomPattern: () => void;
+  onRandomPattern?: () => void;
   onTogglePlayback: () => void;
 };
 
@@ -21,7 +21,9 @@ export function RhythmPlayerControls({
         tone={isPlaying ? 'danger' : 'default'}
       />
 
-      <Button disabled={isPlaying} label="Random" onPress={onRandomPattern} primary={false} />
+      {onRandomPattern && (
+        <Button disabled={isPlaying} label="Random" onPress={onRandomPattern} primary={false} />
+      )}
     </View>
   );
 }

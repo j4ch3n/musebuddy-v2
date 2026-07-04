@@ -3,51 +3,56 @@ import { describe, expect, it } from 'vitest';
 import { buildChordDisplay } from './chord-display';
 
 describe('buildChordDisplay', () => {
-  it('builds C major seventh display tokens and notes', () => {
+  it('builds display tokens and notes from a Supabase chord payload', () => {
     const display = buildChordDisplay({
-      intervals: ['1', '3', '5', '7'],
-      quality: 'major7',
-      root: { accidental: '', letter: 'C' },
+      displayTokens: [
+        { type: 'root', value: 'C' },
+        { type: 'quality', value: 'maj' },
+        { type: 'extension', value: '7' },
+      ],
+      qualityBaseFormula: ['1', '3', '5', '7'],
+      root: 'C',
     });
 
     expect(display.symbol).toBe('Cmaj7');
-    expect(display.commonNotations).toEqual(['Cmaj7', 'CM7']);
+    expect(display.commonNotations).toEqual(['Cmaj7']);
     expect(display.tokens).toEqual([
-      { componentId: 'root', interval: '1', note: 'C', text: 'C', type: 'root' },
-      { componentId: 'quality', text: 'maj', type: 'quality' },
-      { componentId: 'extension', interval: '7', text: '7', type: 'extension' },
+      { text: 'C', type: 'root' },
+      { text: 'maj', type: 'quality' },
+      { text: '7', type: 'extension' },
     ]);
     expect(display.notes.map((note) => note.text)).toEqual(['C', 'E', 'G', 'B']);
   });
 
-  it('omits omitted intervals from display notes', () => {
+  it('supports additions from display tokens', () => {
     const display = buildChordDisplay({
-      intervals: ['1', 'b3', '5', 'b7'],
-      omit: ['b3'],
-      quality: 'minor7',
-      root: { accidental: '', letter: 'C' },
+      displayTokens: [
+        { type: 'root', value: 'A' },
+        { type: 'addition', value: 'add9' },
+      ],
+      qualityBaseFormula: ['1', '3', '5'],
+      root: 'A',
     });
 
-    expect(display.symbol).toBe('Cm7(omit3)');
-    expect(display.tokens).toContainEqual({
-      componentId: 'omit-b3',
-      interval: 'b3',
-      text: '(omit3)',
-      type: 'omission',
-    });
-    expect(display.notes.map((note) => note.text)).toEqual(['C', 'G', 'Bb']);
+    expect(display.symbol).toBe('Aadd9');
+    expect(display.tokens).toContainEqual({ text: 'add9', type: 'addition' });
+    expect(display.notes.map((note) => note.text)).toEqual(['A', 'C#', 'E']);
   });
 
-  it('spells accidental roots and dominant seventh notes for sheet display', () => {
+  it('spells accidental roots for sheet display and keyboard highlighting', () => {
     const display = buildChordDisplay({
-      intervals: ['1', '3', '5', 'b7'],
-      quality: 'dominant7',
-      root: { accidental: 'b', letter: 'B' },
+      displayTokens: [
+        { type: 'root', value: 'Bb' },
+        { type: 'extension', value: '7' },
+      ],
+      qualityBaseFormula: ['1', '3', '5', 'b7'],
+      root: 'Bb',
     });
 
     expect(display.symbol).toBe('Bb7');
     expect(display.commonNotations).toEqual(['Bb7']);
-    expect(display.notes.map((note) => note.text)).toEqual(['Bb', 'D', 'F', 'Ab']);
-    expect(display.notes.map((note) => note.keyboardKey)).toEqual(['Bb', 'D', 'F', 'Ab']);
+    expect(display.notes.map((note) => note.text)).toEqual(['Bb', 'D', 'F', 'G#']);
+    expect(display.notes.map((note) => note.keyboardKey)).toEqual(['A#', 'D', 'F', 'G#']);
+    expect(display.notes[0]).toMatchObject({ accidental: 'b', letter: 'B' });
   });
 });

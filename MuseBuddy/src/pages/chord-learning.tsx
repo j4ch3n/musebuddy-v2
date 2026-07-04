@@ -6,15 +6,16 @@ import {
   ChordNameCard,
   ChordSheetCard,
 } from '@/components/chord-learning';
-import { dailyTrainingConfig } from '@/training/daily-training-config';
+import { useTrainingSession } from '@/contexts/training-session-context';
 import { Button } from '@/ui';
 
+import { PlaceholderPanel } from './placeholder-panel';
 import { TrainingScreenShell } from './training-screen-shell';
 
 export function ChordLearningPage() {
   const router = useRouter();
-  const chord = dailyTrainingConfig.chordLearning.chord;
-  const display = buildChordDisplay(chord);
+  const { session } = useTrainingSession();
+  const display = session ? buildChordDisplay(session.chord) : null;
 
   return (
     <TrainingScreenShell
@@ -28,9 +29,19 @@ export function ChordLearningPage() {
         />
       }
     >
-      <ChordNameCard display={display} explanation={chord.explanation} />
-      <ChordSheetCard display={display} />
-      <ChordKeyboardCard display={display} />
+      {display ? (
+        <>
+          <ChordNameCard display={display} />
+          <ChordSheetCard display={display} />
+          <ChordKeyboardCard display={display} />
+        </>
+      ) : (
+        <PlaceholderPanel
+          accent="blue"
+          body="Training material is not loaded yet."
+          title="Prepare session"
+        />
+      )}
     </TrainingScreenShell>
   );
 }

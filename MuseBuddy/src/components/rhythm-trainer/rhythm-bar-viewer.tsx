@@ -36,7 +36,8 @@ type StepPartProps = {
 };
 
 function StepPart({ isCurrent, step, stepIndex }: StepPartProps) {
-  const label = step === null ? 'rest' : step === 's' ? 'strong beat' : 'weak beat';
+  const label =
+    step === null ? 'rest' : step === 's' ? 'strong beat' : step === 'w' ? 'weak beat' : 'hold';
 
   return (
     <View
@@ -48,6 +49,7 @@ function StepPart({ isCurrent, step, stepIndex }: StepPartProps) {
           styles.stepBar,
           step === 's' && styles.strongStepBar,
           step === 'w' && styles.weakStepBar,
+          step === 'h' && styles.holdStepBar,
           step === null && styles.restStepBar,
         ]}
       />
@@ -100,6 +102,11 @@ const styles = StyleSheet.create({
   weakStepBar: {
     backgroundColor: museBuddyColors.accentBlue,
     height: 26,
+  },
+  holdStepBar: {
+    backgroundColor: museBuddyColors.accentGreen,
+    height: 14,
+    opacity: 0.72,
   },
   restStepBar: {
     backgroundColor: 'transparent',

@@ -1,9 +1,12 @@
 import { useRouter } from 'expo-router';
+import type { Href } from 'expo-router';
 
 import { Button } from '@/ui';
 
 import { PlaceholderPanel } from './placeholder-panel';
 import { TrainingScreenShell } from './training-screen-shell';
+
+const prepareTrainingSessionHref = '/prepare-training-session-splash' as Href;
 
 export function WelcomePage() {
   const router = useRouter();
@@ -15,7 +18,7 @@ export function WelcomePage() {
         <Button
           label="Start today's training"
           onPress={() => {
-            router.push('/session-goal');
+            router.push(prepareTrainingSessionHref);
           }}
         />
       }

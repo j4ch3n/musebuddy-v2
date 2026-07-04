@@ -15,7 +15,7 @@ type ExpectedEvent = {
 
 function pattern(source: string): RhythmStep[] {
   return source.split(/\s+/).map((token) => {
-    if (token === 's' || token === 'w') {
+    if (token === 's' || token === 'w' || token === 'h') {
       return token;
     }
 
@@ -108,11 +108,15 @@ describe('convertRhythmBarToVexflowEvents', () => {
   });
 
   it('ties sustained attacks that need multiple notation segments', () => {
-    expect(convert('s w w w w w w w w w w w w w w -')).toEqual([
+    expect(convert('s h h h h h h h h h h h h h h -')).toEqual([
       note(0, 12, 'h', { dots: 1, tieToNext: true }),
       note(12, 3, '8', { dots: 1, tieFromPrevious: true }),
       rest(15, 1, '16'),
     ]);
+  });
+
+  it('treats hold markers without a preceding attack as rests', () => {
+    expect(convert('h h h h - - - - - - - - - - - -')).toEqual([rest(0, 16, 'w')]);
   });
 
   it('rejects bars that are not exactly sixteen slots', () => {

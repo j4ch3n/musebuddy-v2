@@ -1,15 +1,7 @@
-import {
-  chordIntervalMetadata,
-  diatonicNoteLetters,
-  naturalNoteSemitones,
-  type ChordInterval,
-  type ChordQuality,
-  type ChordRoot,
-  type MusicAccidental,
-  type MusicNoteLetter,
-  type PianoKeyboardKeyName,
-} from '@schema/music-theory-schema';
-import type { ChordLearningChord } from '../../training/daily-training-schema';
+import * as Note from '@tonaljs/note';
+
+import type { TrainingSessionChord, ChordDegree } from '@/contexts/training-session-schema';
+import type { MusicNoteLetter, PianoKeyboardKeyName } from '@schema/music-theory-schema';
 
 export type ChordDisplayTokenType =
   | 'root'
@@ -22,16 +14,13 @@ export type ChordDisplayTokenType =
   | 'separator';
 
 export type ChordDisplayToken = {
-  componentId?: string;
-  interval?: ChordInterval;
-  note?: string;
   text: string;
   type: ChordDisplayTokenType;
 };
 
 export type ChordDisplayNote = {
-  accidental: MusicAccidental;
-  interval: ChordInterval;
+  accidental: string;
+  interval: ChordDegree;
   isRoot: boolean;
   keyboardKey: PianoKeyboardKeyName;
   letter: MusicNoteLetter;
@@ -47,204 +36,91 @@ export type ChordDisplay = {
   tokens: readonly ChordDisplayToken[];
 };
 
-const QUALITY_DISPLAY = {
-  dominant7: {
-    aliases: ['7'],
-    extensionToken: '7',
-    friendlyLabel: 'dominant seventh',
-    qualityToken: '',
-  },
-  major: {
-    aliases: [''],
-    extensionToken: '',
-    friendlyLabel: 'major',
-    qualityToken: '',
-  },
-  major7: {
-    aliases: ['maj7', 'M7'],
-    extensionToken: '7',
-    friendlyLabel: 'major seventh',
-    qualityToken: 'maj',
-  },
-  minor: {
-    aliases: ['m', 'min'],
-    extensionToken: '',
-    friendlyLabel: 'minor',
-    qualityToken: 'm',
-  },
-  minor7: {
-    aliases: ['m7', 'min7'],
-    extensionToken: '7',
-    friendlyLabel: 'minor seventh',
-    qualityToken: 'm',
-  },
-} satisfies Record<
-  ChordQuality,
-  {
-    aliases: readonly string[];
-    extensionToken: string;
-    friendlyLabel: string;
-    qualityToken: string;
-  }
->;
+const INTERVAL_SEMITONES = {
+  '#11': 18,
+  '#2': 3,
+  '#4': 6,
+  '#5': 8,
+  '#9': 15,
+  '1': 0,
+  '11': 17,
+  '13': 21,
+  '2': 2,
+  '3': 4,
+  '4': 5,
+  '5': 7,
+  '6': 9,
+  '7': 11,
+  '9': 14,
+  b2: 1,
+  b3: 3,
+  b5: 6,
+  b6: 8,
+  b7: 10,
+  b9: 13,
+  b13: 20,
+  bb7: 9,
+} satisfies Record<ChordDegree, number>;
 
-export function buildChordDisplay(chord: ChordLearningChord): ChordDisplay {
-  const rootText = formatRoot(chord.root);
-  const qualityDisplay = QUALITY_DISPLAY[chord.quality];
-  const omitIntervals = new Set(chord.omit ?? []);
-  const notes = chord.intervals
-    .filter((interval) => !omitIntervals.has(interval))
-    .map((interval) => buildNote(chord.root, interval));
-  const tokens: ChordDisplayToken[] = [
-    {
-      componentId: 'root',
-      interval: '1',
-      note: rootText,
-      text: rootText,
-      type: 'root',
-    },
-  ];
-
-  if (qualityDisplay.qualityToken) {
-    tokens.push({
-      componentId: 'quality',
-      text: qualityDisplay.qualityToken,
-      type: 'quality',
-    });
-  }
-
-  if (qualityDisplay.extensionToken) {
-    tokens.push({
-      componentId: 'extension',
-      interval: chord.quality === 'major7' ? '7' : 'b7',
-      text: qualityDisplay.extensionToken,
-      type: 'extension',
-    });
-  }
-
-  chord.add?.forEach((interval) => {
-    tokens.push({
-      componentId: `add-${interval}`,
-      interval,
-      text: `(add${stripIntervalAccidentals(interval)})`,
-      type: 'addition',
-    });
-  });
-
-  chord.alterations?.forEach((interval) => {
-    tokens.push({
-      componentId: `alteration-${interval}`,
-      interval,
-      text: interval,
-      type: 'alteration',
-    });
-  });
-
-  chord.omit?.forEach((interval) => {
-    tokens.push({
-      componentId: `omit-${interval}`,
-      interval,
-      text: `(omit${stripIntervalAccidentals(interval)})`,
-      type: 'omission',
-    });
-  });
-
-  if (chord.bass) {
-    tokens.push(
-      { text: '/', type: 'separator' },
-      {
-        componentId: 'bass',
-        note: formatRoot(chord.bass),
-        text: formatRoot(chord.bass),
-        type: 'bass',
-      },
-    );
-  }
-
+export function buildChordDisplay(chord: TrainingSessionChord): ChordDisplay {
+  const tokens = chord.displayTokens.map((token) => ({
+    text: token.value,
+    type: token.type,
+  }));
   const symbol = tokens.map((token) => token.text).join('');
-  const commonNotations = qualityDisplay.aliases.map((alias) => `${rootText}${alias}`);
-  const friendlyName =
-    chord.friendlyName ?? `${rootText} ${qualityDisplay.friendlyLabel}`.replace(/\s+/g, ' ');
 
   return {
-    commonNotations,
-    friendlyName,
-    notes,
+    commonNotations: [symbol],
+    friendlyName: `${chord.root} chord`,
+    notes: chord.qualityBaseFormula.map((interval) => buildNote(chord.root, interval)),
     symbol,
     tokens,
   };
 }
 
-function buildNote(root: ChordRoot, interval: ChordInterval): ChordDisplayNote {
-  const rootText = formatRoot(root);
-  const intervalInfo = chordIntervalMetadata[interval];
-  const rootLetterIndex = diatonicNoteLetters.indexOf(root.letter);
-  const targetLetterIndex =
-    (rootLetterIndex + intervalInfo.degree - 1) % diatonicNoteLetters.length;
-  const letter = diatonicNoteLetters[targetLetterIndex];
-  const targetNaturalSemitone = naturalNoteSemitones[letter];
-  const rootSemitone = getRootSemitone(root);
-  const targetSemitone = (rootSemitone + intervalInfo.semitones) % 12;
-  const accidentalOffset = normalizeAccidentalOffset(targetSemitone - targetNaturalSemitone);
-  const accidental = accidentalOffsetToText(accidentalOffset);
-  const text = `${letter}${accidental}` as PianoKeyboardKeyName;
-  const octave = intervalInfo.semitones >= 12 ? 5 : 4;
+function buildNote(root: string, interval: ChordDegree): ChordDisplayNote {
+  const rootMidi = Note.midi(`${root}4`);
+
+  if (rootMidi === null) {
+    throw new Error(`Unsupported chord root: ${root}.`);
+  }
+
+  const midi = rootMidi + INTERVAL_SEMITONES[interval];
+  const noteName = interval === '1' ? root : Note.pitchClass(Note.fromMidiSharps(midi));
+  const parsedNote = parsePitchClass(noteName);
+  const keyboardKey = midiToKeyboardKey(midi);
+  const octave = Note.octave(Note.fromMidiSharps(midi)) ?? 4;
 
   return {
-    accidental,
+    accidental: parsedNote.accidental,
     interval,
     isRoot: interval === '1',
-    keyboardKey: text,
-    letter,
+    keyboardKey,
+    letter: parsedNote.letter,
     octave,
-    text: interval === '1' ? rootText : text,
+    text: interval === '1' ? root : keyboardKey,
   };
 }
 
-function formatRoot(root: ChordRoot) {
-  return `${root.letter}${root.accidental}`;
-}
+function parsePitchClass(pitchClass: string): { accidental: string; letter: MusicNoteLetter } {
+  const note = Note.get(`${pitchClass}4`);
 
-function getRootSemitone(root: ChordRoot) {
-  return (naturalNoteSemitones[root.letter] + accidentalTextToOffset(root.accidental) + 12) % 12;
-}
-
-function accidentalTextToOffset(accidental: ChordRoot['accidental']) {
-  switch (accidental) {
-    case '#':
-      return 1;
-    case 'b':
-      return -1;
-    default:
-      return 0;
-  }
-}
-
-function accidentalOffsetToText(offset: number): ChordDisplayNote['accidental'] {
-  switch (offset) {
-    case 1:
-      return '#';
-    case -1:
-      return 'b';
-    default:
-      return '';
-  }
-}
-
-function normalizeAccidentalOffset(offset: number) {
-  const normalized = ((offset + 18) % 12) - 6;
-
-  if (normalized === 11) {
-    return -1;
+  if (note.empty) {
+    throw new Error(`Unsupported pitch class: ${pitchClass}.`);
   }
 
-  if (normalized === -11) {
-    return 1;
-  }
-
-  return normalized;
+  return {
+    accidental: note.acc,
+    letter: note.letter as MusicNoteLetter,
+  };
 }
 
-function stripIntervalAccidentals(interval: ChordInterval) {
-  return interval.replaceAll('b', '').replaceAll('#', '');
+function midiToKeyboardKey(midi: number): PianoKeyboardKeyName {
+  const pitchClass = Note.pitchClass(Note.fromMidiSharps(midi));
+
+  if (!pitchClass) {
+    throw new Error(`Unsupported MIDI pitch: ${midi}.`);
+  }
+
+  return pitchClass as PianoKeyboardKeyName;
 }
