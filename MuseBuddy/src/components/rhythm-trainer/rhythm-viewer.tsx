@@ -1,34 +1,26 @@
 import { StyleSheet, View } from 'react-native';
 
-import { BLOCK_COUNT, STEPS_PER_BLOCK } from './constants';
 import { NoteBarViewer } from './note-bar-viewer';
+import { splitRhythmPatternBars } from './rhythm-pattern';
 import { RhythmBarViewer } from './rhythm-bar-viewer';
-import type { SequencerPattern } from './types';
+import type { RhythmPattern } from './types';
 
 type RhythmViewerProps = {
   currentStepIndex: number | null;
-  isBarActionsVisible?: boolean;
-  onRegenerateBar?: (barIndex: number) => void;
-  onShuffleBar?: (barIndex: number) => void;
-  pattern: SequencerPattern;
+  pattern: RhythmPattern;
 };
 
-export function RhythmViewer({
-  currentStepIndex,
-  isBarActionsVisible = true,
-  onRegenerateBar,
-  onShuffleBar,
-  pattern,
-}: RhythmViewerProps) {
+export function RhythmViewer({ currentStepIndex, pattern }: RhythmViewerProps) {
+  const bars = splitRhythmPatternBars(pattern);
+
   return (
     <View style={styles.container}>
-      {Array.from({ length: BLOCK_COUNT }, (_, barIndex) => {
-        const barStartIndex = barIndex * STEPS_PER_BLOCK;
-        const steps = pattern.slice(barStartIndex, barStartIndex + STEPS_PER_BLOCK);
+      {bars.map((steps, barIndex) => {
+        const barStartIndex = barIndex * steps.length;
         const currentStepInBar =
           currentStepIndex !== null &&
           currentStepIndex >= barStartIndex &&
-          currentStepIndex < barStartIndex + STEPS_PER_BLOCK
+          currentStepIndex < barStartIndex + steps.length
             ? currentStepIndex - barStartIndex
             : null;
         const isPlayingBar = currentStepInBar !== null;
@@ -37,14 +29,7 @@ export function RhythmViewer({
           <View key={barIndex} style={styles.barGroup}>
             <RhythmBarViewer
               currentStepIndex={currentStepInBar}
-              isActionVisible={isBarActionsVisible}
               isPlayingBar={isPlayingBar}
-              onRegenerate={() => {
-                onRegenerateBar?.(barIndex);
-              }}
-              onShuffle={() => {
-                onShuffleBar?.(barIndex);
-              }}
               steps={steps}
             />
             <NoteBarViewer currentStepIndex={currentStepInBar} steps={steps} />

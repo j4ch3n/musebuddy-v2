@@ -1,69 +1,27 @@
-import { Image } from 'expo-image';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
-import { Ionicons } from './icons';
+import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 
-const ATTACK_COIN_SOURCE = require('@assets/images/coins/coin-front.png');
-const REST_COIN_SOURCE = require('@assets/images/coins/coin-back.png');
+import type { RhythmStep } from './types';
 
 type RhythmBarViewerProps = {
   currentStepIndex: number | null;
-  isActionVisible?: boolean;
   isPlayingBar: boolean;
-  onRegenerate?: () => void;
-  onShuffle?: () => void;
-  steps: readonly boolean[];
+  steps: readonly RhythmStep[];
 };
 
-export function RhythmBarViewer({
-  currentStepIndex,
-  isActionVisible = true,
-  isPlayingBar,
-  onRegenerate,
-  onShuffle,
-  steps,
-}: RhythmBarViewerProps) {
+export function RhythmBarViewer({ currentStepIndex, isPlayingBar, steps }: RhythmBarViewerProps) {
   return (
     <View
-      accessibilityLabel="Rhythm bar with eight eighth-note steps"
+      accessibilityLabel="Rhythm bar with sixteen sixteenth-note steps"
       style={[styles.container, isPlayingBar && styles.containerPlaying]}
     >
-      <View style={styles.header}>
-        <Text style={styles.label}>{isPlayingBar ? 'Playing bar' : 'Rhythm bar'}</Text>
-        {isActionVisible && (
-          <View style={styles.actionButtons}>
-            <Pressable
-              accessibilityLabel="Shuffle rhythm bar"
-              accessibilityRole="button"
-              hitSlop={8}
-              onPress={onShuffle}
-              style={({ pressed }) => [styles.actionButton, pressed && styles.actionButtonPressed]}
-            >
-              <Ionicons name="shuffle-outline" size={16} color="#2f4f16" />
-            </Pressable>
-            <Pressable
-              accessibilityLabel="Regenerate rhythm bar"
-              accessibilityRole="button"
-              hitSlop={8}
-              onPress={onRegenerate}
-              style={({ pressed }) => [styles.actionButton, pressed && styles.actionButtonPressed]}
-            >
-              <Ionicons name="refresh-outline" size={16} color="#2f4f16" />
-            </Pressable>
-          </View>
-        )}
-      </View>
-
-      <View pointerEvents="none" style={styles.iconLayer}>
-        <Ionicons name="pulse-outline" size={58} color="rgba(77, 111, 36, 0.18)" />
-      </View>
-
       <View style={styles.stepGrid}>
-        {steps.map((isAttack, stepIndex) => (
+        {steps.map((step, stepIndex) => (
           <StepPart
             key={stepIndex}
             isCurrent={currentStepIndex === stepIndex}
-            isAttack={isAttack}
+            step={step}
             stepIndex={stepIndex}
           />
         ))}
@@ -73,26 +31,27 @@ export function RhythmBarViewer({
 }
 
 type StepPartProps = {
-  isAttack: boolean;
   isCurrent: boolean;
+  step: RhythmStep;
   stepIndex: number;
 };
 
-function StepPart({ isAttack, isCurrent, stepIndex }: StepPartProps) {
+function StepPart({ isCurrent, step, stepIndex }: StepPartProps) {
+  const label = step === null ? 'rest' : step === 's' ? 'strong beat' : 'weak beat';
+
   return (
     <View
-      accessibilityLabel={`Step ${stepIndex + 1}: ${isAttack ? 'attack' : 'rest'}`}
-      style={[
-        styles.stepPart,
-        isAttack ? styles.stepPartAttack : styles.stepPartRest,
-        isCurrent && styles.stepPartCurrent,
-      ]}
+      accessibilityLabel={`Step ${stepIndex + 1}: ${label}`}
+      style={[styles.stepPart, isCurrent && styles.stepPartCurrent]}
     >
-      <Image
-        accessible={false}
-        contentFit="contain"
-        source={isAttack ? ATTACK_COIN_SOURCE : REST_COIN_SOURCE}
-        style={styles.stepCoin}
+      <View
+        style={[
+          styles.stepBar,
+          step === 's' && styles.strongStepBar,
+          step === 'w' && styles.weakStepBar,
+          step === null && styles.restStepBar,
+          isCurrent && styles.currentStepBar,
+        ]}
       />
     </View>
   );
@@ -100,83 +59,63 @@ function StepPart({ isAttack, isCurrent, stepIndex }: StepPartProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#e9f7bd',
-    borderColor: '#c7df7e',
+    backgroundColor: museBuddyColors.surface,
+    borderColor: museBuddyColors.ink,
     borderCurve: 'continuous',
-    borderRadius: 8,
-    borderWidth: 1,
-    boxShadow: '0 8px 20px rgba(77, 88, 44, 0.14)',
-    minHeight: 132,
-    overflow: 'hidden',
+    borderRadius: museBuddyRadii.medium,
+    borderWidth: museBuddyBorders.bold,
+    boxShadow: `0 6px 0 ${museBuddyColors.ink}`,
+    minHeight: 82,
     padding: 12,
   },
   containerPlaying: {
-    borderColor: '#6f991c',
-    boxShadow: '0 0 18px rgba(111, 153, 28, 0.28)',
-  },
-  header: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    zIndex: 1,
-  },
-  label: {
-    color: '#2f4f16',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: 4,
-  },
-  actionButton: {
-    alignItems: 'center',
-    borderRadius: 4,
-    height: 28,
-    justifyContent: 'center',
-    width: 28,
-  },
-  actionButtonPressed: {
-    backgroundColor: 'rgba(47, 79, 22, 0.12)',
-  },
-  iconLayer: {
-    alignItems: 'center',
-    bottom: 30,
-    justifyContent: 'center',
-    left: 0,
-    position: 'absolute',
-    right: 0,
-    top: 24,
+    backgroundColor: '#ffffff',
   },
   stepGrid: {
+    alignItems: 'flex-end',
     flexDirection: 'row',
     gap: 4,
-    marginTop: 42,
+    height: 54,
   },
   stepPart: {
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.56)',
-    borderColor: 'rgba(77, 111, 36, 0.18)',
+    backgroundColor: museBuddyColors.surfaceMuted,
+    borderColor: museBuddyColors.ink,
     borderCurve: 'continuous',
-    borderRadius: 4,
-    borderWidth: 1,
+    borderRadius: museBuddyRadii.small,
+    borderWidth: 2,
     flex: 1,
-    height: 44,
-    justifyContent: 'center',
-  },
-  stepPartAttack: {
-    backgroundColor: '#fff7a8',
-  },
-  stepPartRest: {
-    backgroundColor: 'rgba(255, 255, 255, 0.52)',
+    height: 54,
+    justifyContent: 'flex-end',
+    minWidth: 0,
+    overflow: 'hidden',
+    paddingBottom: 4,
   },
   stepPartCurrent: {
     backgroundColor: '#ffffff',
-    borderColor: '#2f4f16',
-    borderWidth: 2,
+    borderWidth: 3,
   },
-  stepCoin: {
-    height: 34,
-    width: 34,
+  stepBar: {
+    borderColor: museBuddyColors.ink,
+    borderRadius: 4,
+    borderWidth: 2,
+    width: '64%',
+  },
+  strongStepBar: {
+    backgroundColor: museBuddyColors.accentRed,
+    height: 40,
+  },
+  weakStepBar: {
+    backgroundColor: museBuddyColors.accentBlue,
+    height: 26,
+  },
+  restStepBar: {
+    backgroundColor: 'transparent',
+    borderColor: museBuddyColors.ink,
+    height: 8,
+    opacity: 0.35,
+  },
+  currentStepBar: {
+    backgroundColor: museBuddyColors.primary,
   },
 });

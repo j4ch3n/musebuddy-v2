@@ -2,7 +2,24 @@ import { describe, expect, it } from 'vitest';
 
 import { dailyTrainingSchema } from './daily-training-schema';
 
-const validBar = [true, false, true, false, true, false, true, false];
+const validPattern = [
+  's',
+  null,
+  'w',
+  null,
+  's',
+  null,
+  null,
+  'w',
+  's',
+  'w',
+  null,
+  null,
+  's',
+  null,
+  'w',
+  null,
+];
 
 const validChordLearning = {
   chord: {
@@ -17,29 +34,29 @@ describe('dailyTrainingSchema', () => {
     const result = dailyTrainingSchema.safeParse({
       chordLearning: validChordLearning,
       rhythmTraining: {
-        bars: [validBar, validBar, validBar, validBar],
+        pattern: validPattern,
       },
     });
 
     expect(result.success).toBe(true);
   });
 
-  it('rejects a rhythm training config without exactly four bars', () => {
+  it('rejects rhythm patterns without exactly sixteen or thirty-two steps', () => {
     const result = dailyTrainingSchema.safeParse({
       chordLearning: validChordLearning,
       rhythmTraining: {
-        bars: [validBar, validBar, validBar],
+        pattern: validPattern.slice(0, 8),
       },
     });
 
     expect(result.success).toBe(false);
   });
 
-  it('rejects rhythm bars without exactly eight steps', () => {
+  it('rejects unsupported rhythm step values', () => {
     const result = dailyTrainingSchema.safeParse({
       chordLearning: validChordLearning,
       rhythmTraining: {
-        bars: [validBar, validBar, validBar, [true, false, true]],
+        pattern: [...validPattern.slice(0, 15), 'x'],
       },
     });
 
@@ -56,7 +73,7 @@ describe('dailyTrainingSchema', () => {
         },
       },
       rhythmTraining: {
-        bars: [validBar, validBar, validBar, validBar],
+        pattern: validPattern,
       },
     });
 
@@ -73,7 +90,7 @@ describe('dailyTrainingSchema', () => {
         },
       },
       rhythmTraining: {
-        bars: [validBar, validBar, validBar, validBar],
+        pattern: validPattern,
       },
     });
 

@@ -2,50 +2,46 @@ import type { Meta, StoryObj } from '@storybook/react-native';
 
 import { RhythmViewer } from './rhythm-viewer';
 
-const noop = () => {};
-
 const samplePattern = [
-  true,
-  false,
-  true,
-  false,
-  true,
-  false,
-  true,
-  false,
-  true,
-  true,
-  false,
-  false,
-  true,
-  false,
-  false,
-  true,
-  true,
-  false,
-  false,
-  true,
-  false,
-  true,
-  false,
-  false,
-  true,
-  false,
-  true,
-  true,
-  false,
-  false,
-  true,
-  false,
-];
+  's',
+  null,
+  'w',
+  null,
+  's',
+  null,
+  null,
+  'w',
+  's',
+  'w',
+  'w',
+  null,
+  's',
+  null,
+  'w',
+  null,
+  's',
+  null,
+  null,
+  'w',
+  's',
+  null,
+  'w',
+  null,
+  's',
+  'w',
+  null,
+  null,
+  's',
+  null,
+  'w',
+  null,
+] as const;
 
 const meta = {
   title: 'Components/RhythmTrainer/RhythmViewer',
   component: RhythmViewer,
   args: {
     currentStepIndex: null,
-    onRegenerateBar: noop,
-    onShuffleBar: noop,
     pattern: samplePattern,
   },
 } satisfies Meta<typeof RhythmViewer>;
@@ -58,6 +54,12 @@ export const Idle: Story = {};
 
 export const ActiveMiddleBar: Story = {
   args: {
-    currentStepIndex: 13,
+    currentStepIndex: 21,
+  },
+};
+
+export const OneBar: Story = {
+  args: {
+    pattern: samplePattern.slice(0, 16),
   },
 };

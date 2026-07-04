@@ -7,7 +7,7 @@ const meta = {
   component: NoteBarViewer,
   args: {
     currentStepIndex: null,
-    steps: [true, false, true, true, false, false, true, false],
+    steps: ['s', 'w', 'w', null, 's', null, null, 'w', 's', null, 'w', null, 's', 'w', null, null],
   },
 } satisfies Meta<typeof NoteBarViewer>;
 

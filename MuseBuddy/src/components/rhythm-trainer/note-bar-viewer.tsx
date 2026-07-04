@@ -2,15 +2,17 @@ import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import NoteBarSheet from './note-bar-sheet.dom';
-import { convertBooleanBarToVexflowEvents } from './note-bar-vexflow';
+import { convertRhythmBarToVexflowEvents } from './note-bar-vexflow';
+import type { RhythmStep } from './types';
+import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 
 type NoteBarViewerProps = {
   currentStepIndex: number | null;
-  steps: readonly boolean[];
+  steps: readonly RhythmStep[];
 };
 
 export function NoteBarViewer({ currentStepIndex, steps }: NoteBarViewerProps) {
-  const events = useMemo(() => convertBooleanBarToVexflowEvents(steps), [steps]);
+  const events = useMemo(() => convertRhythmBarToVexflowEvents(steps), [steps]);
 
   return (
     <View accessibilityLabel="Note preview for rhythm bar" style={styles.container}>
@@ -28,12 +30,12 @@ export function NoteBarViewer({ currentStepIndex, steps }: NoteBarViewerProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#ffffff',
-    borderColor: '#d6decf',
+    backgroundColor: museBuddyColors.surface,
+    borderColor: museBuddyColors.ink,
     borderCurve: 'continuous',
-    borderRadius: 8,
-    borderWidth: 1,
-    boxShadow: '0 4px 14px rgba(68, 78, 54, 0.08)',
+    borderRadius: museBuddyRadii.medium,
+    borderWidth: museBuddyBorders.bold,
+    boxShadow: `0 5px 0 ${museBuddyColors.ink}`,
     height: 124,
     justifyContent: 'center',
     overflow: 'hidden',

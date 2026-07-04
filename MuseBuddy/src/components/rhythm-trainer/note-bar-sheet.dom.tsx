@@ -1,9 +1,9 @@
 'use dom';
 
 import { useEffect, useId, useRef } from 'react';
-import { Dot, Factory, StaveNote } from 'vexflow';
+import { Dot, Factory, StaveNote, TimeSignature } from 'vexflow';
 
-import { DEFAULT_NOTE_KEY, NoteBarVexflowEvent } from './note-bar-vexflow';
+import { NoteBarVexflowEvent, RHYTHM_NOTE_KEY } from './note-bar-vexflow';
 
 type NoteBarSheetProps = {
   currentStepIndex: number | null;
@@ -13,6 +13,7 @@ type NoteBarSheetProps = {
 
 const STAVE_WIDTH = 328;
 const STAVE_HEIGHT = 120;
+const SINGLE_LINE_NOTE_POSITION = 5;
 
 export default function NoteBarSheet({ currentStepIndex, events }: NoteBarSheetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -35,8 +36,20 @@ export default function NoteBarSheet({ currentStepIndex, events }: NoteBarSheetP
       },
     });
     const context = factory.getContext();
-    const stave = factory.Stave({ x: 8, y: 8, width: STAVE_WIDTH - 16 });
-    stave.addClef('treble').addTimeSignature('4/4');
+    const stave = factory.Stave({
+      options: {
+        numLines: 1,
+        spaceAboveStaffLn: 4,
+        spaceBelowStaffLn: 4,
+      },
+      width: STAVE_WIDTH - 16,
+      x: 8,
+      y: 8,
+    });
+    const timeSignature = new TimeSignature('4/4', 10);
+    timeSignature.topLine = -1;
+    timeSignature.bottomLine = 1;
+    stave.addModifier(timeSignature);
     stave.setContext(context).draw();
 
     const notes = events.map((event) => {
@@ -44,8 +57,12 @@ export default function NoteBarSheet({ currentStepIndex, events }: NoteBarSheetP
       const staveNote = new StaveNote({
         clef: 'treble',
         duration,
-        keys: [event.kind === 'note' ? (event.noteKey ?? DEFAULT_NOTE_KEY) : 'b/4'],
+        keys: [event.kind === 'note' ? (event.noteKey ?? RHYTHM_NOTE_KEY) : RHYTHM_NOTE_KEY],
       });
+
+      if (event.kind === 'rest') {
+        staveNote.setKeyLine(0, SINGLE_LINE_NOTE_POSITION);
+      }
 
       Array.from({ length: event.dots }).forEach(() => {
         Dot.buildAndAttach([staveNote], { all: true });
@@ -57,7 +74,7 @@ export default function NoteBarSheet({ currentStepIndex, events }: NoteBarSheetP
         currentStepIndex < event.startStep + event.stepCount;
 
       if (isCurrent) {
-        staveNote.setStyle({ fillStyle: '#6f991c', strokeStyle: '#6f991c' });
+        staveNote.setStyle({ fillStyle: '#2F80ED', strokeStyle: '#2F80ED' });
       }
 
       return staveNote;
@@ -68,7 +85,7 @@ export default function NoteBarSheet({ currentStepIndex, events }: NoteBarSheetP
     factory
       .Formatter()
       .joinVoices([voice])
-      .format([voice], STAVE_WIDTH - 86);
+      .format([voice], STAVE_WIDTH - 76);
     voice.draw(context, stave);
 
     events.forEach((event, eventIndex) => {

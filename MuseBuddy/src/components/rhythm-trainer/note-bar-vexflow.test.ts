@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { convertBooleanBarToVexflowEvents, DEFAULT_NOTE_KEY } from './note-bar-vexflow';
+import { convertRhythmBarToVexflowEvents, RHYTHM_NOTE_KEY } from './note-bar-vexflow';
+import type { RhythmStep } from './types';
 
 type ExpectedEvent = {
   kind: 'note' | 'rest';
@@ -12,14 +13,14 @@ type ExpectedEvent = {
   tieToNext?: boolean;
 };
 
-function pattern(source: string): boolean[] {
+function pattern(source: string): RhythmStep[] {
   return source.split(/\s+/).map((token) => {
-    if (token === 'T') {
-      return true;
+    if (token === 's' || token === 'w') {
+      return token;
     }
 
-    if (token === 'F') {
-      return false;
+    if (token === '-') {
+      return null;
     }
 
     throw new Error(`Unsupported pattern token: ${token}`);
@@ -27,7 +28,7 @@ function pattern(source: string): boolean[] {
 }
 
 function convert(source: string) {
-  return convertBooleanBarToVexflowEvents(pattern(source)).map(
+  return convertRhythmBarToVexflowEvents(pattern(source)).map(
     ({ kind, duration, dots, startStep, stepCount, tieFromPrevious, tieToNext, noteKey }) => ({
       kind,
       duration,
@@ -55,20 +56,15 @@ function note(
     stepCount,
     tieFromPrevious: options.tieFromPrevious ?? false,
     tieToNext: options.tieToNext ?? false,
-    noteKey: DEFAULT_NOTE_KEY,
+    noteKey: RHYTHM_NOTE_KEY,
   };
 }
 
-function rest(
-  startStep: number,
-  stepCount: number,
-  duration: string,
-  options: Pick<ExpectedEvent, 'dots'> = {},
-) {
+function rest(startStep: number, stepCount: number, duration: string, dots: 0 | 1 = 0) {
   return {
     kind: 'rest',
     duration,
-    dots: options.dots ?? 0,
+    dots,
     startStep,
     stepCount,
     tieFromPrevious: false,
@@ -77,204 +73,62 @@ function rest(
   };
 }
 
-describe('convertBooleanBarToVexflowEvents', () => {
-  it.each([
-    ['T T F F F F F F', [note(0, 2, 'q'), rest(2, 6, 'h', { dots: 1 })]],
-    ['T T T F F F F F', [note(0, 3, 'q', { dots: 1 }), rest(3, 4, 'h'), rest(7, 1, '8')]],
-    [
-      'F T T T F F F F',
-      [
-        rest(0, 1, '8'),
-        note(1, 1, '8', { tieToNext: true }),
-        note(2, 2, 'q', { tieFromPrevious: true }),
-        rest(4, 4, 'h'),
-      ],
-    ],
-    [
-      'F F T T T F F F',
-      [rest(0, 2, 'q'), note(2, 3, 'q', { dots: 1 }), rest(5, 2, 'q'), rest(7, 1, '8')],
-    ],
-    [
-      'F F F T T T F F',
-      [
-        rest(0, 2, 'q'),
-        rest(2, 1, '8'),
-        note(3, 1, '8', { tieToNext: true }),
-        note(4, 2, 'q', { tieFromPrevious: true }),
-        rest(6, 2, 'q'),
-      ],
-    ],
-    [
-      'T T T F T T T F',
-      [
-        note(0, 3, 'q', { dots: 1 }),
-        rest(3, 1, '8'),
-        note(4, 3, 'q', { dots: 1 }),
-        rest(7, 1, '8'),
-      ],
-    ],
-  ])('converts core pattern %s', (source, expected) => {
-    expect(convert(source)).toEqual(expected);
+describe('convertRhythmBarToVexflowEvents', () => {
+  it('converts all rests into one whole rest', () => {
+    expect(convert('- - - - - - - - - - - - - - - -')).toEqual([rest(0, 16, 'w')]);
   });
 
-  it.each([
-    ['T T T T F F F F', [note(0, 4, 'h'), rest(4, 4, 'h')]],
-    [
-      'T T T T T F F F',
-      [
-        note(0, 4, 'h', { tieToNext: true }),
-        note(4, 1, '8', { tieFromPrevious: true }),
-        rest(5, 3, 'q', { dots: 1 }),
-      ],
-    ],
-    [
-      'F T T T T T F F',
-      [
-        rest(0, 1, '8'),
-        note(1, 1, '8', { tieToNext: true }),
-        note(2, 4, 'h', { tieFromPrevious: true }),
-        rest(6, 2, 'q'),
-      ],
-    ],
-    [
-      'F F T T T T T F',
-      [
-        rest(0, 2, 'q'),
-        note(2, 4, 'h', { tieToNext: true }),
-        note(6, 1, '8', { tieFromPrevious: true }),
-        rest(7, 1, '8'),
-      ],
-    ],
-    [
-      'F F F T T T T T',
-      [
-        rest(0, 2, 'q'),
-        rest(2, 1, '8'),
-        note(3, 1, '8', { tieToNext: true }),
-        note(4, 4, 'h', { tieFromPrevious: true }),
-      ],
-    ],
-  ])('converts long note run %s', (source, expected) => {
-    expect(convert(source)).toEqual(expected);
+  it('groups consecutive strong and weak attacks into one dotted crotchet', () => {
+    expect(convert('s w w - - - - - - - - - - - - -')).toEqual([
+      note(0, 3, '8', { dots: 1 }),
+      rest(3, 12, 'h', 1),
+      rest(15, 1, '16'),
+    ]);
   });
 
-  it.each([
-    [
-      'T F T F T F T F',
-      [
-        note(0, 1, '8'),
-        rest(1, 1, '8'),
-        note(2, 1, '8'),
-        rest(3, 1, '8'),
-        note(4, 1, '8'),
-        rest(5, 1, '8'),
-        note(6, 1, '8'),
-        rest(7, 1, '8'),
-      ],
-    ],
-    [
-      'F T F T F T F T',
-      [
-        rest(0, 1, '8'),
-        note(1, 1, '8'),
-        rest(2, 1, '8'),
-        note(3, 1, '8'),
-        rest(4, 1, '8'),
-        note(5, 1, '8'),
-        rest(6, 1, '8'),
-        note(7, 1, '8'),
-      ],
-    ],
-    [
-      'T F F T T F F T',
-      [note(0, 1, '8'), rest(1, 2, 'q'), note(3, 2, 'q'), rest(5, 2, 'q'), note(7, 1, '8')],
-    ],
-    [
-      'F T T F F T T F',
-      [rest(0, 1, '8'), note(1, 2, 'q'), rest(3, 2, 'q'), note(5, 2, 'q'), rest(7, 1, '8')],
-    ],
-  ])('converts alternating pattern %s', (source, expected) => {
-    expect(convert(source)).toEqual(expected);
+  it('keeps attacks separated by rests as separate note events', () => {
+    expect(convert('s - w - s - w - s - w - s - w -')).toEqual([
+      note(0, 1, '16'),
+      rest(1, 1, '16'),
+      note(2, 1, '16'),
+      rest(3, 1, '16'),
+      note(4, 1, '16'),
+      rest(5, 1, '16'),
+      note(6, 1, '16'),
+      rest(7, 1, '16'),
+      note(8, 1, '16'),
+      rest(9, 1, '16'),
+      note(10, 1, '16'),
+      rest(11, 1, '16'),
+      note(12, 1, '16'),
+      rest(13, 1, '16'),
+      note(14, 1, '16'),
+      rest(15, 1, '16'),
+    ]);
   });
 
-  it.each([
-    ['T F F F T T T T', [note(0, 1, '8'), rest(1, 1, '8'), rest(2, 2, 'q'), note(4, 4, 'h')]],
-    [
-      'T T F F F T T T',
-      [
-        note(0, 2, 'q'),
-        rest(2, 2, 'q'),
-        rest(4, 1, '8'),
-        note(5, 1, '8', { tieToNext: true }),
-        note(6, 2, 'q', { tieFromPrevious: true }),
-      ],
-    ],
-    [
-      'F F F F F T T T',
-      [
-        rest(0, 4, 'h'),
-        rest(4, 1, '8'),
-        note(5, 1, '8', { tieToNext: true }),
-        note(6, 2, 'q', { tieFromPrevious: true }),
-      ],
-    ],
-    ['F F F F T T T F', [rest(0, 4, 'h'), note(4, 3, 'q', { dots: 1 }), rest(7, 1, '8')]],
-  ])('keeps rests crossing beats readable for %s', (source, expected) => {
-    expect(convert(source)).toEqual(expected);
+  it('ties sustained attacks that need multiple notation segments', () => {
+    expect(convert('s w w w w w w w w w w w w w w -')).toEqual([
+      note(0, 12, 'h', { dots: 1, tieToNext: true }),
+      note(12, 3, '8', { dots: 1, tieFromPrevious: true }),
+      rest(15, 1, '16'),
+    ]);
   });
 
-  it.each([
-    ['T F F F F F F F', [note(0, 1, '8'), rest(1, 1, '8'), rest(2, 4, 'h'), rest(6, 2, 'q')]],
-    ['F F F F F F F T', [rest(0, 6, 'h', { dots: 1 }), rest(6, 1, '8'), note(7, 1, '8')]],
-    [
-      'F T T T T F F F',
-      [
-        rest(0, 1, '8'),
-        note(1, 1, '8', { tieToNext: true }),
-        note(2, 2, 'q', { tieFromPrevious: true, tieToNext: true }),
-        note(4, 1, '8', { tieFromPrevious: true }),
-        rest(5, 2, 'q'),
-        rest(7, 1, '8'),
-      ],
-    ],
-    [
-      'T T T T F T T T',
-      [
-        note(0, 4, 'h'),
-        rest(4, 1, '8'),
-        note(5, 1, '8', { tieToNext: true }),
-        note(6, 2, 'q', { tieFromPrevious: true }),
-      ],
-    ],
-    [
-      'T T F T T T T F',
-      [
-        note(0, 2, 'q'),
-        rest(2, 1, '8'),
-        note(3, 1, '8', { tieToNext: true }),
-        note(4, 2, 'q', { tieFromPrevious: true, tieToNext: true }),
-        note(6, 1, '8', { tieFromPrevious: true }),
-        rest(7, 1, '8'),
-      ],
-    ],
-  ])('handles beat-boundary stress pattern %s', (source, expected) => {
-    expect(convert(source)).toEqual(expected);
-  });
-
-  it('rejects bars that are not exactly eight slots', () => {
-    expect(() => convertBooleanBarToVexflowEvents([true, false])).toThrow(
-      'Expected 8 bar steps, received 2.',
+  it('rejects bars that are not exactly sixteen slots', () => {
+    expect(() => convertRhythmBarToVexflowEvents(['s', null])).toThrow(
+      'Expected 16 bar steps, received 2.',
     );
   });
 
   it('covers the whole bar without gaps or overlaps', () => {
-    const events = convertBooleanBarToVexflowEvents(pattern('F T T T T F F F'));
+    const events = convertRhythmBarToVexflowEvents(pattern('s w w - s - - w s - w - s w - -'));
 
     events.forEach((event, index) => {
       expect(event.startStep).toBe(
         index === 0 ? 0 : events[index - 1].startStep + events[index - 1].stepCount,
       );
     });
-    expect(events.reduce((total, event) => total + event.stepCount, 0)).toBe(8);
+    expect(events.reduce((total, event) => total + event.stepCount, 0)).toBe(16);
   });
 });

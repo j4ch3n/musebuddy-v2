@@ -9,16 +9,12 @@ import {
   type ChordRoot,
 } from '@schema/music-theory-schema';
 
-const rhythmBarSchema = z.tuple([
-  z.boolean(),
-  z.boolean(),
-  z.boolean(),
-  z.boolean(),
-  z.boolean(),
-  z.boolean(),
-  z.boolean(),
-  z.boolean(),
-]);
+const rhythmStepSchema = z.union([z.literal('s'), z.literal('w'), z.null()]);
+const rhythmPatternSchema = z
+  .array(rhythmStepSchema)
+  .refine((pattern) => pattern.length === 16 || pattern.length === 32, {
+    message: 'Rhythm pattern must contain exactly 16 or 32 steps.',
+  });
 
 export const chordLearningChordSchema = z.object({
   add: z.array(chordIntervalSchema).optional(),
@@ -37,11 +33,12 @@ export const dailyTrainingSchema = z.object({
     chord: chordLearningChordSchema,
   }),
   rhythmTraining: z.object({
-    bars: z.tuple([rhythmBarSchema, rhythmBarSchema, rhythmBarSchema, rhythmBarSchema]),
+    pattern: rhythmPatternSchema,
   }),
 });
 
 export type DailyTrainingConfig = z.infer<typeof dailyTrainingSchema>;
 export type ChordLearningChord = z.infer<typeof chordLearningChordSchema>;
+export type DailyTrainingRhythmPattern = z.infer<typeof rhythmPatternSchema>;
 export type { ChordInterval, ChordQuality, ChordRoot };
 export { chordIntervalSchema, chordQualitySchema, chordRootSchema };
