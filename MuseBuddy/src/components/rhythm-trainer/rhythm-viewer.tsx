@@ -25,15 +25,9 @@ export function RhythmViewer({ currentStepIndex, pattern }: RhythmViewerProps) {
           currentStepIndex < barStartIndex + steps.length
             ? currentStepIndex - barStartIndex
             : null;
-        const isPlayingBar = currentStepInBar !== null;
-
         return (
           <View key={barIndex} style={styles.barGroup}>
-            <RhythmBarViewer
-              currentStepIndex={currentStepInBar}
-              isPlayingBar={isPlayingBar}
-              steps={steps}
-            />
+            <RhythmBarViewer currentStepIndex={currentStepInBar} steps={steps} />
             <NoteBarViewer currentStepIndex={currentStepInBar} steps={steps} />
           </View>
         );
@@ -47,7 +41,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   barGroup: {
-    backgroundColor: museBuddyColors.surface,
+    backgroundColor: museBuddyColors.white,
     borderColor: museBuddyColors.ink,
     borderCurve: 'continuous',
     borderRadius: museBuddyRadii.large,

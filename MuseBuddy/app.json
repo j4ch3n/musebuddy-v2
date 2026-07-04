@@ -30,6 +30,7 @@
     },
     "plugins": [
       "@react-native-vector-icons/ionicons",
+      "@react-native-vector-icons/fontawesome5",
       "expo-router",
       [
         "expo-splash-screen",

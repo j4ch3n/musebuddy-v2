@@ -11,7 +11,7 @@ export function JamSessionPage() {
 
   return (
     <TrainingScreenShell
-      eyebrow="Step 3 of 3"
+      currentStep="jam"
       footer={
         <PrimaryTrainingButton
           label="End session"
@@ -20,8 +20,6 @@ export function JamSessionPage() {
           }}
         />
       }
-      subtitle="Use today's chord and rhythm as the frame for your improvisation."
-      title="Jam session"
     >
       <PlaceholderPanel
         accent="green"

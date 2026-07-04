@@ -17,6 +17,9 @@ importers:
       '@react-native-community/slider':
         specifier: 5.2.0
         version: 5.2.0
+      '@react-native-vector-icons/fontawesome5':
+        specifier: ^13.1.2
+        version: 13.1.2(@expo/config-plugins@56.0.9(typescript@6.0.3))(@react-native/assets-registry@0.85.3)(expo-font@56.0.7)(react-native@0.85.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)
       '@react-native-vector-icons/ionicons':
         specifier: ^13.1.2
         version: 13.1.2(@expo/config-plugins@56.0.9(typescript@6.0.3))(@react-native/assets-registry@0.85.3)(expo-font@56.0.7)(react-native@0.85.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)
@@ -1737,6 +1740,17 @@ packages:
       '@react-native/assets-registry':
         optional: true
       expo-font:
+        optional: true
+
+  '@react-native-vector-icons/fontawesome5@13.1.2':
+    resolution: {integrity: sha512-V0icTX+EkyD4OyyUurrkInQJHRgSdlv4Z6flnIaUARH3Wahaodnyr4W+QS/kNUrMHYNYDtGpp9MEyTEPth0mqg==}
+    engines: {node: '>= 18.0.0'}
+    peerDependencies:
+      '@expo/config-plugins': '>=10.0.0'
+      react: '*'
+      react-native: '*'
+    peerDependenciesMeta:
+      '@expo/config-plugins':
         optional: true
 
   '@react-native-vector-icons/ionicons@13.1.2':
@@ -7813,6 +7827,18 @@ snapshots:
     optionalDependencies:
       '@react-native/assets-registry': 0.85.3
       expo-font: 56.0.7(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)
+
+  '@react-native-vector-icons/fontawesome5@13.1.2(@expo/config-plugins@56.0.9(typescript@6.0.3))(@react-native/assets-registry@0.85.3)(expo-font@56.0.7)(react-native@0.85.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)':
+    dependencies:
+      '@react-native-vector-icons/common': 13.0.1(@react-native/assets-registry@0.85.3)(expo-font@56.0.7)(react-native@0.85.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)
+      react: 19.2.3
+      react-native: 0.85.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3)
+    optionalDependencies:
+      '@expo/config-plugins': 56.0.9(typescript@6.0.3)
+    transitivePeerDependencies:
+      - '@react-native-vector-icons/get-image'
+      - '@react-native/assets-registry'
+      - expo-font
 
   '@react-native-vector-icons/ionicons@13.1.2(@expo/config-plugins@56.0.9(typescript@6.0.3))(@react-native/assets-registry@0.85.3)(expo-font@56.0.7)(react-native@0.85.3(@babel/core@7.29.7)(@react-native/metro-config@0.85.3(@babel/core@7.29.7))(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)':
     dependencies:

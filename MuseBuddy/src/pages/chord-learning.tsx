@@ -17,7 +17,7 @@ export function ChordLearningPage() {
 
   return (
     <TrainingScreenShell
-      eyebrow="Step 1 of 3"
+      currentStep="chord"
       footer={
         <PrimaryTrainingButton
           label="Continue"
@@ -26,8 +26,6 @@ export function ChordLearningPage() {
           }}
         />
       }
-      subtitle="Get familiar with today's chord shape before adding movement."
-      title="Chord learning"
     >
       <ChordNameCard display={display} explanation={chord.explanation} />
       <ChordSheetCard display={display} />

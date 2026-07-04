@@ -43,6 +43,8 @@ const lightTheme = {
   placeholderColor: '#6b5f52',
   shadowColor: museBuddyColors.ink,
   primary: museBuddyColors.primary,
+  secondary: museBuddyColors.secondary,
+  active: museBuddyColors.active,
   ink: museBuddyColors.ink,
   surface: museBuddyColors.surface,
   surfaceMuted: museBuddyColors.surfaceMuted,

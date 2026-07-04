@@ -29,7 +29,7 @@ export function RhythmTrainingPage() {
 
   return (
     <TrainingScreenShell
-      eyebrow="Step 2 of 3"
+      currentStep="rhythm"
       footer={
         <View style={{ gap: 14 }}>
           <RhythmSpeedControl onChange={setBpm} value={bpm} />
@@ -47,8 +47,6 @@ export function RhythmTrainingPage() {
           />
         </View>
       }
-      subtitle="Read today's rhythm, then carry it into the jam."
-      title="Rhythm training"
     >
       <RhythmViewer currentStepIndex={currentStepIndex} pattern={pattern} />
     </TrainingScreenShell>

@@ -6,15 +6,14 @@ import type { RhythmStep } from './types';
 
 type RhythmBarViewerProps = {
   currentStepIndex: number | null;
-  isPlayingBar: boolean;
   steps: readonly RhythmStep[];
 };
 
-export function RhythmBarViewer({ currentStepIndex, isPlayingBar, steps }: RhythmBarViewerProps) {
+export function RhythmBarViewer({ currentStepIndex, steps }: RhythmBarViewerProps) {
   return (
     <View
       accessibilityLabel="Rhythm bar with sixteen sixteenth-note steps"
-      style={[styles.container, isPlayingBar && styles.containerPlaying]}
+      style={styles.container}
     >
       <View style={styles.stepGrid}>
         {steps.map((step, stepIndex) => (
@@ -50,7 +49,6 @@ function StepPart({ isCurrent, step, stepIndex }: StepPartProps) {
           step === 's' && styles.strongStepBar,
           step === 'w' && styles.weakStepBar,
           step === null && styles.restStepBar,
-          isCurrent && styles.currentStepBar,
         ]}
       />
     </View>
@@ -59,13 +57,10 @@ function StepPart({ isCurrent, step, stepIndex }: StepPartProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: museBuddyColors.surfaceMuted,
+    backgroundColor: museBuddyColors.white,
     borderRadius: museBuddyRadii.small,
     minHeight: 82,
     padding: 12,
-  },
-  containerPlaying: {
-    backgroundColor: '#ffffff',
   },
   stepGrid: {
     alignItems: 'flex-end',
@@ -75,7 +70,7 @@ const styles = StyleSheet.create({
   },
   stepPart: {
     alignItems: 'center',
-    backgroundColor: museBuddyColors.surfaceMuted,
+    backgroundColor: museBuddyColors.white,
     borderColor: museBuddyColors.ink,
     borderCurve: 'continuous',
     borderRadius: museBuddyRadii.small,
@@ -88,7 +83,7 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   stepPartCurrent: {
-    backgroundColor: '#ffffff',
+    backgroundColor: museBuddyColors.active,
     borderWidth: 3,
   },
   stepBar: {
@@ -96,9 +91,10 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     borderWidth: 2,
     width: '64%',
+    zIndex: 1,
   },
   strongStepBar: {
-    backgroundColor: museBuddyColors.accentRed,
+    backgroundColor: museBuddyColors.primary,
     height: 40,
   },
   weakStepBar: {
@@ -110,8 +106,5 @@ const styles = StyleSheet.create({
     borderColor: museBuddyColors.ink,
     height: 8,
     opacity: 0.35,
-  },
-  currentStepBar: {
-    backgroundColor: museBuddyColors.primary,
   },
 });

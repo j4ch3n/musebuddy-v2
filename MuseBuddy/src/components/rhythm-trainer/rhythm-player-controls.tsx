@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
     backgroundColor: museBuddyColors.accentRed,
   },
   randomButton: {
-    backgroundColor: museBuddyColors.accentPurple,
+    backgroundColor: museBuddyColors.secondary,
   },
   buttonDisabled: {
     backgroundColor: museBuddyColors.surfaceMuted,

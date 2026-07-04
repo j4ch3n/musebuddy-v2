@@ -7,7 +7,6 @@ const meta = {
   component: RhythmBarViewer,
   args: {
     currentStepIndex: null,
-    isPlayingBar: false,
     steps: ['s', null, 'w', null, 's', null, null, 'w', 's', 'w', 'w', null, 's', null, 'w', null],
   },
 } satisfies Meta<typeof RhythmBarViewer>;
@@ -21,7 +20,6 @@ export const Idle: Story = {};
 export const PlayingCurrentStep: Story = {
   args: {
     currentStepIndex: 8,
-    isPlayingBar: true,
   },
 };
 

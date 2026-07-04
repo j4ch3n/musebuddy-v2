@@ -120,6 +120,15 @@ active workflow: load model, record, finish, transcribe, inspect notes.
 - Do not add accounts, cloud features, history, export flows, or elaborate decorative UI
   unless the user explicitly asks.
 
+### Daily Training Layout
+
+Daily training screens should stay focused on the exercise itself. For the chord, rhythm,
+and jam flow, use a compact top step indicator with FontAwesome icons (`music`, `drum`,
+`magic`), then the actual practice content, then the primary navigation/action controls at
+the bottom. Do not repeat daily exercise labels, screen titles, or descriptive intro copy
+inside each training step. Disable back navigation within the daily training section so the
+flow moves forward through chord, rhythm, and jam.
+
 ## Tamagui Implementation
 
 Use Tamagui tokens and themes for new UI. Reuse shared MuseBuddy tokens from

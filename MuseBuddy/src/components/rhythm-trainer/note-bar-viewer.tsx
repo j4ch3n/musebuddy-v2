@@ -1,10 +1,11 @@
 import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
+
 import NoteBarSheet from './note-bar-sheet.dom';
 import { convertRhythmBarToVexflowEvents } from './note-bar-vexflow';
 import type { RhythmStep } from './types';
-import { museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 
 type NoteBarViewerProps = {
   currentStepIndex: number | null;

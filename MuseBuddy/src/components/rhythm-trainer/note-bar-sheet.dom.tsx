@@ -3,7 +3,9 @@
 import { useEffect, useId, useRef } from 'react';
 import { Dot, Factory, StaveNote, TimeSignature } from 'vexflow';
 
-import { NoteBarVexflowEvent, RHYTHM_NOTE_KEY } from './note-bar-vexflow';
+import { museBuddyColors } from '@/constants/design-tokens';
+
+import { RHYTHM_NOTE_KEY, type NoteBarVexflowEvent } from './note-bar-vexflow';
 
 type NoteBarSheetProps = {
   currentStepIndex: number | null;
@@ -74,7 +76,10 @@ export default function NoteBarSheet({ currentStepIndex, events }: NoteBarSheetP
         currentStepIndex < event.startStep + event.stepCount;
 
       if (isCurrent) {
-        staveNote.setStyle({ fillStyle: '#2F80ED', strokeStyle: '#2F80ED' });
+        staveNote.setStyle({
+          fillStyle: museBuddyColors.active,
+          strokeStyle: museBuddyColors.active,
+        });
       }
 
       return staveNote;
@@ -112,7 +117,7 @@ export default function NoteBarSheet({ currentStepIndex, events }: NoteBarSheetP
       ref={containerRef}
       style={{
         alignItems: 'center',
-        background: '#ffffff',
+        background: museBuddyColors.white,
         display: 'flex',
         height: STAVE_HEIGHT,
         justifyContent: 'center',

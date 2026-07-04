@@ -1,38 +1,117 @@
 import type { ReactNode } from 'react';
+import FontAwesome5 from '@react-native-vector-icons/fontawesome5';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 
-type TrainingScreenShellProps = {
+type TrainingStepId = 'chord' | 'rhythm' | 'jam';
+type TrainingStepIconName = 'music' | 'drum' | 'magic';
+
+type BaseTrainingScreenShellProps = {
   children: ReactNode;
-  eyebrow: string;
   footer: ReactNode;
+};
+
+type StepTrainingScreenShellProps = BaseTrainingScreenShellProps & {
+  currentStep: TrainingStepId;
+  eyebrow?: never;
+  subtitle?: never;
+  title?: never;
+};
+
+type HeaderTrainingScreenShellProps = BaseTrainingScreenShellProps & {
+  currentStep?: never;
+  eyebrow: string;
   subtitle: string;
   title: string;
 };
 
-export function TrainingScreenShell({
-  children,
-  eyebrow,
-  footer,
-  subtitle,
-  title,
-}: TrainingScreenShellProps) {
+type TrainingScreenShellProps = StepTrainingScreenShellProps | HeaderTrainingScreenShellProps;
+
+type TrainingStep = {
+  accent: 'blue' | 'green' | 'purple';
+  iconName: TrainingStepIconName;
+  id: TrainingStepId;
+  label: string;
+};
+
+const trainingSteps: TrainingStep[] = [
+  {
+    accent: 'blue',
+    iconName: 'music',
+    id: 'chord',
+    label: 'Chord',
+  },
+  {
+    accent: 'green',
+    iconName: 'drum',
+    id: 'rhythm',
+    label: 'Rhythm',
+  },
+  {
+    accent: 'purple',
+    iconName: 'magic',
+    id: 'jam',
+    label: 'Jam',
+  },
+];
+
+export function TrainingScreenShell(props: TrainingScreenShellProps) {
+  const { children, footer } = props;
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic">
-        <View style={styles.header}>
-          <Text style={styles.eyebrow}>{eyebrow}</Text>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.subtitle}>{subtitle}</Text>
-        </View>
+        {props.currentStep !== undefined ? (
+          <TrainingStepIndicator currentStep={props.currentStep} />
+        ) : (
+          <View style={styles.header}>
+            <Text style={styles.eyebrow}>{props.eyebrow}</Text>
+            <Text style={styles.title}>{props.title}</Text>
+            <Text style={styles.subtitle}>{props.subtitle}</Text>
+          </View>
+        )}
 
         <View style={styles.body}>{children}</View>
 
         <View style={styles.footer}>{footer}</View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function TrainingStepIndicator({ currentStep }: { currentStep: TrainingStepId }) {
+  const currentStepIndex = trainingSteps.findIndex((step) => step.id === currentStep);
+
+  return (
+    <View accessibilityRole="summary" style={styles.stepIndicator}>
+      {trainingSteps.map((step, index) => {
+        const isActive = step.id === currentStep;
+        const isComplete = index < currentStepIndex;
+
+        return (
+          <View
+            accessibilityLabel={`${step.label} step${isActive ? ', current' : ''}`}
+            key={step.id}
+            style={[
+              styles.stepItem,
+              isActive && styles.stepItemActive,
+              isComplete && styles.stepItemComplete,
+            ]}
+          >
+            <FontAwesome5
+              color={museBuddyColors.ink}
+              iconStyle="solid"
+              name={step.iconName}
+              size={22}
+            />
+            <Text style={styles.stepLabel}>{step.label}</Text>
+            <View style={[styles.stepAccent, accentStyles[step.accent]]} />
+          </View>
+        );
+      })}
+    </View>
   );
 }
 
@@ -104,6 +183,48 @@ const styles = StyleSheet.create({
   },
   header: {
     gap: 8,
+  },
+  stepIndicator: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  stepItem: {
+    alignItems: 'center',
+    backgroundColor: museBuddyColors.surface,
+    borderColor: museBuddyColors.ink,
+    borderRadius: museBuddyRadii.medium,
+    borderWidth: museBuddyBorders.bold,
+    boxShadow: `0 4px 0 ${museBuddyColors.ink}`,
+    flex: 1,
+    gap: 6,
+    minHeight: 86,
+    overflow: 'hidden',
+    paddingHorizontal: 6,
+    paddingTop: 12,
+  },
+  stepItemActive: {
+    backgroundColor: museBuddyColors.active,
+    boxShadow: `0 6px 0 ${museBuddyColors.ink}`,
+    transform: [{ translateY: -2 }],
+  },
+  stepItemComplete: {
+    backgroundColor: museBuddyColors.surfaceMuted,
+  },
+  stepLabel: {
+    color: museBuddyColors.ink,
+    fontSize: 13,
+    fontWeight: '900',
+    lineHeight: 16,
+    textAlign: 'center',
+  },
+  stepAccent: {
+    borderColor: museBuddyColors.ink,
+    borderTopWidth: museBuddyBorders.bold,
+    bottom: 0,
+    height: 10,
+    left: 0,
+    position: 'absolute',
+    right: 0,
   },
   eyebrow: {
     color: museBuddyColors.accentPurple,

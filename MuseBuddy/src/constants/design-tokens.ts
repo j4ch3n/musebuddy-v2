@@ -1,6 +1,8 @@
 export const museBuddyColors = {
   background: '#fff3c7',
-  primary: '#ffb347',
+  primary: '#9b5de5',
+  secondary: '#ffc15e',
+  active: '#ff7a83',
   ink: '#201b22',
   surface: '#fff8e8',
   surfaceMuted: '#f4ead5',

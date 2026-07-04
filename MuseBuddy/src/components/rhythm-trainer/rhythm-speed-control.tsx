@@ -36,7 +36,7 @@ export function RhythmSpeedControl({ onChange, value }: RhythmSpeedControlProps)
                 onChange(option.bpm);
               }}
               pressStyle={{
-                background: isSelected ? museBuddyColors.primary : museBuddyColors.surfaceMuted,
+                background: isSelected ? museBuddyColors.active : museBuddyColors.surfaceMuted,
                 transform: [{ translateY: 2 }],
               }}
               style={[styles.option, isSelected && styles.optionSelected]}
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   optionSelected: {
-    backgroundColor: museBuddyColors.primary,
+    backgroundColor: museBuddyColors.active,
   },
   optionLabel: {
     textAlign: 'center',
