@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
-import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
+import { FlashCard } from '@/ui';
 
 import { NoteBarViewer } from './note-bar-viewer';
 import { splitRhythmPatternBars } from './rhythm-pattern';
@@ -26,10 +26,12 @@ export function RhythmViewer({ currentStepIndex, pattern }: RhythmViewerProps) {
             ? currentStepIndex - barStartIndex
             : null;
         return (
-          <View key={barIndex} style={styles.barGroup}>
-            <RhythmBarViewer currentStepIndex={currentStepInBar} steps={steps} />
-            <NoteBarViewer currentStepIndex={currentStepInBar} steps={steps} />
-          </View>
+          <FlashCard key={barIndex} padded={false}>
+            <View style={styles.barGroupContent}>
+              <RhythmBarViewer currentStepIndex={currentStepInBar} steps={steps} />
+              <NoteBarViewer currentStepIndex={currentStepInBar} steps={steps} />
+            </View>
+          </FlashCard>
         );
       })}
     </View>
@@ -40,15 +42,8 @@ const styles = StyleSheet.create({
   container: {
     gap: 16,
   },
-  barGroup: {
-    backgroundColor: museBuddyColors.white,
-    borderColor: museBuddyColors.ink,
-    borderCurve: 'continuous',
-    borderRadius: museBuddyRadii.large,
-    borderWidth: museBuddyBorders.bold,
-    boxShadow: `0 8px 0 ${museBuddyColors.ink}`,
+  barGroupContent: {
     gap: 10,
-    overflow: 'hidden',
     padding: 12,
   },
 });

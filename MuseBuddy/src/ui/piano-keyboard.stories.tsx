@@ -66,7 +66,7 @@ const noteOptions: PianoKeyboardKeyName[] = [
 ];
 
 const meta = {
-  title: 'Components/PianoKeyboard',
+  title: 'UI/PianoKeyboard',
   component: PianoKeyboard,
   args: {
     chordPreset: 'C major',

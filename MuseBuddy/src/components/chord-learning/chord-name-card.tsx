@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
+import { FlashCard } from '@/ui';
 
 import type { ChordDisplay, ChordDisplayTokenType } from './chord-display';
-import { FlashCard } from './flash-card';
 
 type ChordNameCardProps = {
   display: ChordDisplay;

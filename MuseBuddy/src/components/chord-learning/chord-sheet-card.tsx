@@ -1,10 +1,10 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { museBuddyColors } from '@/constants/design-tokens';
+import { FlashCard } from '@/ui';
 
 import type { ChordDisplay } from './chord-display';
 import ChordSheet from './chord-sheet.dom';
-import { FlashCard } from './flash-card';
 
 type ChordSheetCardProps = {
   display: ChordDisplay;

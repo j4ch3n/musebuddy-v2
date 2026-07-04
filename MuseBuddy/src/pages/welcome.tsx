@@ -1,10 +1,9 @@
 import { useRouter } from 'expo-router';
 
-import {
-  PlaceholderPanel,
-  PrimaryTrainingButton,
-  TrainingScreenShell,
-} from './training-screen-shell';
+import { Button } from '@/ui';
+
+import { PlaceholderPanel } from './placeholder-panel';
+import { TrainingScreenShell } from './training-screen-shell';
 
 export function WelcomePage() {
   const router = useRouter();
@@ -13,7 +12,7 @@ export function WelcomePage() {
     <TrainingScreenShell
       eyebrow="Daily exercise"
       footer={
-        <PrimaryTrainingButton
+        <Button
           label="Start today's training"
           onPress={() => {
             router.push('/chord-learning');

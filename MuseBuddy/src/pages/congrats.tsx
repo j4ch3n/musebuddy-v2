@@ -1,10 +1,9 @@
 import { useRouter } from 'expo-router';
 
-import {
-  PlaceholderPanel,
-  PrimaryTrainingButton,
-  TrainingScreenShell,
-} from './training-screen-shell';
+import { Button } from '@/ui';
+
+import { PlaceholderPanel } from './placeholder-panel';
+import { TrainingScreenShell } from './training-screen-shell';
 
 export function CongratsPage() {
   const router = useRouter();
@@ -13,7 +12,7 @@ export function CongratsPage() {
     <TrainingScreenShell
       eyebrow="Session complete"
       footer={
-        <PrimaryTrainingButton
+        <Button
           label="Back to home"
           onPress={() => {
             router.dismissTo('/');

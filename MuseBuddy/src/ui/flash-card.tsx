@@ -1,13 +1,18 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { YStack } from 'tamagui';
 
 import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
+
+type FlashCardSurface = 'cream' | 'white';
 
 type FlashCardProps = {
   accessibilityLabel?: string;
   children: ReactNode;
   isPressedStyleEnabled?: boolean;
   onPress?: () => void;
+  padded?: boolean;
+  surface?: FlashCardSurface;
 };
 
 export function FlashCard({
@@ -15,31 +20,28 @@ export function FlashCard({
   children,
   isPressedStyleEnabled = true,
   onPress,
+  padded = true,
+  surface = 'white',
 }: FlashCardProps) {
-  const content = <View style={styles.inner}>{children}</View>;
-
-  if (!onPress) {
-    return <View style={styles.card}>{content}</View>;
-  }
+  const backgroundStyle = surface === 'cream' ? styles.creamSurface : styles.whiteSurface;
 
   return (
-    <Pressable
+    <YStack
       accessibilityLabel={accessibilityLabel}
-      accessibilityRole="button"
+      accessibilityRole={onPress ? 'button' : undefined}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.card,
-        pressed && isPressedStyleEnabled ? styles.cardPressed : null,
-      ]}
+      pressStyle={onPress && isPressedStyleEnabled ? styles.cardPressed : undefined}
+      style={[styles.card, backgroundStyle]}
     >
-      {content}
-    </Pressable>
+      <YStack style={[styles.inner, backgroundStyle, padded ? styles.padded : null]}>
+        {children}
+      </YStack>
+    </YStack>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: museBuddyColors.white,
     borderColor: museBuddyColors.ink,
     borderRadius: museBuddyRadii.large,
     borderWidth: museBuddyBorders.bold,
@@ -50,8 +52,16 @@ const styles = StyleSheet.create({
     boxShadow: `0 3px 0 ${museBuddyColors.ink}`,
     transform: [{ translateY: 5 }],
   },
+  creamSurface: {
+    backgroundColor: museBuddyColors.surface,
+  },
   inner: {
-    backgroundColor: museBuddyColors.white,
+    gap: 0,
+  },
+  padded: {
     padding: 18,
+  },
+  whiteSurface: {
+    backgroundColor: museBuddyColors.white,
   },
 });

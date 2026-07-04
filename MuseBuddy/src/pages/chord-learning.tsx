@@ -7,8 +7,9 @@ import {
   ChordSheetCard,
 } from '@/components/chord-learning';
 import { dailyTrainingConfig } from '@/training/daily-training-config';
+import { Button } from '@/ui';
 
-import { PrimaryTrainingButton, TrainingScreenShell } from './training-screen-shell';
+import { TrainingScreenShell } from './training-screen-shell';
 
 export function ChordLearningPage() {
   const router = useRouter();
@@ -19,7 +20,7 @@ export function ChordLearningPage() {
     <TrainingScreenShell
       currentStep="chord"
       footer={
-        <PrimaryTrainingButton
+        <Button
           label="Continue"
           onPress={() => {
             router.push('/rhythm-training');

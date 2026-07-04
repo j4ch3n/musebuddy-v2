@@ -12,8 +12,9 @@ import {
 } from '@/components/rhythm-trainer';
 import { DEFAULT_BPM } from '@/components/rhythm-trainer/constants';
 import { dailyTrainingConfig } from '@/training/daily-training-config';
+import { Button } from '@/ui';
 
-import { PrimaryTrainingButton, TrainingScreenShell } from './training-screen-shell';
+import { TrainingScreenShell } from './training-screen-shell';
 
 export function RhythmTrainingPage() {
   const router = useRouter();
@@ -38,7 +39,7 @@ export function RhythmTrainingPage() {
             onRandomPattern={handleRandomPattern}
             onTogglePlayback={togglePlayback}
           />
-          <PrimaryTrainingButton
+          <Button
             label="Continue"
             onPress={() => {
               stopPlayback();

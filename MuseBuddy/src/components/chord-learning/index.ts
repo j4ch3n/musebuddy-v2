@@ -8,4 +8,3 @@ export type {
 export { ChordKeyboardCard } from './chord-keyboard-card';
 export { ChordNameCard } from './chord-name-card';
 export { ChordSheetCard } from './chord-sheet-card';
-export { FlashCard } from './flash-card';

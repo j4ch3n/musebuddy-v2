@@ -1,10 +1,9 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { PianoKeyboard } from '@/components/piano-keyboard/piano-keyboard';
 import { museBuddyColors } from '@/constants/design-tokens';
+import { FlashCard, PianoKeyboard } from '@/ui';
 
 import type { ChordDisplay } from './chord-display';
-import { FlashCard } from './flash-card';
 
 type ChordKeyboardCardProps = {
   display: ChordDisplay;
