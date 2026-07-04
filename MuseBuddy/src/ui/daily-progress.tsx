@@ -1,10 +1,11 @@
 import FontAwesome5 from '@react-native-vector-icons/fontawesome5';
+import Lucide from '@react-native-vector-icons/lucide';
 import { StyleSheet } from 'react-native';
-import { Text, View, XStack, YStack } from 'tamagui';
+import { View, XStack, YStack } from 'tamagui';
 
-import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
+import { museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 
-export type DailyProgressStep = 'chord' | 'rhythm' | 'jam';
+export type DailyProgressStep = 'goal' | 'chord' | 'rhythm' | 'pattern' | 'jam';
 
 type TrainingStepIconName = 'music' | 'drum' | 'magic';
 
@@ -13,27 +14,52 @@ type DailyProgressProps = {
 };
 
 type DailyProgressItem = {
-  accent: 'blue' | 'green' | 'purple';
-  iconName: TrainingStepIconName;
+  accent: 'blue' | 'green' | 'purple' | 'secondary';
   id: DailyProgressStep;
   label: string;
-};
+} & (
+  | {
+      iconFamily: 'fontAwesome5';
+      iconName: TrainingStepIconName | 'shapes';
+    }
+  | {
+      iconFamily: 'lucide';
+      iconName: 'piano';
+    }
+);
 
 const dailyProgressSteps: DailyProgressItem[] = [
   {
+    accent: 'secondary',
+    iconFamily: 'lucide',
+    iconName: 'piano',
+    id: 'goal',
+    label: 'Goal',
+  },
+  {
     accent: 'blue',
+    iconFamily: 'fontAwesome5',
     iconName: 'music',
     id: 'chord',
     label: 'Chord',
   },
   {
     accent: 'green',
+    iconFamily: 'fontAwesome5',
     iconName: 'drum',
     id: 'rhythm',
     label: 'Rhythm',
   },
   {
     accent: 'purple',
+    iconFamily: 'fontAwesome5',
+    iconName: 'shapes',
+    id: 'pattern',
+    label: 'Pattern',
+  },
+  {
+    accent: 'purple',
+    iconFamily: 'fontAwesome5',
     iconName: 'magic',
     id: 'jam',
     label: 'Jam',
@@ -48,6 +74,7 @@ export function DailyProgress({ currentStep }: DailyProgressProps) {
       {dailyProgressSteps.map((step, index) => {
         const isActive = step.id === currentStep;
         const isComplete = index < currentStepIndex;
+        const accentStyle = isActive ? styles.stepAccentActive : accentStyles[step.accent];
 
         return (
           <YStack
@@ -60,22 +87,17 @@ export function DailyProgress({ currentStep }: DailyProgressProps) {
               isComplete && styles.stepItemComplete,
             ]}
           >
-            <FontAwesome5
-              color={museBuddyColors.ink}
-              iconStyle="solid"
-              name={step.iconName}
-              size={22}
-            />
-            <Text
-              color={museBuddyColors.ink}
-              fontSize={13}
-              fontWeight="900"
-              lineHeight={16}
-              style={styles.stepLabel}
-            >
-              {step.label}
-            </Text>
-            <View style={[styles.stepAccent, accentStyles[step.accent]]} />
+            {step.iconFamily === 'lucide' ? (
+              <Lucide color={museBuddyColors.ink} name={step.iconName} size={24} />
+            ) : (
+              <FontAwesome5
+                color={museBuddyColors.ink}
+                iconStyle="solid"
+                name={step.iconName}
+                size={22}
+              />
+            )}
+            <View style={[styles.stepAccent, accentStyle]} />
           </YStack>
         );
       })}
@@ -93,40 +115,38 @@ const accentStyles = StyleSheet.create({
   purple: {
     backgroundColor: museBuddyColors.accentPurple,
   },
+  secondary: {
+    backgroundColor: museBuddyColors.secondary,
+  },
 });
 
 const styles = StyleSheet.create({
   stepItem: {
     alignItems: 'center',
     backgroundColor: museBuddyColors.surface,
-    borderColor: museBuddyColors.ink,
     borderRadius: museBuddyRadii.medium,
-    borderWidth: museBuddyBorders.bold,
-    boxShadow: `0 4px 0 ${museBuddyColors.ink}`,
-    gap: 6,
-    minHeight: 86,
+    justifyContent: 'center',
+    minHeight: 52,
     overflow: 'hidden',
-    paddingHorizontal: 6,
-    paddingTop: 12,
+    paddingBottom: 8,
+    paddingHorizontal: 4,
+    paddingTop: 8,
   },
   stepItemActive: {
-    backgroundColor: museBuddyColors.active,
-    boxShadow: `0 6px 0 ${museBuddyColors.ink}`,
+    boxShadow: `0 5px 0 ${museBuddyColors.active}`,
     transform: [{ translateY: -2 }],
   },
   stepItemComplete: {
     backgroundColor: museBuddyColors.surfaceMuted,
   },
-  stepLabel: {
-    textAlign: 'center',
-  },
   stepAccent: {
-    borderColor: museBuddyColors.ink,
-    borderTopWidth: museBuddyBorders.bold,
     bottom: 0,
-    height: 10,
+    height: 7,
     left: 0,
     position: 'absolute',
     right: 0,
+  },
+  stepAccentActive: {
+    backgroundColor: museBuddyColors.active,
   },
 });

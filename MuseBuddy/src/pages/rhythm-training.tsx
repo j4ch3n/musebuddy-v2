@@ -43,7 +43,7 @@ export function RhythmTrainingPage() {
             label="Continue"
             onPress={() => {
               stopPlayback();
-              router.push('/jam-session');
+              router.push('/pattern-training');
             }}
           />
         </View>

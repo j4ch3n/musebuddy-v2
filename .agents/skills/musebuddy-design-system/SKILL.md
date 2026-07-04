@@ -116,18 +116,15 @@ active workflow: load model, record, finish, transcribe, inspect notes.
 - Use generous touch targets for recording controls.
 - Use vertical rhythm and clear grouping so note data stays scannable.
 - Prefer direct controls over explanatory in-app text.
-- Keep route files thin and put screen composition in `src/pages/` when adding pages.
 - Do not add accounts, cloud features, history, export flows, or elaborate decorative UI
   unless the user explicitly asks.
 
 ### Daily Training Layout
 
-Daily training screens should stay focused on the exercise itself. For the chord, rhythm,
-and jam flow, use a compact top step indicator with FontAwesome icons (`music`, `drum`,
-`magic`), then the actual practice content, then the primary navigation/action controls at
-the bottom. Do not repeat daily exercise labels, screen titles, or descriptive intro copy
-inside each training step. Disable back navigation within the daily training section so the
-flow moves forward through chord, rhythm, and jam.
+Daily training screens should stay focused on the exercise itself: show compact progress
+context, the actual practice content, and the primary navigation/action controls. Do not
+repeat daily exercise labels, screen titles, or descriptive intro copy inside each
+training step.
 
 ## Tamagui Implementation
 

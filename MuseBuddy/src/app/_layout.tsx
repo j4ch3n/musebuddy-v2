@@ -27,8 +27,10 @@ export default function RootLayout() {
   return (
     <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
       <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="session-goal" options={{ gestureEnabled: false }} />
         <Stack.Screen name="chord-learning" options={{ gestureEnabled: false }} />
         <Stack.Screen name="rhythm-training" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="pattern-training" options={{ gestureEnabled: false }} />
         <Stack.Screen name="jam-session" options={{ gestureEnabled: false }} />
       </Stack>
       <StatusBar style="dark" />

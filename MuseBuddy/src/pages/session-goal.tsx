@@ -5,27 +5,25 @@ import { Button } from '@/ui';
 import { PlaceholderPanel } from './placeholder-panel';
 import { TrainingScreenShell } from './training-screen-shell';
 
-export function WelcomePage() {
+export function SessionGoalPage() {
   const router = useRouter();
 
   return (
     <TrainingScreenShell
-      eyebrow="Daily exercise"
+      currentStep="goal"
       footer={
         <Button
-          label="Start today's training"
+          label="Continue"
           onPress={() => {
-            router.push('/session-goal');
+            router.push('/chord-learning');
           }}
         />
       }
-      subtitle="A focused piano improvisation practice session for today."
-      title="MuseBuddy"
     >
       <PlaceholderPanel
-        accent="purple"
-        body="Warm up with today's chord shape, lock in the rhythm, then use both ideas in a short jam."
-        title="Practice path"
+        accent="blue"
+        body="Goal placeholder. This screen will set the focus for today's practice."
+        title="Set your goal"
       />
     </TrainingScreenShell>
   );

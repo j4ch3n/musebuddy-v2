@@ -57,8 +57,6 @@ argument. A Metro reload is sufficient only for JavaScript/TypeScript changes.
 
 - `MuseBuddy/`: the Expo application and package-management root.
 - `MuseBuddy/src/app/`: Expo Router routes and layouts only.
-- `MuseBuddy/src/pages/`: route-level standalone screen components imported by thin
-  Expo Router route files.
 - `MuseBuddy/src/components/`: reusable React Native UI components.
 - `MuseBuddy/src/components/<component>/`: package-style folders for standalone
   component packages and their private implementation files.
@@ -70,12 +68,11 @@ argument. A Metro reload is sufficient only for JavaScript/TypeScript changes.
   from the Expo app runtime. Reference to courses/README.md for details.
 
 Keep business logic, types, and utilities outside `MuseBuddy/src/app/`. Expo Router
-files should stay thin: import a screen component from `MuseBuddy/src/pages/` and avoid
-co-locating feature code in route files. Use `MuseBuddy/src/pages/` for screen-level
-composition and `MuseBuddy/src/components/<component>/` for reusable standalone
-component packages. Keep component-specific hooks, constants, types, stories, and tests
-inside that component package. Promote code to `MuseBuddy/src/hooks/` or
-`MuseBuddy/src/constants/` only when it is shared across features.
+files should stay thin and avoid co-locating feature code in route files. Use
+`MuseBuddy/src/components/<component>/` for reusable standalone component packages. Keep
+component-specific hooks, constants, types, stories, and tests inside that component
+package. Promote code to `MuseBuddy/src/hooks/` or `MuseBuddy/src/constants/` only when it
+is shared across features.
 
 Inside the app, use the `@/` TypeScript alias for imports from `MuseBuddy/src/`. Prefer
 relative imports within a component package, and expose only stable public entrypoints

@@ -6,12 +6,12 @@ const meta = {
   title: 'UI/DailyProgress',
   component: DailyProgress,
   args: {
-    currentStep: 'chord',
+    currentStep: 'goal',
   },
   argTypes: {
     currentStep: {
       control: 'select',
-      options: ['chord', 'rhythm', 'jam'],
+      options: ['goal', 'chord', 'rhythm', 'pattern', 'jam'],
     },
   },
 } satisfies Meta<typeof DailyProgress>;
@@ -20,11 +20,23 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Chord: Story = {};
+export const Goal: Story = {};
+
+export const Chord: Story = {
+  args: {
+    currentStep: 'chord',
+  },
+};
 
 export const Rhythm: Story = {
   args: {
     currentStep: 'rhythm',
+  },
+};
+
+export const Pattern: Story = {
+  args: {
+    currentStep: 'pattern',
   },
 };
 
