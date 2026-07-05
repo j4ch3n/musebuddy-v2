@@ -41,10 +41,10 @@ const trainingSession: TrainingSession = {
 };
 
 describe('prepareTrainingSessionDisplay', () => {
-  it('derives display data and rhythm while dropping the raw key arrangement', () => {
+  it('derives display data and rhythm while retaining the raw key arrangement', () => {
     const preparedSession = prepareTrainingSessionDisplay(trainingSession);
 
-    expect(preparedSession).not.toHaveProperty('keyArrangement');
+    expect(preparedSession.keyArrangement).toBe(trainingSession.keyArrangement);
     expect(preparedSession.chordDisplay.symbol).toBe('C');
     expect(preparedSession.rhythm.pattern).toHaveLength(32);
     expect(preparedSession.rhythm.pattern[0]).toBe('w');

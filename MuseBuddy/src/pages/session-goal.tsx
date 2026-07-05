@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 
+import { ChoreographyViewer } from '@/components/choreography-viewer';
 import { useTrainingSession } from '@/contexts/training-session-context';
 import { Button } from '@/ui';
 
@@ -22,15 +23,15 @@ export function SessionGoalPage() {
         />
       }
     >
-      <PlaceholderPanel
-        accent="purple"
-        body={
-          session
-            ? "Today, you'll set a clear practice target before moving into chord and rhythm training."
-            : "Load today's training to set a clear practice target before moving into chord and rhythm work."
-        }
-        title="Today's goal"
-      />
+      {session ? (
+        <ChoreographyViewer keyArrangement={session.keyArrangement} />
+      ) : (
+        <PlaceholderPanel
+          accent="purple"
+          body="Load today's training to set a clear practice target before moving into chord and rhythm work."
+          title="Today's goal"
+        />
+      )}
       {!session && <Button label="Load training" onPress={() => void prepareTrainingSession()} />}
     </TrainingScreenShell>
   );
