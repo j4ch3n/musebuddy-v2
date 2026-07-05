@@ -41,12 +41,12 @@ Deno.serve(async (request) => {
     return json({ message: "Method not allowed." }, 405);
   }
 
-  const publishableKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
+  const publishableKey = getPublishableKey();
   const requestApiKey = request.headers.get("apikey");
 
   if (!publishableKey) {
     logError(requestId, "config_missing", {
-      missing: "SUPABASE_PUBLISHABLE_KEY",
+      missing: "SUPABASE_PUBLISHABLE_KEYS.default",
     });
     return json(
       { message: "Edge function publishable key is not configured." },
@@ -68,8 +68,7 @@ Deno.serve(async (request) => {
   });
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const databaseKey = Deno.env.get("SUPABASE_SECRET_KEY") ??
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const databaseKey = getSecretKey();
 
   if (!supabaseUrl || !databaseKey) {
     logError(requestId, "config_missing", {
@@ -184,6 +183,38 @@ function json(body: unknown, status: number) {
     },
     status,
   });
+}
+
+function getPublishableKey() {
+  const publishableKeys = getSupabaseKeyDictionary("SUPABASE_PUBLISHABLE_KEYS");
+
+  return publishableKeys?.["default"];
+}
+
+function getSecretKey() {
+  const secretKeys = getSupabaseKeyDictionary("SUPABASE_SECRET_KEYS");
+
+  return secretKeys?.["default"];
+}
+
+function getSupabaseKeyDictionary(envName: string) {
+  const rawValue = Deno.env.get(envName);
+
+  if (!rawValue) {
+    return undefined;
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue) as Record<string, unknown>;
+    const entries = Object.entries(parsed).filter((entry): entry is [
+      string,
+      string,
+    ] => typeof entry[1] === "string");
+
+    return Object.fromEntries(entries);
+  } catch {
+    return undefined;
+  }
 }
 
 function summarizeRows(rows: readonly DbArrangementRow[]) {
