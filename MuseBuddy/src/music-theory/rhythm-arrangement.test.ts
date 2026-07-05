@@ -20,7 +20,6 @@ function keyArrangement(slots: Record<number, SourceSlot>): TrainingSessionKeyAr
   });
 
   return {
-    barIndex: 0,
     rows: [
       {
         beatIndex: 0,
@@ -31,7 +30,6 @@ function keyArrangement(slots: Record<number, SourceSlot>): TrainingSessionKeyAr
         slots: emptySlots(),
       },
     ],
-    songId: 'test-song',
   };
 }
 
@@ -105,7 +103,6 @@ describe('deriveRhythmFromKeyArrangement', () => {
     secondBeat[0] = [{ midi: 64, velocity: 80 }];
 
     const result = deriveRhythmFromKeyArrangement({
-      barIndex: 0,
       rows: [
         {
           beatIndex: 1,
@@ -116,7 +113,6 @@ describe('deriveRhythmFromKeyArrangement', () => {
           slots: firstBeat,
         },
       ],
-      songId: 'test-song',
     });
 
     expect(result.pattern[0]).toBe('w');

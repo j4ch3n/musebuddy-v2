@@ -11,8 +11,10 @@ import {
   type PianoAmbientLevelChangeEvent,
   type PianoAttackEvent,
 } from '../../../modules/piano-attack-detector';
+import { createLogger } from '@/utils/logger';
 
 type PianoAttackDetectorPhase = 'idle' | 'starting' | 'listening' | 'stopping' | 'error';
+const logger = createLogger('PianoAttackDetectorExample');
 
 function messageFor(error: unknown): string {
   if (error instanceof PianoAttackDetectorError) {
@@ -23,7 +25,7 @@ function messageFor(error: unknown): string {
 
 function logError(context: string, error: unknown): void {
   if (error instanceof PianoAttackDetectorError) {
-    console.error(context, {
+    logger.error(context, {
       code: error.code,
       message: error.message,
       nativeMessage: error.nativeMessage,
@@ -31,7 +33,7 @@ function logError(context: string, error: unknown): void {
     });
     return;
   }
-  console.error(context, error);
+  logger.error(context, error);
 }
 
 export function usePianoAttackDetector() {

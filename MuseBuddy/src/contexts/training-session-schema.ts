@@ -85,9 +85,7 @@ export const keyArrangementRowSchema = z.object({
 });
 
 export const keyArrangementSchema = z.object({
-  barIndex: z.number().int().nonnegative(),
   rows: z.array(keyArrangementRowSchema).length(2),
-  songId: z.string().min(1),
 });
 
 export const rhythmSchema = z.object({

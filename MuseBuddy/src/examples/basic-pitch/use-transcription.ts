@@ -13,6 +13,7 @@ import {
   type RecordingProgress,
   type TranscriptionResult,
 } from '../../../modules/basic-pitch';
+import { createLogger } from '@/utils/logger';
 
 export type TranscriptionPhase =
   | 'loadingModel'
@@ -29,6 +30,7 @@ const initialProgress: RecordingProgress = {
   elapsedMs: 0,
   level: 0,
 };
+const logger = createLogger('BasicPitchExample');
 
 function messageFor(error: unknown, fallback: string): string {
   return error instanceof BasicPitchError ? error.message : fallback;
@@ -36,7 +38,7 @@ function messageFor(error: unknown, fallback: string): string {
 
 function logError(context: string, error: unknown): void {
   if (error instanceof BasicPitchError) {
-    console.error(context, {
+    logger.error(context, {
       code: error.code,
       message: error.message,
       nativeMessage: error.nativeMessage,
@@ -44,7 +46,7 @@ function logError(context: string, error: unknown): void {
     });
     return;
   }
-  console.error(context, error);
+  logger.error(context, error);
 }
 
 export function useTranscription() {

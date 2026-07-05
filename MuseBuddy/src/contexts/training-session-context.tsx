@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 
 import { initialize, BasicPitchError } from '../../modules/basic-pitch';
 import { prepareTrainingSessionDisplay, type PreparedTrainingSession } from '@/music-theory';
+import { createLogger } from '@/utils/logger';
 import { fetchDailyTrainingSession } from './training-session-api';
 
 type TrainingSessionPhase = 'idle' | 'loading' | 'ready' | 'error';
@@ -14,6 +15,7 @@ type TrainingSessionContextValue = {
 };
 
 const TrainingSessionContext = createContext<TrainingSessionContextValue | null>(null);
+const logger = createLogger('TrainingSession');
 
 type TrainingSessionProviderProps = {
   children: ReactNode;
@@ -39,23 +41,16 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
   const prepareTrainingSession = useCallback(async () => {
     setErrorMessage('');
     setPhase('loading');
-    const startedAt = performance.now();
 
-    console.info('Daily training preparation started.');
+    logger.info('Daily training preparation started.');
 
     try {
       const [, loadedSession] = await Promise.all([initialize(), fetchDailyTrainingSession()]);
       const preparedSession = prepareTrainingSessionDisplay(loadedSession);
       setSession(preparedSession);
       setPhase('ready');
-      console.info('Daily training preparation completed.', {
-        chordRoot: preparedSession.chord.root,
-        durationMs: Math.round(performance.now() - startedAt),
-        rhythmSteps: preparedSession.rhythm.pattern.length,
-      });
     } catch (error) {
-      console.error('Daily training preparation failed.', {
-        durationMs: Math.round(performance.now() - startedAt),
+      logger.error('Daily training preparation failed.', {
         error,
       });
       setErrorMessage(messageFor(error));

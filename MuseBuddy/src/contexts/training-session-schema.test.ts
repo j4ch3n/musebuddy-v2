@@ -20,7 +20,6 @@ const validSession = {
     root: 'A',
   },
   keyArrangement: {
-    barIndex: 0,
     rows: [
       {
         beatIndex: 0,
@@ -31,7 +30,6 @@ const validSession = {
         slots: emptySlots(),
       },
     ],
-    songId: 'test-song',
   },
 };
 

@@ -14,29 +14,15 @@ const corsHeaders = {
 
 Deno.serve(async (request) => {
   const requestId = crypto.randomUUID();
-  const startedAt = performance.now();
 
   if (request.method === "OPTIONS") {
-    logInfo(requestId, "cors_preflight", {
-      method: request.method,
-    });
-
     return new Response(null, {
       headers: corsHeaders,
       status: 204,
     });
   }
 
-  logInfo(requestId, "request_started", {
-    method: request.method,
-    userAgent: request.headers.get("user-agent") ?? "unknown",
-  });
-
   if (request.method !== "POST") {
-    logInfo(requestId, "request_rejected", {
-      reason: "method_not_allowed",
-      status: 405,
-    });
     return json({ message: "Method not allowed." }, 405);
   }
 
@@ -54,17 +40,8 @@ Deno.serve(async (request) => {
   }
 
   if (requestApiKey !== publishableKey) {
-    logInfo(requestId, "request_rejected", {
-      hasApiKey: requestApiKey !== null,
-      reason: "invalid_publishable_key",
-      status: 401,
-    });
     return json({ message: "Unauthorized." }, 401);
   }
-
-  logInfo(requestId, "request_authorized", {
-    hasApiKey: true,
-  });
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const databaseKey = getSecretKey();
@@ -85,11 +62,6 @@ Deno.serve(async (request) => {
     },
   });
 
-  const rpcStartedAt = performance.now();
-  logInfo(requestId, "rpc_started", {
-    name: "get_daily_training_session_candidate",
-  });
-
   const { data, error } = await supabase.rpc(
     "get_daily_training_session_candidate",
   );
@@ -98,29 +70,25 @@ Deno.serve(async (request) => {
     logError(requestId, "rpc_failed", {
       code: error.code,
       details: error.details,
-      durationMs: elapsed(rpcStartedAt),
       hint: error.hint,
       message: error.message,
     });
     return json({ message: "Training material could not be loaded." }, 500);
   }
 
-  logInfo(requestId, "rpc_completed", {
-    durationMs: elapsed(rpcStartedAt),
-    rowCount: Array.isArray(data) ? data.length : null,
-  });
-
   let orderedRows: DbArrangementRow[];
 
   try {
-    const validationStartedAt = performance.now();
     const rows = dbArrangementRowsSchema.parse(data);
     orderedRows = [...rows].sort((left, right) =>
       left.beat_index - right.beat_index
     );
-    logInfo(requestId, "payload_validated", {
-      durationMs: elapsed(validationStartedAt),
-      rowSummary: summarizeRows(orderedRows),
+    logInfo(requestId, "training_material_selected", {
+      barIndex: orderedRows[0].bar_index,
+      beatIndexes: orderedRows.map((row) => row.beat_index),
+      chordName: orderedRows[0].chord,
+      durationSteps: countArrangementSteps(orderedRows),
+      songId: orderedRows[0].song_id,
     });
   } catch (error) {
     logError(requestId, "payload_validation_failed", {
@@ -130,17 +98,6 @@ Deno.serve(async (request) => {
   }
 
   const responseBody = toTrainingSession(orderedRows);
-  logInfo(requestId, "response_ready", {
-    durationMs: elapsed(startedAt),
-    status: 200,
-    trainingSession: {
-      chordRoot: responseBody.chord.root,
-      displayTokenCount: responseBody.chord.displayTokens.length,
-      formula: responseBody.chord.qualityBaseFormula,
-      keyArrangementBarIndex: responseBody.keyArrangement.barIndex,
-      keyArrangementSongId: responseBody.keyArrangement.songId,
-    },
-  });
 
   return json(responseBody, 200);
 });
@@ -155,7 +112,6 @@ function toTrainingSession(rows: readonly DbArrangementRow[]) {
       root: firstRow.chord_root,
     },
     keyArrangement: {
-      barIndex: firstRow.bar_index,
       rows: rows.map((row) => ({
         beatIndex: row.beat_index,
         slots: row.arrangement.map((slot, slotIndex) =>
@@ -165,7 +121,6 @@ function toTrainingSession(rows: readonly DbArrangementRow[]) {
           }))
         ),
       })),
-      songId: firstRow.song_id,
     },
   };
 }
@@ -212,20 +167,8 @@ function getSupabaseKeyDictionary(envName: string) {
   }
 }
 
-function summarizeRows(rows: readonly DbArrangementRow[]) {
-  return rows.map((row) => ({
-    arrangementSlots: row.arrangement.length,
-    barIndex: row.bar_index,
-    beatIndex: row.beat_index,
-    chord: row.chord,
-    chordRoot: row.chord_root,
-    songId: row.song_id,
-    velocitySlots: row.velocity.length,
-  }));
-}
-
-function elapsed(startedAt: number) {
-  return Math.round(performance.now() - startedAt);
+function countArrangementSteps(rows: readonly DbArrangementRow[]) {
+  return rows.reduce((total, row) => total + row.arrangement.length, 0);
 }
 
 function logInfo(

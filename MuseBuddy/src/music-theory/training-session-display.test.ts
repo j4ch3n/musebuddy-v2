@@ -19,7 +19,6 @@ const trainingSession: TrainingSession = {
     root: 'C',
   },
   keyArrangement: {
-    barIndex: 0,
     rows: [
       {
         beatIndex: 0,
@@ -38,7 +37,6 @@ const trainingSession: TrainingSession = {
         slots: emptySlots(),
       },
     ],
-    songId: 'test-song',
   },
 };
 
