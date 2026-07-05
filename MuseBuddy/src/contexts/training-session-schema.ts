@@ -45,20 +45,6 @@ export const chordDegreeSchema = z.enum([
 export const rhythmStepSchema = z.union([z.literal('s'), z.literal('w'), z.literal('h'), z.null()]);
 
 export const trainingSessionSchema = z.object({
-  arrangement: z.object({
-    barIndex: z.number().int().nonnegative(),
-    rows: z
-      .array(
-        z.object({
-          arrangement: z.array(z.array(z.number().int().nullable())),
-          beatIndex: z.number().int().nonnegative(),
-          songId: z.string().min(1),
-          velocity: z.array(z.array(z.number().int().min(0).max(127).nullable())),
-        }),
-      )
-      .length(2),
-    songId: z.string().min(1),
-  }),
   chord: z.object({
     displayTokens: z.array(chordDisplayTokenSchema).min(1),
     qualityBaseFormula: z.array(chordDegreeSchema).min(1),

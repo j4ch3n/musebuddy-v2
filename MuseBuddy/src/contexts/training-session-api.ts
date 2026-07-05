@@ -49,11 +49,9 @@ export async function fetchDailyTrainingSession(): Promise<TrainingSession> {
   const session = trainingSessionSchema.parse(data);
 
   console.info('Daily training edge function request completed.', {
-    barIndex: session.arrangement.barIndex,
     chordRoot: session.chord.root,
     durationMs: Math.round(performance.now() - startedAt),
     rhythmSteps: session.rhythm.pattern.length,
-    songId: session.arrangement.songId,
   });
 
   return session;

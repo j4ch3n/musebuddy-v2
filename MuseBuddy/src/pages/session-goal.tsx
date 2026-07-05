@@ -1,6 +1,5 @@
 import { useRouter } from 'expo-router';
 
-import { RhythmViewer } from '@/components/rhythm-trainer';
 import { useTrainingSession } from '@/contexts/training-session-context';
 import { Button } from '@/ui';
 
@@ -23,15 +22,15 @@ export function SessionGoalPage() {
         />
       }
     >
-      {session ? (
-        <RhythmViewer currentStepIndex={null} pattern={session.rhythm.pattern} />
-      ) : (
-        <PlaceholderPanel
-          accent="blue"
-          body="Training material is not loaded yet."
-          title="Prepare session"
-        />
-      )}
+      <PlaceholderPanel
+        accent="purple"
+        body={
+          session
+            ? "Today, you'll set a clear practice target before moving into chord and rhythm training."
+            : "Load today's training to set a clear practice target before moving into chord and rhythm work."
+        }
+        title="Today's goal"
+      />
       {!session && <Button label="Load training" onPress={() => void prepareTrainingSession()} />}
     </TrainingScreenShell>
   );

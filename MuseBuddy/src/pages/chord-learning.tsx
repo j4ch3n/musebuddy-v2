@@ -1,11 +1,6 @@
 import { useRouter } from 'expo-router';
 
-import {
-  buildChordDisplay,
-  ChordKeyboardCard,
-  ChordNameCard,
-  ChordSheetCard,
-} from '@/components/chord-learning';
+import { ChordKeyboardCard, ChordNameCard, ChordSheetCard } from '@/components/chord-learning';
 import { useTrainingSession } from '@/contexts/training-session-context';
 import { Button } from '@/ui';
 
@@ -15,7 +10,6 @@ import { TrainingScreenShell } from './training-screen-shell';
 export function ChordLearningPage() {
   const router = useRouter();
   const { session } = useTrainingSession();
-  const display = session ? buildChordDisplay(session.chord) : null;
 
   return (
     <TrainingScreenShell
@@ -29,11 +23,11 @@ export function ChordLearningPage() {
         />
       }
     >
-      {display ? (
+      {session ? (
         <>
-          <ChordNameCard display={display} />
-          <ChordSheetCard display={display} />
-          <ChordKeyboardCard display={display} />
+          <ChordNameCard display={session.chordDisplay} />
+          <ChordSheetCard display={session.chordDisplay} />
+          <ChordKeyboardCard display={session.chordDisplay} />
         </>
       ) : (
         <PlaceholderPanel

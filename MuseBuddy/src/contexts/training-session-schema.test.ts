@@ -3,24 +3,6 @@ import { describe, expect, it } from 'vitest';
 import { trainingSessionSchema } from './training-session-schema';
 
 const validSession = {
-  arrangement: {
-    barIndex: 3,
-    rows: [
-      {
-        arrangement: Array.from({ length: 32 }, () => [null]),
-        beatIndex: 0,
-        songId: '001',
-        velocity: Array.from({ length: 32 }, () => [null]),
-      },
-      {
-        arrangement: Array.from({ length: 32 }, () => [null]),
-        beatIndex: 1,
-        songId: '001',
-        velocity: Array.from({ length: 32 }, () => [null]),
-      },
-    ],
-    songId: '001',
-  },
   chord: {
     displayTokens: [
       { type: 'root', value: 'A' },

@@ -1,8 +1,8 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 
 import { initialize, BasicPitchError } from '../../modules/basic-pitch';
+import { prepareTrainingSessionDisplay, type PreparedTrainingSession } from '@/music-theory';
 import { fetchDailyTrainingSession } from './training-session-api';
-import type { TrainingSession } from './training-session-schema';
 
 type TrainingSessionPhase = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -10,7 +10,7 @@ type TrainingSessionContextValue = {
   errorMessage: string;
   phase: TrainingSessionPhase;
   prepareTrainingSession: () => Promise<void>;
-  session: TrainingSession | null;
+  session: PreparedTrainingSession | null;
 };
 
 const TrainingSessionContext = createContext<TrainingSessionContextValue | null>(null);
@@ -34,7 +34,7 @@ function messageFor(error: unknown) {
 export function TrainingSessionProvider({ children }: TrainingSessionProviderProps) {
   const [errorMessage, setErrorMessage] = useState('');
   const [phase, setPhase] = useState<TrainingSessionPhase>('idle');
-  const [session, setSession] = useState<TrainingSession | null>(null);
+  const [session, setSession] = useState<PreparedTrainingSession | null>(null);
 
   const prepareTrainingSession = useCallback(async () => {
     setErrorMessage('');
@@ -45,13 +45,13 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
 
     try {
       const [, loadedSession] = await Promise.all([initialize(), fetchDailyTrainingSession()]);
-      setSession(loadedSession);
+      const preparedSession = prepareTrainingSessionDisplay(loadedSession);
+      setSession(preparedSession);
       setPhase('ready');
       console.info('Daily training preparation completed.', {
-        barIndex: loadedSession.arrangement.barIndex,
-        chordRoot: loadedSession.chord.root,
+        chordRoot: preparedSession.chord.root,
         durationMs: Math.round(performance.now() - startedAt),
-        songId: loadedSession.arrangement.songId,
+        rhythmSteps: preparedSession.rhythm.pattern.length,
       });
     } catch (error) {
       console.error('Daily training preparation failed.', {
