@@ -4,7 +4,6 @@ import {
   type DbArrangementRow,
   dbArrangementRowsSchema,
 } from "@shared/daily-training-session-schema.ts";
-import { deriveRhythmPattern } from "@shared/rhythm.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Headers":
@@ -112,7 +111,6 @@ Deno.serve(async (request) => {
   });
 
   let orderedRows: DbArrangementRow[];
-  let rhythm: ReturnType<typeof deriveRhythmPattern>;
 
   try {
     const validationStartedAt = performance.now();
@@ -120,11 +118,9 @@ Deno.serve(async (request) => {
     orderedRows = [...rows].sort((left, right) =>
       left.beat_index - right.beat_index
     );
-    rhythm = deriveRhythmPattern(orderedRows);
     logInfo(requestId, "payload_validated", {
       durationMs: elapsed(validationStartedAt),
       rowSummary: summarizeRows(orderedRows),
-      rhythmSummary: summarizeRhythm(rhythm),
     });
   } catch (error) {
     logError(requestId, "payload_validation_failed", {
@@ -133,45 +129,44 @@ Deno.serve(async (request) => {
     return json({ message: "Training material is not valid." }, 500);
   }
 
-  const responseBody = toTrainingSession(orderedRows, rhythm);
+  const responseBody = toTrainingSession(orderedRows);
   logInfo(requestId, "response_ready", {
     durationMs: elapsed(startedAt),
     status: 200,
     trainingSession: {
-      barIndex: responseBody.arrangement.barIndex,
       chordRoot: responseBody.chord.root,
       displayTokenCount: responseBody.chord.displayTokens.length,
       formula: responseBody.chord.qualityBaseFormula,
-      songId: responseBody.arrangement.songId,
+      keyArrangementBarIndex: responseBody.keyArrangement.barIndex,
+      keyArrangementSongId: responseBody.keyArrangement.songId,
     },
   });
 
   return json(responseBody, 200);
 });
 
-function toTrainingSession(
-  rows: readonly DbArrangementRow[],
-  rhythm: ReturnType<typeof deriveRhythmPattern>,
-) {
+function toTrainingSession(rows: readonly DbArrangementRow[]) {
   const firstRow = rows[0];
 
   return {
-    arrangement: {
-      barIndex: firstRow.bar_index,
-      rows: rows.map((row) => ({
-        arrangement: row.arrangement,
-        beatIndex: row.beat_index,
-        songId: row.song_id,
-        velocity: row.velocity,
-      })),
-      songId: firstRow.song_id,
-    },
     chord: {
       displayTokens: firstRow.chord_display_tokens,
       qualityBaseFormula: firstRow.chord_quality_base_formula,
       root: firstRow.chord_root,
     },
-    rhythm,
+    keyArrangement: {
+      barIndex: firstRow.bar_index,
+      rows: rows.map((row) => ({
+        beatIndex: row.beat_index,
+        slots: row.arrangement.map((slot, slotIndex) =>
+          slot.map((midi, laneIndex) => ({
+            midi,
+            velocity: row.velocity[slotIndex][laneIndex],
+          }))
+        ),
+      })),
+      songId: firstRow.song_id,
+    },
   };
 }
 
@@ -227,32 +222,6 @@ function summarizeRows(rows: readonly DbArrangementRow[]) {
     songId: row.song_id,
     velocitySlots: row.velocity.length,
   }));
-}
-
-function summarizeRhythm(rhythm: ReturnType<typeof deriveRhythmPattern>) {
-  return rhythm.pattern.reduce(
-    (summary, step) => {
-      if (step === "s") {
-        summary.strong += 1;
-      } else if (step === "w") {
-        summary.weak += 1;
-      } else if (step === "h") {
-        summary.hold += 1;
-      } else {
-        summary.rest += 1;
-      }
-
-      return summary;
-    },
-    {
-      averageAttackVelocity: rhythm.averageAttackVelocity,
-      hold: 0,
-      rest: 0,
-      strong: 0,
-      totalSteps: rhythm.pattern.length,
-      weak: 0,
-    },
-  );
 }
 
 function elapsed(startedAt: number) {

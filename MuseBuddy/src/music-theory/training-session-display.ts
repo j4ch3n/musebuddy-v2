@@ -1,15 +1,23 @@
-import type { TrainingSession } from '@/contexts/training-session-schema';
+import type {
+  TrainingSession,
+  TrainingSessionChord,
+  TrainingSessionRhythm,
+} from '@/contexts/training-session-schema';
 
 import { buildChordDisplay, type ChordDisplay } from './chord-display';
+import { deriveRhythmFromKeyArrangement } from './rhythm-arrangement';
 
-export type PreparedTrainingSession = TrainingSession & {
+export type PreparedTrainingSession = {
+  chord: TrainingSessionChord;
   chordDisplay: ChordDisplay;
+  rhythm: TrainingSessionRhythm;
 };
 
 export function prepareTrainingSessionDisplay(session: TrainingSession): PreparedTrainingSession {
   return {
-    ...session,
+    chord: session.chord,
     chordDisplay: buildChordDisplay(session.chord),
+    rhythm: deriveRhythmFromKeyArrangement(session.keyArrangement),
   };
 }
 

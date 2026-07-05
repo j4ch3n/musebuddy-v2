@@ -16,3 +16,4 @@ export {
   prepareTrainingSessionDisplay,
   type PreparedTrainingSession,
 } from './training-session-display';
+export { deriveRhythmFromKeyArrangement } from './rhythm-arrangement';

@@ -51,7 +51,7 @@ export async function fetchDailyTrainingSession(): Promise<TrainingSession> {
   console.info('Daily training edge function request completed.', {
     chordRoot: session.chord.root,
     durationMs: Math.round(performance.now() - startedAt),
-    rhythmSteps: session.rhythm.pattern.length,
+    keyArrangementRows: session.keyArrangement.rows.length,
   });
 
   return session;

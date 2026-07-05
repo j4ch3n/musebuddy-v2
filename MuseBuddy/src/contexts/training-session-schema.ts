@@ -44,20 +44,70 @@ export const chordDegreeSchema = z.enum([
 
 export const rhythmStepSchema = z.union([z.literal('s'), z.literal('w'), z.literal('h'), z.null()]);
 
+export const keyArrangementCellSchema = z
+  .object({
+    midi: z.number().int().nullable(),
+    velocity: z.number().int().min(0).max(127).nullable(),
+  })
+  .superRefine((cell, context) => {
+    if (cell.midi === null || cell.midi === -50) {
+      if (cell.velocity !== null) {
+        context.addIssue({
+          code: 'custom',
+          message: 'Rest and hold cells must not carry velocity.',
+          path: ['velocity'],
+        });
+      }
+
+      return;
+    }
+
+    if (cell.midi <= 0) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Arrangement MIDI must be a positive pitch, -50 hold, or null rest.',
+        path: ['midi'],
+      });
+    }
+
+    if (cell.velocity === null) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Attack cells must carry velocity.',
+        path: ['velocity'],
+      });
+    }
+  });
+
+export const keyArrangementRowSchema = z.object({
+  beatIndex: z.number().int().nonnegative(),
+  slots: z.array(z.array(keyArrangementCellSchema).min(1)).length(32),
+});
+
+export const keyArrangementSchema = z.object({
+  barIndex: z.number().int().nonnegative(),
+  rows: z.array(keyArrangementRowSchema).length(2),
+  songId: z.string().min(1),
+});
+
+export const rhythmSchema = z.object({
+  averageAttackVelocity: z.number().min(0).max(127).nullable(),
+  pattern: z.array(rhythmStepSchema).length(32),
+});
+
 export const trainingSessionSchema = z.object({
   chord: z.object({
     displayTokens: z.array(chordDisplayTokenSchema).min(1),
     qualityBaseFormula: z.array(chordDegreeSchema).min(1),
     root: z.string().min(1),
   }),
-  rhythm: z.object({
-    averageAttackVelocity: z.number().min(0).max(127).nullable(),
-    pattern: z.array(rhythmStepSchema).length(32),
-  }),
+  keyArrangement: keyArrangementSchema,
 });
 
 export type TrainingSession = z.infer<typeof trainingSessionSchema>;
 export type TrainingSessionChord = TrainingSession['chord'];
-export type TrainingSessionRhythmPattern = TrainingSession['rhythm']['pattern'];
+export type TrainingSessionKeyArrangement = TrainingSession['keyArrangement'];
+export type TrainingSessionRhythm = z.infer<typeof rhythmSchema>;
+export type TrainingSessionRhythmPattern = TrainingSessionRhythm['pattern'];
 export type ChordDisplayTokenValue = z.infer<typeof chordDisplayTokenSchema>;
 export type ChordDegree = z.infer<typeof chordDegreeSchema>;
