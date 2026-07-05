@@ -78,8 +78,18 @@ describe('convertRhythmBarToVexflowEvents', () => {
     expect(convert('- - - - - - - - - - - - - - - -')).toEqual([rest(0, 16, 'w')]);
   });
 
-  it('groups consecutive strong and weak attacks into one dotted crotchet', () => {
+  it('keeps consecutive strong and weak attacks as separate sixteenth notes', () => {
     expect(convert('s w w - - - - - - - - - - - - -')).toEqual([
+      note(0, 1, '16'),
+      note(1, 1, '16'),
+      note(2, 1, '16'),
+      rest(3, 12, 'h', 1),
+      rest(15, 1, '16'),
+    ]);
+  });
+
+  it('uses hold steps to extend attack duration', () => {
+    expect(convert('s h h - - - - - - - - - - - - -')).toEqual([
       note(0, 3, '8', { dots: 1 }),
       rest(3, 12, 'h', 1),
       rest(15, 1, '16'),

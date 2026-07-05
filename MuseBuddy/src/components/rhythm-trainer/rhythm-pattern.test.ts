@@ -24,11 +24,29 @@ describe('rhythm pattern helpers', () => {
     expect(splitRhythmPatternBars(pattern)[1]).toHaveLength(16);
   });
 
-  it('groups consecutive attacks independently from strong and weak labels', () => {
+  it('keeps adjacent strong and weak attacks as separate rhythm events', () => {
     expect(collectRhythmEvents(['s', 'w', 'w', null, 'w', 's'])).toEqual([
+      { attack: 's', kind: 'attack', startStep: 0, stepCount: 1 },
+      { attack: 'w', kind: 'attack', startStep: 1, stepCount: 1 },
+      { attack: 'w', kind: 'attack', startStep: 2, stepCount: 1 },
+      { attack: null, kind: 'rest', startStep: 3, stepCount: 1 },
+      { attack: 'w', kind: 'attack', startStep: 4, stepCount: 1 },
+      { attack: 's', kind: 'attack', startStep: 5, stepCount: 1 },
+    ]);
+  });
+
+  it('extends attack durations only through following hold steps', () => {
+    expect(collectRhythmEvents(['s', 'h', 'h', null, 'w', 'h'])).toEqual([
       { attack: 's', kind: 'attack', startStep: 0, stepCount: 3 },
       { attack: null, kind: 'rest', startStep: 3, stepCount: 1 },
       { attack: 'w', kind: 'attack', startStep: 4, stepCount: 2 },
+    ]);
+  });
+
+  it('treats holds without a preceding attack as rests', () => {
+    expect(collectRhythmEvents(['h', 'h', 's'])).toEqual([
+      { attack: null, kind: 'rest', startStep: 0, stepCount: 2 },
+      { attack: 's', kind: 'attack', startStep: 2, stepCount: 1 },
     ]);
   });
 
