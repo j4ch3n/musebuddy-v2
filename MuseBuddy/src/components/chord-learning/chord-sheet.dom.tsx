@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef } from 'react';
 import { Accidental, Factory, StaveNote } from 'vexflow';
 
-import type { ChordDisplayNote } from './chord-display';
+import type { ChordDisplayNote } from '@/music-theory';
 
 type ChordSheetProps = {
   dom?: import('expo/dom').DOMProps;

@@ -732,39 +732,39 @@ def tone_explanation(
 ) -> str:
     if omitted:
         return (
-            f"{pitch} is the {degree_name}, but it is omitted. "
+            f"is the {degree_name}, but it is omitted. "
             "Omitting it creates space and changes the chord's weight."
         )
 
     if degree == "1":
-        explanation = f"{pitch} is the root. It names and anchors the chord."
+        explanation = "is the root. It names and anchors the chord."
         if bass is not None and bass != pitch:
             explanation += f" The bass is {bass}, so the root is not the lowest sounding note."
         return explanation
 
     if degree in ("b3", "3"):
         quality = spec.quality_name or "major"
-        explanation = f"{pitch} is the {degree_name}. It defines the chord as {quality}."
+        explanation = f"is the {degree_name}. It defines the chord as {quality}."
     elif degree == "5":
-        explanation = f"{pitch} is the {degree_name}. It reinforces the chord structure."
+        explanation = f"is the {degree_name}. It reinforces the chord structure."
     elif degree in ("b7", "7", "bb7"):
         explanation = (
-            f"{pitch} is the {degree_name}. It adds {seventh_color(degree)} "
+            f"is the {degree_name}. It adds {seventh_color(degree)} "
             "and helps define the seventh-chord quality."
         )
     elif degree in ("2", "4") and "suspended" in spec.family:
         explanation = (
-            f"{pitch} is the suspension tone. "
+            "is the suspension tone. "
             "It delays or replaces the third and wants resolution in many contexts."
         )
     elif degree in ("b5", "#5", "b9", "#9", "#11", "b13"):
         explanation = (
-            f"{pitch} is the {degree_name}. It creates {alteration_color(degree)} "
+            f"is the {degree_name}. It creates {alteration_color(degree)} "
             "against the basic chord shape."
         )
     else:
         explanation = (
-            f"{pitch} is the {degree_name}. "
+            f"is the {degree_name}. "
             f"It adds {extension_color(degree)} without replacing the basic chord identity."
         )
 

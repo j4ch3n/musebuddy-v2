@@ -11,14 +11,23 @@ const emptySlots = () =>
   ]);
 
 const validSession = {
-  chord: {
-    displayTokens: [
-      { type: 'root', value: 'A' },
-      { type: 'addition', value: 'add9' },
-    ],
-    qualityBaseFormula: ['1', '3', '5'],
-    root: 'A',
-  },
+  chords: [
+    {
+      displayTokens: [
+        { type: 'root', value: 'A' },
+        { type: 'addition', value: 'add9' },
+      ],
+      idName: 'a-add9',
+      normalizedSymbol: 'Aadd9',
+      qualityBaseFormula: ['1', '3', '5'],
+      root: 'A',
+      tones: [
+        { explanation: 'is the root. It names and anchors the chord.' },
+        { explanation: 'is the third. It gives the chord its major color.' },
+        { explanation: 'is the fifth. It makes the chord feel stable.' },
+      ],
+    },
+  ],
   keyArrangement: {
     rows: [
       {
@@ -136,10 +145,26 @@ describe('trainingSessionSchema', () => {
   it('rejects unsupported chord formula degrees', () => {
     const result = trainingSessionSchema.safeParse({
       ...validSession,
-      chord: {
-        ...validSession.chord,
-        qualityBaseFormula: ['1', '3', '15'],
-      },
+      chords: [
+        {
+          ...validSession.chords[0],
+          qualityBaseFormula: ['1', '3', '15'],
+        },
+      ],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects chords without tone explanations', () => {
+    const result = trainingSessionSchema.safeParse({
+      ...validSession,
+      chords: [
+        {
+          ...validSession.chords[0],
+          tones: [],
+        },
+      ],
     });
 
     expect(result.success).toBe(false);

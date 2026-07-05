@@ -1,9 +1,9 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { museBuddyColors } from '@/constants/design-tokens';
+import type { ChordDisplay } from '@/music-theory';
 import { FlashCard, PianoKeyboard } from '@/ui';
-
-import type { ChordDisplay } from './chord-display';
+import { normalizePianoKeyboardKey, type CanonicalPianoKeyboardKeyName } from '@/ui/piano-keyboard';
 
 type ChordKeyboardCardProps = {
   display: ChordDisplay;
@@ -15,21 +15,35 @@ export function ChordKeyboardCard({ display }: ChordKeyboardCardProps) {
     .filter((note) => note.keyboardKey !== rootNote.keyboardKey)
     .map((note) => note.keyboardKey);
   const noteNames = display.notes.map((note) => note.text).join(' - ');
+  const markerLabels = display.notes.reduce<Partial<Record<CanonicalPianoKeyboardKeyName, string>>>(
+    (labels, note) => {
+      labels[normalizePianoKeyboardKey(note.keyboardKey)] = note.text;
+      return labels;
+    },
+    {},
+  );
 
   return (
     <FlashCard>
       <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Piano keys</Text>
-          <Text style={styles.notes}>{noteNames}</Text>
-        </View>
         <PianoKeyboard
           accessibilityLabel={`Piano keyboard highlighting ${noteNames}`}
           keyColor={museBuddyColors.accentBlue}
           keys={selectedKeys}
+          markerLabels={markerLabels}
           root={rootNote.keyboardKey}
           rootColor={museBuddyColors.accentRed}
         />
+        <View style={styles.explanations}>
+          {display.notes.map((note) =>
+            note.explanation ? (
+              <Text key={`${note.interval}-${note.text}`} style={styles.explanation}>
+                <Text style={styles.noteName}>{note.text}</Text>
+                {` ${note.explanation}`}
+              </Text>
+            ) : null,
+          )}
+        </View>
       </View>
     </FlashCard>
   );
@@ -37,21 +51,19 @@ export function ChordKeyboardCard({ display }: ChordKeyboardCardProps) {
 
 const styles = StyleSheet.create({
   content: {
-    gap: 12,
+    gap: 16,
   },
-  header: {
-    gap: 4,
+  explanations: {
+    gap: 8,
   },
-  title: {
-    color: museBuddyColors.ink,
-    fontSize: 20,
-    fontWeight: '900',
-    lineHeight: 26,
-  },
-  notes: {
+  explanation: {
     color: museBuddyColors.ink,
     fontSize: 16,
-    fontWeight: '800',
-    lineHeight: 22,
+    fontWeight: '700',
+    lineHeight: 23,
+  },
+  noteName: {
+    color: museBuddyColors.accentRed,
+    fontWeight: '900',
   },
 });

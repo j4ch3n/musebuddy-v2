@@ -86,7 +86,7 @@ Deno.serve(async (request) => {
     logInfo(requestId, "training_material_selected", {
       barIndex: orderedRows[0].bar_index,
       beatIndexes: orderedRows.map((row) => row.beat_index),
-      chordName: orderedRows[0].chord,
+      chordNames: uniqueChordRows(orderedRows).map((row) => row.chord),
       durationSteps: countArrangementSteps(orderedRows),
       songId: orderedRows[0].song_id,
     });
@@ -103,14 +103,15 @@ Deno.serve(async (request) => {
 });
 
 function toTrainingSession(rows: readonly DbArrangementRow[]) {
-  const firstRow = rows[0];
-
   return {
-    chord: {
-      displayTokens: firstRow.chord_display_tokens,
-      qualityBaseFormula: firstRow.chord_quality_base_formula,
-      root: firstRow.chord_root,
-    },
+    chords: uniqueChordRows(rows).map((row) => ({
+      displayTokens: row.chord_display_tokens,
+      idName: row.chord,
+      normalizedSymbol: row.chord_normalized_symbol,
+      qualityBaseFormula: row.chord_quality_base_formula,
+      root: row.chord_root,
+      tones: row.chord_tones,
+    })),
     keyArrangement: {
       rows: rows.map((row) => ({
         beatIndex: row.beat_index,
@@ -123,6 +124,19 @@ function toTrainingSession(rows: readonly DbArrangementRow[]) {
       })),
     },
   };
+}
+
+function uniqueChordRows(rows: readonly DbArrangementRow[]) {
+  const seenChordIds = new Set<string>();
+
+  return rows.filter((row) => {
+    if (seenChordIds.has(row.chord)) {
+      return false;
+    }
+
+    seenChordIds.add(row.chord);
+    return true;
+  });
 }
 
 function json(body: unknown, status: number) {

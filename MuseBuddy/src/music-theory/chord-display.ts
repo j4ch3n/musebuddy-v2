@@ -18,6 +18,7 @@ export type ChordDisplayToken = {
 };
 
 export type ChordDisplayNote = MusicDisplayNote & {
+  explanation?: string;
   interval: ChordDegree;
   isRoot: boolean;
 };
@@ -25,7 +26,9 @@ export type ChordDisplayNote = MusicDisplayNote & {
 export type ChordDisplay = {
   commonNotations: readonly string[];
   friendlyName: string;
+  idName: string;
   notes: readonly ChordDisplayNote[];
+  normalizedSymbol: string;
   symbol: string;
   tokens: readonly ChordDisplayToken[];
 };
@@ -65,19 +68,34 @@ export function buildChordDisplay(chord: TrainingSessionChord): ChordDisplay {
 
   return {
     commonNotations: [symbol],
-    friendlyName: `${chord.root} chord`,
-    notes: chord.qualityBaseFormula.map((interval) => buildChordNote(chord.root, interval)),
+    friendlyName: formatChordIdName(chord.idName),
+    idName: chord.idName,
+    notes: chord.qualityBaseFormula.map((interval, index) =>
+      buildChordNote(chord.root, interval, chord.tones[index]?.explanation),
+    ),
+    normalizedSymbol: chord.normalizedSymbol,
     symbol,
     tokens,
   };
 }
 
-function buildChordNote(root: string, interval: ChordDegree): ChordDisplayNote {
+function formatChordIdName(idName: string) {
+  const displayName = idName.replaceAll('-', ' ');
+
+  return `${displayName.charAt(0).toUpperCase()}${displayName.slice(1)}`;
+}
+
+function buildChordNote(
+  root: string,
+  interval: ChordDegree,
+  explanation: string | undefined,
+): ChordDisplayNote {
   const midi = pitchClassToMidi(root, 4) + INTERVAL_SEMITONES[interval];
   const note = midiToDisplayNote(midi, interval === '1' ? root : undefined);
 
   return {
     ...note,
+    explanation,
     interval,
     isRoot: interval === '1',
   };

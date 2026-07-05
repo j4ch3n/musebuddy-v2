@@ -1,5 +1,5 @@
 import { StyleSheet, View } from 'react-native';
-import Svg, { Circle, G, Rect } from 'react-native-svg';
+import Svg, { Circle, G, Rect, Text as SvgText } from 'react-native-svg';
 
 import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 import {
@@ -23,6 +23,7 @@ export type PianoKeyboardProps = {
   width?: number;
   rootColor?: string;
   keyColor?: string;
+  markerLabels?: Partial<Record<CanonicalPianoKeyboardKeyName, string>>;
   accessibilityLabel?: string;
 };
 
@@ -72,6 +73,7 @@ export function PianoKeyboard({
   accessibilityLabel,
   keyColor = museBuddyColors.accentBlue,
   keys = [],
+  markerLabels,
   root,
   rootColor = museBuddyColors.accentRed,
   width,
@@ -170,17 +172,31 @@ export function PianoKeyboard({
         <G>
           {markers.map(({ key, isRoot }) => {
             const { cx, cy, r } = getMarkerPosition(key);
+            const label = markerLabels?.[key];
 
             return (
-              <Circle
-                cx={cx}
-                cy={cy}
-                fill={isRoot ? rootColor : keyColor}
-                key={`marker-${key}-${rootKey}`}
-                r={r}
-                stroke={museBuddyColors.ink}
-                strokeWidth={museBuddyBorders.bold}
-              />
+              <G key={`marker-${key}-${rootKey}`}>
+                <Circle
+                  cx={cx}
+                  cy={cy}
+                  fill={isRoot ? rootColor : keyColor}
+                  r={r}
+                  stroke={museBuddyColors.ink}
+                  strokeWidth={museBuddyBorders.bold}
+                />
+                {label ? (
+                  <SvgText
+                    fill={museBuddyColors.white}
+                    fontSize={label.length > 1 ? 7 : 9}
+                    fontWeight="900"
+                    textAnchor="middle"
+                    x={cx}
+                    y={cy + 3}
+                  >
+                    {label}
+                  </SvgText>
+                ) : null}
+              </G>
             );
           })}
         </G>

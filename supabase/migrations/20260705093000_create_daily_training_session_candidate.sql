@@ -5,8 +5,10 @@ returns table (
   beat_index integer,
   chord text,
   chord_display_tokens jsonb,
+  chord_normalized_symbol text,
   chord_quality_base_formula public.chord_degree[],
   chord_root text,
+  chord_tones jsonb,
   song_id text,
   velocity jsonb
 )
@@ -66,8 +68,13 @@ as $$
     arrangements.beat_index,
     arrangements.chord,
     profiles."displayTokens" as chord_display_tokens,
+    profiles."normalizedSymbol" as chord_normalized_symbol,
     profiles."quality_baseFormula" as chord_quality_base_formula,
     profiles.root::text as chord_root,
+    (
+      select jsonb_agg(jsonb_build_object('explanation', tone ->> 'explanation'))
+      from jsonb_array_elements(profiles.tones) as tone
+    ) as chord_tones,
     arrangements.song_id,
     arrangements.velocity
   from daily_candidate

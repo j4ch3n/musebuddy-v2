@@ -16,6 +16,10 @@ export const chordDisplayTokenSchema = z.object({
   value: z.string(),
 });
 
+export const chordToneSchema = z.object({
+  explanation: z.string().min(1),
+});
+
 export const chordDegreeSchema = z.enum([
   '#11',
   '#2',
@@ -94,18 +98,26 @@ export const rhythmSchema = z.object({
 });
 
 export const trainingSessionSchema = z.object({
-  chord: z.object({
-    displayTokens: z.array(chordDisplayTokenSchema).min(1),
-    qualityBaseFormula: z.array(chordDegreeSchema).min(1),
-    root: z.string().min(1),
-  }),
+  chords: z
+    .array(
+      z.object({
+        displayTokens: z.array(chordDisplayTokenSchema).min(1),
+        idName: z.string().min(1),
+        normalizedSymbol: z.string().min(1),
+        qualityBaseFormula: z.array(chordDegreeSchema).min(1),
+        root: z.string().min(1),
+        tones: z.array(chordToneSchema).min(1),
+      }),
+    )
+    .min(1),
   keyArrangement: keyArrangementSchema,
 });
 
 export type TrainingSession = z.infer<typeof trainingSessionSchema>;
-export type TrainingSessionChord = TrainingSession['chord'];
+export type TrainingSessionChord = TrainingSession['chords'][number];
 export type TrainingSessionKeyArrangement = TrainingSession['keyArrangement'];
 export type TrainingSessionRhythm = z.infer<typeof rhythmSchema>;
 export type TrainingSessionRhythmPattern = TrainingSessionRhythm['pattern'];
 export type ChordDisplayTokenValue = z.infer<typeof chordDisplayTokenSchema>;
 export type ChordDegree = z.infer<typeof chordDegreeSchema>;
+export type ChordTone = z.infer<typeof chordToneSchema>;

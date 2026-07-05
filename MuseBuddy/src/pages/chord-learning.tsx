@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 
-import { ChordKeyboardCard, ChordNameCard, ChordSheetCard } from '@/components/chord-learning';
+import { ChordLearning } from '@/components/chord-learning';
 import { useTrainingSession } from '@/contexts/training-session-context';
 import { Button } from '@/ui';
 
@@ -25,9 +25,9 @@ export function ChordLearningPage() {
     >
       {session ? (
         <>
-          <ChordNameCard display={session.chordDisplay} />
-          <ChordSheetCard display={session.chordDisplay} />
-          <ChordKeyboardCard display={session.chordDisplay} />
+          {session.chordDisplays.map((display) => (
+            <ChordLearning display={display} key={display.symbol} />
+          ))}
         </>
       ) : (
         <PlaceholderPanel

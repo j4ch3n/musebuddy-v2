@@ -10,11 +10,22 @@ describe('buildChordDisplay', () => {
         { type: 'quality', value: 'maj' },
         { type: 'extension', value: '7' },
       ],
+      idName: 'c-major-seven',
+      normalizedSymbol: 'Cmaj7',
       qualityBaseFormula: ['1', '3', '5', '7'],
       root: 'C',
+      tones: [
+        { explanation: 'is the root. It names and anchors the chord.' },
+        { explanation: 'is the third. It gives the chord its major color.' },
+        { explanation: 'is the fifth. It makes the chord feel stable.' },
+        { explanation: 'is the seventh. It adds a smooth color.' },
+      ],
     });
 
     expect(display.symbol).toBe('Cmaj7');
+    expect(display.idName).toBe('c-major-seven');
+    expect(display.friendlyName).toBe('C major seven');
+    expect(display.normalizedSymbol).toBe('Cmaj7');
     expect(display.commonNotations).toEqual(['Cmaj7']);
     expect(display.tokens).toEqual([
       { text: 'C', type: 'root' },
@@ -22,6 +33,9 @@ describe('buildChordDisplay', () => {
       { text: '7', type: 'extension' },
     ]);
     expect(display.notes.map((note) => note.text)).toEqual(['C', 'E', 'G', 'B']);
+    expect(display.notes[0]).toMatchObject({
+      explanation: 'is the root. It names and anchors the chord.',
+    });
   });
 
   it('supports additions from display tokens', () => {
@@ -30,8 +44,15 @@ describe('buildChordDisplay', () => {
         { type: 'root', value: 'A' },
         { type: 'addition', value: 'add9' },
       ],
+      idName: 'a-add9',
+      normalizedSymbol: 'Aadd9',
       qualityBaseFormula: ['1', '3', '5'],
       root: 'A',
+      tones: [
+        { explanation: 'is the root. It names and anchors the chord.' },
+        { explanation: 'is the third. It gives the chord its major color.' },
+        { explanation: 'is the fifth. It makes the chord feel stable.' },
+      ],
     });
 
     expect(display.symbol).toBe('Aadd9');
@@ -45,8 +66,16 @@ describe('buildChordDisplay', () => {
         { type: 'root', value: 'Bb' },
         { type: 'extension', value: '7' },
       ],
+      idName: 'bb-dominant-seven',
+      normalizedSymbol: 'Bb7',
       qualityBaseFormula: ['1', '3', '5', 'b7'],
       root: 'Bb',
+      tones: [
+        { explanation: 'is the root. It names and anchors the chord.' },
+        { explanation: 'is the third. It gives the chord its major color.' },
+        { explanation: 'is the fifth. It makes the chord feel stable.' },
+        { explanation: 'is the flat seventh. It creates dominant tension.' },
+      ],
     });
 
     expect(display.symbol).toBe('Bb7');
