@@ -31,6 +31,9 @@ build/
 *.key
 *.mobileprovision
 
+# Swift
+.swift-*/
+
 # Metro
 .metro-health-check*
 .metro-cache/

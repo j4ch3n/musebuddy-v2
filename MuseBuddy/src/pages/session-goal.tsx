@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 
 import { ChoreographyViewer } from '@/components/choreography-viewer';
+import { SessionGoalPlayButton } from '@/components/session-goal-play-button';
 import { useTrainingSession } from '@/contexts/training-session-context';
 import { Button } from '@/ui';
 
@@ -24,7 +25,10 @@ export function SessionGoalPage() {
       }
     >
       {session ? (
-        <ChoreographyViewer keyArrangement={session.keyArrangement} />
+        <>
+          <ChoreographyViewer keyArrangement={session.keyArrangement} />
+          <SessionGoalPlayButton keyArrangement={session.keyArrangement} />
+        </>
       ) : (
         <PlaceholderPanel
           accent="purple"

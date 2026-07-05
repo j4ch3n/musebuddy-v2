@@ -1,0 +1,31 @@
+{
+  "bpm": 100,
+  "instrument": "piano",
+  "slotDurationSeconds": 0.075,
+  "notes": [
+    {
+      "channel": 0,
+      "durationSeconds": 0.45,
+      "id": "diagnostic-c4",
+      "midi": 60,
+      "startTimeSeconds": 0,
+      "velocity": 96
+    },
+    {
+      "channel": 0,
+      "durationSeconds": 0.45,
+      "id": "diagnostic-e4",
+      "midi": 64,
+      "startTimeSeconds": 0.45,
+      "velocity": 96
+    },
+    {
+      "channel": 0,
+      "durationSeconds": 0.6,
+      "id": "diagnostic-g4",
+      "midi": 67,
+      "startTimeSeconds": 0.9,
+      "velocity": 96
+    }
+  ]
+}
