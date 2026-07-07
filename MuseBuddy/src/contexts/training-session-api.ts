@@ -17,7 +17,7 @@ const logger = createLogger('TrainingSessionApi');
 function getSupabaseClient() {
   if (!supabaseUrl || !supabasePublishableKey) {
     throw new TrainingSessionApiError(
-      'Supabase environment variables are missing. Check MuseBuddy/.env.',
+      'Supabase environment variables are missing',
     );
   }
 
