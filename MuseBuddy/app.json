@@ -11,6 +11,7 @@
       "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.j4s0nch3.MuseBuddy",
       "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
         "NSMicrophoneUsageDescription": "MuseBuddy records piano audio so it can transcribe the notes on your device."
       }
     },

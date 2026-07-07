@@ -30,6 +30,8 @@ build/
 *.p12
 *.key
 *.mobileprovision
+credentials/
+credentials.json
 
 # Swift
 .swift-*/
