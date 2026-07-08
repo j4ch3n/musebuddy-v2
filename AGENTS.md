@@ -143,7 +143,24 @@ pnpm --dir MuseBuddy <script>
 
 ## Required Checks
 
-After every code change, run:
+Run the checks that apply to the files changed. Do not run every check reflexively when the
+change only touches one project area, but do not consider work complete while an
+applicable check is failing. If formatting fails, run the matching formatter first and
+then rerun the check.
+
+For `courses/` Python changes, use Ruff through uv:
+
+```sh
+cd courses
+UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff format --check .
+UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff check .
+```
+
+Run `UV_CACHE_DIR=/private/tmp/uv-cache uv run ruff format .` first when Python
+formatting needs correction.
+
+For `MuseBuddy/` TypeScript, React Native, Expo Router, Tamagui, assets, or app
+configuration changes, run the relevant app checks from `MuseBuddy/`:
 
 ```sh
 cd MuseBuddy
@@ -153,15 +170,32 @@ pnpm typecheck
 pnpm test
 ```
 
+`pnpm format:check` is the MuseBuddy Prettier check. `pnpm lint` is the TypeScript/Expo
+ESLint check. Run `pnpm format` first when MuseBuddy Prettier formatting needs
+correction. Use judgment on `pnpm test`: run it for logic, hooks, components, or shared
+behavior changes; it can be skipped for documentation-only or formatting-only changes.
+
+For Swift or local native module changes under `MuseBuddy/modules/`, run the Swift
+formatter and linter checks from `MuseBuddy/`:
+
+```sh
+cd MuseBuddy
+pnpm format:swift:check
+pnpm lint:swift
+```
+
+`pnpm format:swift:check` is the SwiftFormat check. `pnpm lint:swift` is the SwiftLint
+check. Run `pnpm format:swift` first when Swift formatting needs correction.
+
 Use `pnpm --dir MuseBuddy check` from the repository root, or `pnpm check` from
-`MuseBuddy/`, to run all required checks together. Run `pnpm format` from `MuseBuddy/`
-first when formatting needs correction.
+`MuseBuddy/`, when a MuseBuddy change spans TypeScript, Swift, formatting, and tests and
+running the full app check is appropriate.
 
 For changes to Swift, Core ML resources, app configuration, or local Expo modules, report
 that the developer must regenerate/build the iOS development project from `MuseBuddy/`
 using `pnpm build` and verify it compiles.
 
-Do not consider work complete while an applicable check is failing. If a check cannot run, report the exact blocker and the checks that remain unverified.
+If a check cannot run, report the exact blocker and the checks that remain unverified.
 
 ## Developer-Run Runtime Testing
 
@@ -171,5 +205,5 @@ run, Metro debug session, or interactive debug workflow. Do not run commands suc
 attach to the app.
 
 The developer will build, launch, and perform simulator/device testing. Agents should run
-the non-interactive static checks (`pnpm format:check`, `pnpm lint`, and `pnpm typecheck`)
-and clearly report that runtime and native build verification remain for the developer.
+the applicable non-interactive static checks listed above and clearly report that runtime
+and native build verification remain for the developer.

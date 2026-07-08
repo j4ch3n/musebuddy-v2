@@ -11,9 +11,36 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  checks:
-    name: Format, lint, typecheck, and test
-    runs-on: macos-latest
+  python:
+    name: python
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: courses
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: uv sync --frozen --dev
+
+      - name: Check Python formatting
+        run: uv run ruff format --check .
+
+      - name: Lint Python
+        run: uv run ruff check .
+
+  mobile-app:
+    name: mobile-app
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: MuseBuddy
@@ -33,13 +60,51 @@ jobs:
           cache: pnpm
           cache-dependency-path: MuseBuddy/pnpm-lock.yaml
 
-      - name: Install Swift tooling
-        run: brew install swiftformat swiftlint
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
         env:
           HUSKY: "0"
 
-      - name: Run checks
-        run: pnpm check
+      - name: Check Prettier formatting
+        run: pnpm format:check
+
+      - name: Lint TypeScript
+        run: pnpm lint
+
+      - name: Typecheck TypeScript
+        run: pnpm typecheck
+
+      - name: Test TypeScript
+        run: pnpm test
+
+  swift-modules:
+    name: swift-modules
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: MuseBuddy
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Setup Homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Install Swift tooling
+        run: brew install swiftformat swiftlint
+
+      - name: Check Swift formatting
+        run: pnpm format:swift:check
+
+      - name: Lint Swift
+        run: pnpm lint:swift

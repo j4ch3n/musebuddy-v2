@@ -23,7 +23,9 @@ def load_environment(remote_db: RemoteDb | None = None) -> None:
     load_dotenv(env_path, override=remote_db is not None)
 
 
-def database_url(option_value: str | None, remote_db: RemoteDb | None = None) -> str | None:
+def database_url(
+    option_value: str | None, remote_db: RemoteDb | None = None
+) -> str | None:
     load_environment(remote_db)
     value = option_value or os.environ.get("SUPABASE_DATABASE_URL")
     if value and value.startswith(POSTGRES_SCHEME):

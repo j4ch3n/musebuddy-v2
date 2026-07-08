@@ -80,7 +80,9 @@ def validate_rows(rows: list[ArrangementRow]) -> None:
         location = f"{row.bar_index}:{row.beat_index}"
         messages.extend(
             f"{location} {message}"
-            for message in pop909.validate_arrangement_shape(row.arrangement, row.velocity)
+            for message in pop909.validate_arrangement_shape(
+                row.arrangement, row.velocity
+            )
         )
         messages.extend(validate_row_values(row))
     if messages:
@@ -93,38 +95,60 @@ def validate_row_values(row: ArrangementRow) -> list[str]:
     for slot_index, (arrangement_slot, velocity_slot) in enumerate(
         zip(row.arrangement, row.velocity, strict=False)
     ):
-        if not isinstance(arrangement_slot, list) or not isinstance(velocity_slot, list):
+        if not isinstance(arrangement_slot, list) or not isinstance(
+            velocity_slot, list
+        ):
             continue
         for lane_index, pitch in enumerate(arrangement_slot):
-            velocity = velocity_slot[lane_index] if lane_index < len(velocity_slot) else None
+            velocity = (
+                velocity_slot[lane_index] if lane_index < len(velocity_slot) else None
+            )
             path = f"{location} slot {slot_index} lane {lane_index}"
             if pitch is None or pitch == pop909.HOLD_VALUE:
                 if velocity is not None:
                     messages.append(f"{path} velocity must be null for rest or hold")
                 continue
             if type(pitch) is not int or not 1 <= pitch <= 127:
-                messages.append(f"{path} pitch must be a positive MIDI integer from 1 to 127")
+                messages.append(
+                    f"{path} pitch must be a positive MIDI integer from 1 to 127"
+                )
                 continue
             if type(velocity) is not int or not 0 <= velocity <= 127:
-                messages.append(f"{path} attack velocity must be a MIDI integer from 0 to 127")
+                messages.append(
+                    f"{path} attack velocity must be a MIDI integer from 0 to 127"
+                )
     return messages
 
 
 def rows_to_midi(rows: list[ArrangementRow], bpm: float) -> pretty_midi.PrettyMIDI:
     seconds_per_beat = 60 / bpm
-    slot_duration = seconds_per_beat * BEATS_PER_TABLE_BEAT / pop909.STEPS_PER_TABLE_BEAT
+    slot_duration = (
+        seconds_per_beat * BEATS_PER_TABLE_BEAT / pop909.STEPS_PER_TABLE_BEAT
+    )
     midi = pretty_midi.PrettyMIDI(initial_tempo=bpm)
     piano = pretty_midi.Instrument(program=PIANO_PROGRAM, is_drum=False, name="Piano")
     active_notes: dict[int, ActiveNote] = {}
     current_time = 0.0
 
     for row in rows:
-        for arrangement_slot, velocity_slot in zip(row.arrangement, row.velocity, strict=True):
-            max_lane_index = max([len(arrangement_slot) - 1, *active_notes.keys()], default=-1)
+        for arrangement_slot, velocity_slot in zip(
+            row.arrangement, row.velocity, strict=True
+        ):
+            max_lane_index = max(
+                [len(arrangement_slot) - 1, *active_notes.keys()], default=-1
+            )
             lane_count = max_lane_index + 1
             for lane_index in range(lane_count):
-                pitch = arrangement_slot[lane_index] if lane_index < len(arrangement_slot) else None
-                velocity = velocity_slot[lane_index] if lane_index < len(velocity_slot) else None
+                pitch = (
+                    arrangement_slot[lane_index]
+                    if lane_index < len(arrangement_slot)
+                    else None
+                )
+                velocity = (
+                    velocity_slot[lane_index]
+                    if lane_index < len(velocity_slot)
+                    else None
+                )
                 active = active_notes.get(lane_index)
 
                 if pitch is None:
@@ -159,7 +183,9 @@ def rows_to_midi(rows: list[ArrangementRow], bpm: float) -> pretty_midi.PrettyMI
     return midi
 
 
-def append_note(instrument: pretty_midi.Instrument, active: ActiveNote, end: float) -> None:
+def append_note(
+    instrument: pretty_midi.Instrument, active: ActiveNote, end: float
+) -> None:
     if end <= active.start:
         return
     instrument.notes.append(
@@ -207,7 +233,9 @@ def main(song_id: str, database_url: str | None, bpm: float, output_dir: Path) -
 
     rows = fetch_rows(database_url, song_id)
     if not rows:
-        raise click.ClickException(f"No companion arrangement rows found for song_id {song_id!r}.")
+        raise click.ClickException(
+            f"No companion arrangement rows found for song_id {song_id!r}."
+        )
 
     validate_rows(rows)
     midi = rows_to_midi(rows, bpm)

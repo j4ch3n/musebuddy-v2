@@ -15,3 +15,12 @@ dependencies = [
     "sqlalchemy>=2.0.41",
     "tqdm>=4.68.3",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.20",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"chord_dictionary/upload.py" = ["E402"]
+"companion/pop909_common.py" = ["E402"]

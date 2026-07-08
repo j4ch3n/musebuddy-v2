@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
 
 import click
 from sqlalchemy import Column, ForeignKey, Integer, Text, create_engine, delete
@@ -79,7 +78,9 @@ def persist_song(database_url: str, processed_song: pop909.ProcessedSong) -> Non
         with session.begin():
             session.execute(statement)
             session.execute(
-                delete(key_table).where(key_table.c.song_id == processed_song.metadata.song_id)
+                delete(key_table).where(
+                    key_table.c.song_id == processed_song.metadata.song_id
+                )
             )
             if key_values:
                 session.execute(insert(key_table).values(key_values))
@@ -88,7 +89,11 @@ def persist_song(database_url: str, processed_song: pop909.ProcessedSong) -> Non
 def existing_chord_ids(database_url: str) -> set[str]:
     engine = create_engine(database_url)
     with Session(engine) as session:
-        return set(session.scalars(ChordProfile.__table__.select().with_only_columns(ChordProfile.id)))
+        return set(
+            session.scalars(
+                ChordProfile.__table__.select().with_only_columns(ChordProfile.id)
+            )
+        )
 
 
 def verify_chord_profiles(database_url: str, rows: list[pop909.BeatRow]) -> None:
@@ -167,7 +172,11 @@ def main(
         try:
             processed_song = pop909.process_song(dataset_root, metadata, chord_lookup)
             if processed_song.audio_key_summary:
-                pop909.logging.info("%s audio key summary: %s", metadata.song_id, processed_song.audio_key_summary)
+                pop909.logging.info(
+                    "%s audio key summary: %s",
+                    metadata.song_id,
+                    processed_song.audio_key_summary,
+                )
             if dry_run:
                 click.echo(f"{metadata.song_id}: {len(processed_song.rows)} beat rows")
             else:

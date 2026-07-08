@@ -138,7 +138,9 @@ def read_index(dataset_root: Path, song_limit: int | None = None) -> list[SongMe
     return rows
 
 
-def filter_songs_by_id(songs: list[SongMetadata], song_ids: tuple[str, ...]) -> list[SongMetadata]:
+def filter_songs_by_id(
+    songs: list[SongMetadata], song_ids: tuple[str, ...]
+) -> list[SongMetadata]:
     if not song_ids:
         return songs
 
@@ -147,7 +149,9 @@ def filter_songs_by_id(songs: list[SongMetadata], song_ids: tuple[str, ...]) -> 
     found_ids = {song.dataset_song_id for song in selected}
     missing_ids = sorted(normalized_ids - found_ids)
     if missing_ids:
-        raise ValueError(f"Song id(s) not found in supported POP909 index rows: {', '.join(missing_ids)}")
+        raise ValueError(
+            f"Song id(s) not found in supported POP909 index rows: {', '.join(missing_ids)}"
+        )
     return selected
 
 
@@ -164,7 +168,9 @@ def song_dir(dataset_root: Path, metadata: SongMetadata) -> Path:
 
 def parse_beat_midi(path: Path) -> list[BeatBoundary]:
     boundaries: list[BeatBoundary] = []
-    for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+    for line_number, line in enumerate(
+        path.read_text(encoding="utf-8").splitlines(), start=1
+    ):
         if not line.strip():
             continue
         parts = line.split()
@@ -173,7 +179,9 @@ def parse_beat_midi(path: Path) -> list[BeatBoundary]:
         marker = float(parts[1])
         if marker == TABLE_BEAT_MARKER:
             boundaries.append(
-                BeatBoundary(time=float(parts[0]), is_downbeat=float(parts[2]) == DOWNBEAT_MARKER)
+                BeatBoundary(
+                    time=float(parts[0]), is_downbeat=float(parts[2]) == DOWNBEAT_MARKER
+                )
             )
     if len(boundaries) < 2:
         raise ValueError(f"{path} does not contain enough table beat boundaries")
@@ -186,7 +194,9 @@ def beat_windows(boundaries: list[BeatBoundary]) -> list[BeatWindow]:
         if boundary.is_downbeat:
             start_index = index
             if index:
-                logging.info("Skipping %s pickup table beat(s) before first complete bar", index)
+                logging.info(
+                    "Skipping %s pickup table beat(s) before first complete bar", index
+                )
             break
 
     windows: list[BeatWindow] = []
@@ -207,7 +217,9 @@ def beat_windows(boundaries: list[BeatBoundary]) -> list[BeatWindow]:
 
 def parse_chord_midi(path: Path) -> list[ChordSpan]:
     spans: list[ChordSpan] = []
-    for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+    for line_number, line in enumerate(
+        path.read_text(encoding="utf-8").splitlines(), start=1
+    ):
         if not line.strip():
             continue
         parts = line.split()
@@ -252,13 +264,17 @@ def generated_chord_lookup() -> dict[tuple[int, tuple[int, ...], int], str]:
     return lookup
 
 
-def chord_profile_id(label: str, lookup: dict[tuple[int, tuple[int, ...], int], str]) -> str | None:
+def chord_profile_id(
+    label: str, lookup: dict[tuple[int, tuple[int, ...], int], str]
+) -> str | None:
     if label == "N":
         return None
     root_number, chroma, bass_number = mir_eval.chord.encode(label)
     if root_number < 0:
         return None
-    relative = tuple(index for index, value in enumerate(chroma.tolist()) if int(value) == 1)
+    relative = tuple(
+        index for index, value in enumerate(chroma.tolist()) if int(value) == 1
+    )
     exact_key = (int(root_number), relative, int(bass_number))
     exact_match = lookup.get(exact_key)
     if exact_match is not None:
@@ -266,7 +282,9 @@ def chord_profile_id(label: str, lookup: dict[tuple[int, tuple[int, ...], int], 
 
     base_match = lookup.get((int(root_number), relative, 0))
     if base_match is not None:
-        logging.info("Mapped POP909 chord %s to base chord profile %s", label, base_match)
+        logging.info(
+            "Mapped POP909 chord %s to base chord profile %s", label, base_match
+        )
         return base_match
 
     root, quality, extensions, _bass = mir_eval.chord.split(label)
@@ -274,22 +292,32 @@ def chord_profile_id(label: str, lookup: dict[tuple[int, tuple[int, ...], int], 
         sus4_chroma = tuple(index for index in relative if index != 10)
         sus4_match = lookup.get((int(root_number), sus4_chroma, 0))
         if sus4_match is not None:
-            logging.info("Mapped POP909 chord %s to suspended-fourth profile %s", label, sus4_match)
+            logging.info(
+                "Mapped POP909 chord %s to suspended-fourth profile %s",
+                label,
+                sus4_match,
+            )
             return sus4_match
 
     return None
 
 
-def piano_instrument(midi: pretty_midi.PrettyMIDI, midi_path: Path) -> pretty_midi.Instrument:
+def piano_instrument(
+    midi: pretty_midi.PrettyMIDI, midi_path: Path
+) -> pretty_midi.Instrument:
     matches = [
         instrument
         for instrument in midi.instruments
         if instrument.name.strip().upper() == "PIANO" and not instrument.is_drum
     ]
     if not matches:
-        raise ValueError(f"{midi_path} does not contain a non-drum instrument named PIANO")
+        raise ValueError(
+            f"{midi_path} does not contain a non-drum instrument named PIANO"
+        )
     if len(matches) > 1:
-        logging.info("%s contains %s PIANO instruments; using the first", midi_path, len(matches))
+        logging.info(
+            "%s contains %s PIANO instruments; using the first", midi_path, len(matches)
+        )
     return matches[0]
 
 
@@ -313,7 +341,9 @@ def quantize_window(
     window: BeatWindow,
 ) -> tuple[Arrangement, Arrangement, int]:
     step_duration = (window.end - window.start) / STEPS_PER_TABLE_BEAT
-    attacks_by_slot: list[list[QuantizedNote]] = [[] for _ in range(STEPS_PER_TABLE_BEAT)]
+    attacks_by_slot: list[list[QuantizedNote]] = [
+        [] for _ in range(STEPS_PER_TABLE_BEAT)
+    ]
     skipped = 0
     for note in notes:
         if not (window.start - EPSILON <= note.start < window.end - EPSILON):
@@ -344,7 +374,9 @@ def quantize_window(
         if all(active is None for active in active_lanes):
             active_lanes = []
 
-        pitch_slot: Slot = [HOLD_VALUE if active is not None else None for active in active_lanes]
+        pitch_slot: Slot = [
+            HOLD_VALUE if active is not None else None for active in active_lanes
+        ]
         velocity_slot: Slot = [None for _ in active_lanes]
 
         for attack in sorted(attacks, key=lambda value: value.pitch):
@@ -371,7 +403,9 @@ def quantize_window(
 
 
 def row_id(song_id: str, bar_index: int, beat_index: int) -> str:
-    return hashlib.sha256(f"{song_id}:{bar_index}:{beat_index}".encode("utf-8")).hexdigest()
+    return hashlib.sha256(
+        f"{song_id}:{bar_index}:{beat_index}".encode("utf-8")
+    ).hexdigest()
 
 
 def load_audio_key_summary(directory: Path) -> str | None:
@@ -379,8 +413,14 @@ def load_audio_key_summary(directory: Path) -> str | None:
     key_audio_path = directory / "key_audio.txt"
     if not beat_audio_path.exists() or not key_audio_path.exists():
         return None
-    beat_lines = [line for line in beat_audio_path.read_text(encoding="utf-8").splitlines() if line]
-    key_lines = [line for line in key_audio_path.read_text(encoding="utf-8").splitlines() if line]
+    beat_lines = [
+        line
+        for line in beat_audio_path.read_text(encoding="utf-8").splitlines()
+        if line
+    ]
+    key_lines = [
+        line for line in key_audio_path.read_text(encoding="utf-8").splitlines() if line
+    ]
     if not beat_lines or not key_lines:
         return None
     return f"{len(beat_lines)} audio beat markers; key span: {key_lines[0]}"
@@ -403,7 +443,9 @@ def process_song(
     first_start = windows[0].start if windows else 0
     pickup_notes = sum(1 for note in notes if note.start < first_start - EPSILON)
     if pickup_notes:
-        logging.info("Skipping %s pickup PIANO note(s) for %s", pickup_notes, metadata.song_id)
+        logging.info(
+            "Skipping %s pickup PIANO note(s) for %s", pickup_notes, metadata.song_id
+        )
 
     rows: list[BeatRow] = []
     skipped_note_count = pickup_notes
@@ -411,7 +453,9 @@ def process_song(
         label = chord_for_window(window, chord_spans)
         profile_id = chord_profile_id(label, chord_lookup)
         if label != "N" and profile_id is None:
-            raise ValueError(f"{metadata.song_id} chord {label!r} cannot be linked to chord_profiles")
+            raise ValueError(
+                f"{metadata.song_id} chord {label!r} cannot be linked to chord_profiles"
+            )
         if profile_id is None:
             continue
         arrangement, velocity, skipped = quantize_window(notes, window)
@@ -466,7 +510,9 @@ def count_positive_attacks(arrangement: Arrangement) -> int:
     )
 
 
-def validate_arrangement_shape(arrangement: JsonValue, velocity: JsonValue) -> list[str]:
+def validate_arrangement_shape(
+    arrangement: JsonValue, velocity: JsonValue
+) -> list[str]:
     errors: list[str] = []
     if not isinstance(arrangement, list) or not isinstance(velocity, list):
         return ["arrangement and velocity must be lists"]
@@ -474,8 +520,12 @@ def validate_arrangement_shape(arrangement: JsonValue, velocity: JsonValue) -> l
         errors.append(f"arrangement has {len(arrangement)} slots")
     if len(velocity) != STEPS_PER_TABLE_BEAT:
         errors.append(f"velocity has {len(velocity)} slots")
-    for index, (arrangement_slot, velocity_slot) in enumerate(zip(arrangement, velocity)):
-        if not isinstance(arrangement_slot, list) or not isinstance(velocity_slot, list):
+    for index, (arrangement_slot, velocity_slot) in enumerate(
+        zip(arrangement, velocity)
+    ):
+        if not isinstance(arrangement_slot, list) or not isinstance(
+            velocity_slot, list
+        ):
             errors.append(f"slot {index} is not a nested list")
             continue
         if len(arrangement_slot) != len(velocity_slot):

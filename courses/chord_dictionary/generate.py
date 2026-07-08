@@ -110,7 +110,9 @@ class ChordSpec:
     base_formula: tuple[str, ...]
     sounding_degrees: tuple[str, ...]
     family: tuple[ChordFamily, ...]
-    components: dict[ComponentKind, tuple[ChordComponent, ...]] = field(default_factory=dict)
+    components: dict[ComponentKind, tuple[ChordComponent, ...]] = field(
+        default_factory=dict
+    )
     omitted_degrees: tuple[str, ...] = ()
     suffix: str = ""
     parenthetical_values: tuple[tuple[ChordDisplayTokenType, str], ...] = ()
@@ -178,11 +180,19 @@ DEGREE_NAMES = {
     "b13": "flat thirteenth",
     "13": "thirteenth",
 }
-FLAT_SLUGS = {"Db": "d-flat", "Eb": "e-flat", "Gb": "g-flat", "Ab": "a-flat", "Bb": "b-flat"}
+FLAT_SLUGS = {
+    "Db": "d-flat",
+    "Eb": "e-flat",
+    "Gb": "g-flat",
+    "Ab": "a-flat",
+    "Bb": "b-flat",
+}
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate MuseBuddy chord dictionary JSON files.")
+    parser = argparse.ArgumentParser(
+        description="Generate MuseBuddy chord dictionary JSON files."
+    )
     parser.add_argument(
         "--output",
         type=Path,
@@ -423,7 +433,12 @@ def chord_specs() -> tuple[ChordSpec, ...]:
             sounding_degrees=("1", "3", "5", "6", "9"),
             family=("added-tone",),
             suffix="6add9",
-            components={"additions": (ChordComponent("6", "6"), ChordComponent("add9", "9", "2"))},
+            components={
+                "additions": (
+                    ChordComponent("6", "6"),
+                    ChordComponent("add9", "9", "2"),
+                )
+            },
         ),
         ChordSpec(
             slug="dominant-seventh-flat-ninth",
@@ -533,8 +548,12 @@ def chord_specs() -> tuple[ChordSpec, ...]:
 
 
 def build_profile(root: str, spec: ChordSpec) -> dict[str, object]:
-    bass = pitch_for_degree(root, spec.slash_degree).pitch if spec.slash_degree else None
-    normalized_symbol = f"{root}{spec.suffix}{format_parenthetical(spec.parenthetical_values)}"
+    bass = (
+        pitch_for_degree(root, spec.slash_degree).pitch if spec.slash_degree else None
+    )
+    normalized_symbol = (
+        f"{root}{spec.suffix}{format_parenthetical(spec.parenthetical_values)}"
+    )
     if bass is not None:
         normalized_symbol = f"{normalized_symbol}/{bass}"
 
@@ -562,16 +581,20 @@ def build_profile(root: str, spec: ChordSpec) -> dict[str, object]:
         "family": list(spec.family),
         "components": {
             "extensions": [
-                component.to_json() for component in spec.components.get("extensions", ())
+                component.to_json()
+                for component in spec.components.get("extensions", ())
             ],
             "additions": [
-                component.to_json() for component in spec.components.get("additions", ())
+                component.to_json()
+                for component in spec.components.get("additions", ())
             ],
             "alterations": [
-                component.to_json() for component in spec.components.get("alterations", ())
+                component.to_json()
+                for component in spec.components.get("alterations", ())
             ],
             "omissions": [
-                component.to_json() for component in spec.components.get("omissions", ())
+                component.to_json()
+                for component in spec.components.get("omissions", ())
             ],
         },
         "displayTokens": display_tokens(root, spec, bass),
@@ -601,7 +624,9 @@ def build_tone(
     degree_name = DEGREE_NAMES.get(degree, degree)
     importance = tone_importance(degree, spec, omitted)
     tendency = tone_tendency(degree, spec, pitch.pitch == bass, omitted)
-    explanation = tone_explanation(pitch.pitch, degree, degree_name, spec, bass, omitted)
+    explanation = tone_explanation(
+        pitch.pitch, degree, degree_name, spec, bass, omitted
+    )
 
     return ChordTone(
         degree=semantic_degree(degree),
@@ -634,7 +659,9 @@ def pitch_for_degree(root: str, degree: str | None) -> DegreePitch:
     semitones = MAJOR_DEGREE_SEMITONES[number] + accidental
     target_pc = (root_pc + semitones) % 12
     pitch = spell_pitch(target_letter, target_pc)
-    return DegreePitch(pitch=pitch, pitch_class=target_pc, semitones_from_root=semitones)
+    return DegreePitch(
+        pitch=pitch, pitch_class=target_pc, semitones_from_root=semitones
+    )
 
 
 def pitch_class(pitch: str) -> int:
@@ -675,7 +702,15 @@ def semantic_degree(degree: str) -> str:
 
 
 def raw_degree(degree: str) -> str:
-    return {"9": "2", "b9": "b2", "#9": "#2", "11": "4", "#11": "#4", "13": "6", "b13": "b6"}.get(
+    return {
+        "9": "2",
+        "b9": "b2",
+        "#9": "#2",
+        "11": "4",
+        "#11": "#4",
+        "13": "6",
+        "b13": "b6",
+    }.get(
         degree,
         degree,
     )
@@ -691,7 +726,9 @@ def tone_importance(degree: str, spec: ChordSpec, omitted: bool) -> ToneImportan
     return "color"
 
 
-def tone_tendency(degree: str, spec: ChordSpec, is_bass: bool, omitted: bool) -> ChordToneTendency:
+def tone_tendency(
+    degree: str, spec: ChordSpec, is_bass: bool, omitted: bool
+) -> ChordToneTendency:
     if omitted:
         return "omitted"
     if is_bass and spec.slash_degree is not None:
@@ -739,7 +776,9 @@ def tone_explanation(
     if degree == "1":
         explanation = "is the root. It names and anchors the chord."
         if bass is not None and bass != pitch:
-            explanation += f" The bass is {bass}, so the root is not the lowest sounding note."
+            explanation += (
+                f" The bass is {bass}, so the root is not the lowest sounding note."
+            )
         return explanation
 
     if degree in ("b3", "3"):
@@ -801,7 +840,9 @@ def extension_color(degree: str) -> str:
     }.get(semantic_degree(degree), "color")
 
 
-def display_tokens(root: str, spec: ChordSpec, bass: str | None) -> list[dict[str, str]]:
+def display_tokens(
+    root: str, spec: ChordSpec, bass: str | None
+) -> list[dict[str, str]]:
     tokens: list[dict[str, str]] = [{"type": "root", "value": root}]
     suffix_tokens = suffix_display_tokens(spec.suffix)
     tokens.extend(suffix_tokens)
@@ -825,7 +866,9 @@ def suffix_display_tokens(suffix: str) -> list[dict[str, str]]:
         remainder = suffix[1:]
         tokens = [{"type": "quality", "value": "m"}]
         if remainder:
-            token_type = "addition" if remainder.startswith(("6", "add")) else "extension"
+            token_type = (
+                "addition" if remainder.startswith(("6", "add")) else "extension"
+            )
             tokens.append({"type": token_type, "value": remainder})
         return tokens
     if suffix.startswith("maj"):
@@ -880,7 +923,9 @@ def write_profiles(profiles: list[dict[str, object]], output_dir: Path) -> None:
         if not isinstance(profile_id_value, str):
             raise TypeError("Profile id must be a string")
         path = output_dir / f"{profile_id_value}.json"
-        path.write_text(json.dumps(profile, indent=2, ensure_ascii=True) + "\n", encoding="utf-8")
+        path.write_text(
+            json.dumps(profile, indent=2, ensure_ascii=True) + "\n", encoding="utf-8"
+        )
 
 
 if __name__ == "__main__":

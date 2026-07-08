@@ -54,7 +54,9 @@ def values_from_profiles(profiles: Iterable[JsonObject], *paths: str) -> set[str
             value: Any = profile
             for key in path.split("."):
                 if not isinstance(value, dict):
-                    raise TypeError(f"Expected object while reading generated value path {path}")
+                    raise TypeError(
+                        f"Expected object while reading generated value path {path}"
+                    )
                 value = value[key]
             if value is not None:
                 if not isinstance(value, str):
@@ -78,10 +80,14 @@ def pitch_values_from_profiles(profiles: Iterable[JsonObject]) -> set[str]:
                 raise TypeError(f"Expected list at generated value path {key}")
             for index, tone in enumerate(tones):
                 if not isinstance(tone, dict):
-                    raise TypeError(f"Expected object at generated value path {key}[{index}]")
+                    raise TypeError(
+                        f"Expected object at generated value path {key}[{index}]"
+                    )
                 pitch = tone["pitch"]
                 if not isinstance(pitch, str):
-                    raise TypeError(f"Expected string at generated value path {key}[{index}].pitch")
+                    raise TypeError(
+                        f"Expected string at generated value path {key}[{index}].pitch"
+                    )
                 values.add(pitch)
     return values
 
@@ -169,11 +175,15 @@ def validate_enum(value: str | None, allowed_values: set[str], context: str) -> 
         return
     if value not in allowed_values:
         expected = ", ".join(sorted(allowed_values))
-        raise ValueError(f"{context} has unsupported value {value!r}; expected one of: {expected}")
+        raise ValueError(
+            f"{context} has unsupported value {value!r}; expected one of: {expected}"
+        )
 
 
 def validate_degree_list(values: list[Any], context: str) -> list[str]:
-    degrees = [expect_str(value, f"{context}[{index}]") for index, value in enumerate(values)]
+    degrees = [
+        expect_str(value, f"{context}[{index}]") for index, value in enumerate(values)
+    ]
     for degree in degrees:
         validate_enum(degree, CHORD_DEGREE_VALUES, context)
     return degrees
@@ -194,7 +204,9 @@ def validate_components(components: JsonObject) -> None:
             component = expect_object(item, f"components.{kind}[{index}]")
             expect_str(component.get("value"), f"components.{kind}[{index}].value")
             validate_enum(
-                expect_str(component.get("degree"), f"components.{kind}[{index}].degree"),
+                expect_str(
+                    component.get("degree"), f"components.{kind}[{index}].degree"
+                ),
                 CHORD_DEGREE_VALUES,
                 f"components.{kind}[{index}].degree",
             )
@@ -202,7 +214,9 @@ def validate_components(components: JsonObject) -> None:
                 component.get("rawDegree"),
                 f"components.{kind}[{index}].rawDegree",
             )
-            validate_enum(raw_degree, CHORD_DEGREE_VALUES, f"components.{kind}[{index}].rawDegree")
+            validate_enum(
+                raw_degree, CHORD_DEGREE_VALUES, f"components.{kind}[{index}].rawDegree"
+            )
 
 
 def validate_display_tokens(tokens: list[Any]) -> None:
@@ -234,9 +248,13 @@ def validate_tones(tones: list[Any], context: str) -> None:
             CHORD_PITCH_VALUES,
             f"{context}[{index}].pitch",
         )
-        pitch_class = expect_int(tone.get("pitchClass"), f"{context}[{index}].pitchClass")
+        pitch_class = expect_int(
+            tone.get("pitchClass"), f"{context}[{index}].pitchClass"
+        )
         validate_pitch_class(pitch_class, f"{context}[{index}].pitchClass")
-        expect_int(tone.get("semitonesFromRoot"), f"{context}[{index}].semitonesFromRoot")
+        expect_int(
+            tone.get("semitonesFromRoot"), f"{context}[{index}].semitonesFromRoot"
+        )
         validate_enum(
             expect_str(tone.get("importance"), f"{context}[{index}].importance"),
             CHORD_TONE_IMPORTANCE_VALUES,
@@ -257,16 +275,22 @@ def load_profile(path: Path) -> dict[str, Any]:
         if profile_id != path.stem:
             raise ValueError(f"{path}.id must match file name stem {path.stem!r}")
 
-        normalized_symbol = expect_str(profile.get("normalizedSymbol"), f"{path}.normalizedSymbol")
+        normalized_symbol = expect_str(
+            profile.get("normalizedSymbol"), f"{path}.normalizedSymbol"
+        )
         root = expect_str(profile.get("root"), f"{path}.root")
         bass = expect_optional_str(profile.get("bass"), f"{path}.bass")
         validate_enum(root, CHORD_PITCH_VALUES, f"{path}.root")
         validate_enum(bass, CHORD_PITCH_VALUES, f"{path}.bass")
 
         quality = expect_object(profile.get("quality"), f"{path}.quality")
-        quality_symbol = expect_optional_str(quality.get("symbol"), f"{path}.quality.symbol")
+        quality_symbol = expect_optional_str(
+            quality.get("symbol"), f"{path}.quality.symbol"
+        )
         quality_name = expect_optional_str(quality.get("name"), f"{path}.quality.name")
-        validate_enum(quality_symbol, CHORD_QUALITY_SYMBOL_VALUES, f"{path}.quality.symbol")
+        validate_enum(
+            quality_symbol, CHORD_QUALITY_SYMBOL_VALUES, f"{path}.quality.symbol"
+        )
         validate_enum(quality_name, CHORD_QUALITY_NAME_VALUES, f"{path}.quality.name")
         quality_base_formula = validate_degree_list(
             expect_list(quality.get("baseFormula"), f"{path}.quality.baseFormula"),
@@ -275,7 +299,9 @@ def load_profile(path: Path) -> dict[str, Any]:
 
         family = [
             expect_str(value, f"{path}.family[{index}]")
-            for index, value in enumerate(expect_list(profile.get("family"), f"{path}.family"))
+            for index, value in enumerate(
+                expect_list(profile.get("family"), f"{path}.family")
+            )
         ]
         for value in family:
             validate_enum(value, CHORD_FAMILY_VALUES, f"{path}.family")
@@ -283,7 +309,9 @@ def load_profile(path: Path) -> dict[str, Any]:
         components = expect_object(profile.get("components"), f"{path}.components")
         validate_components(components)
 
-        display_tokens = expect_list(profile.get("displayTokens"), f"{path}.displayTokens")
+        display_tokens = expect_list(
+            profile.get("displayTokens"), f"{path}.displayTokens"
+        )
         validate_display_tokens(display_tokens)
 
         tones = expect_list(profile.get("tones"), f"{path}.tones")
@@ -292,7 +320,9 @@ def load_profile(path: Path) -> dict[str, Any]:
         validate_tones(omitted_tones, f"{path}.omittedTones")
 
         midi = expect_object(profile.get("midi"), f"{path}.midi")
-        root_pitch_class = expect_int(midi.get("rootPitchClass"), f"{path}.midi.rootPitchClass")
+        root_pitch_class = expect_int(
+            midi.get("rootPitchClass"), f"{path}.midi.rootPitchClass"
+        )
         bass_pitch_class_value = midi.get("bassPitchClass")
         bass_pitch_class = (
             None

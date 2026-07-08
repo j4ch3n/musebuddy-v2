@@ -97,26 +97,38 @@ def validate_song(
             f"bar coverage differs: expected {sorted(expected_bars)}, found {sorted(actual_bars)}"
         )
 
-    expected_attack_count = sum(pop909.count_positive_attacks(row.arrangement) for row in expected)
+    expected_attack_count = sum(
+        pop909.count_positive_attacks(row.arrangement) for row in expected
+    )
     actual_attack_count = attack_count_for_rows(actual)
     if expected_attack_count != actual_attack_count:
-        errors.append(f"expected {expected_attack_count} attacks, found {actual_attack_count}")
+        errors.append(
+            f"expected {expected_attack_count} attacks, found {actual_attack_count}"
+        )
 
     for key, expected_row in expected_keys.items():
         actual_row = actual_keys.get(key)
         if actual_row is None:
             continue
         if expected_row.chord != actual_row["chord"]:
-            errors.append(f"{key} expected chord {expected_row.chord}, found {actual_row['chord']}")
+            errors.append(
+                f"{key} expected chord {expected_row.chord}, found {actual_row['chord']}"
+            )
         if expected_row.id != actual_row["id"]:
-            errors.append(f"{key} expected id {expected_row.id}, found {actual_row['id']}")
+            errors.append(
+                f"{key} expected id {expected_row.id}, found {actual_row['id']}"
+            )
 
     for row in actual:
         if row["chord"] not in chord_ids:
-            errors.append(f"{row['bar_index']}:{row['beat_index']} missing chord {row['chord']}")
+            errors.append(
+                f"{row['bar_index']}:{row['beat_index']} missing chord {row['chord']}"
+            )
         errors.extend(
             f"{row['bar_index']}:{row['beat_index']} {message}"
-            for message in pop909.validate_arrangement_shape(row["arrangement"], row["velocity"])
+            for message in pop909.validate_arrangement_shape(
+                row["arrangement"], row["velocity"]
+            )
         )
 
     return errors
@@ -175,13 +187,17 @@ def main(
     pop909.logging.info("Starting POP909 validation for %s song(s)", len(songs))
     for metadata in tqdm(songs, desc="Validating POP909"):
         try:
-            errors = validate_song(dataset_root, metadata, database_url, chord_lookup, chord_ids)
+            errors = validate_song(
+                dataset_root, metadata, database_url, chord_lookup, chord_ids
+            )
         except Exception as error:
             errors = [str(error)]
 
         if errors:
             failed += 1
-            pop909.logging.error("%s failed validation: %s", metadata.song_id, "; ".join(errors))
+            pop909.logging.error(
+                "%s failed validation: %s", metadata.song_id, "; ".join(errors)
+            )
             click.echo(f"{metadata.song_id}: FAIL ({len(errors)} issue(s))")
         else:
             passed += 1
@@ -191,7 +207,9 @@ def main(
     pop909.logging.info(summary)
     click.echo(summary)
     if failed:
-        raise click.ClickException(f"{failed} song(s) failed validation; see {pop909.RUN_LOG_PATH}")
+        raise click.ClickException(
+            f"{failed} song(s) failed validation; see {pop909.RUN_LOG_PATH}"
+        )
 
 
 if __name__ == "__main__":
