@@ -10,6 +10,7 @@ from sqlalchemy.orm import DeclarativeBase, Session
 from tqdm import tqdm
 
 from companion import pop909_common as pop909
+from course_environment import RemoteDb
 
 
 class Base(DeclarativeBase):
@@ -109,8 +110,14 @@ def verify_chord_profiles(database_url: str, rows: list[pop909.BeatRow]) -> None
 )
 @click.option(
     "--database-url",
-    envvar="SUPABASE_DATABASE_URL",
-    help="Supabase Postgres SQLAlchemy URL. Defaults to SUPABASE_DATABASE_URL.",
+    help="Supabase Postgres SQLAlchemy URL. Overrides the selected --remote-db env file.",
+)
+@click.option(
+    "--remote-db",
+    type=click.Choice(("local", "prod")),
+    default="local",
+    show_default=True,
+    help="Named database environment file to load from courses/.env.local or courses/.env.prod.",
 )
 @click.option(
     "--dry-run",
@@ -131,12 +138,13 @@ def verify_chord_profiles(database_url: str, rows: list[pop909.BeatRow]) -> None
 def main(
     dataset_root: Path,
     database_url: str | None,
+    remote_db: RemoteDb,
     dry_run: bool,
     song_limit: int | None,
     song_id: tuple[str, ...],
 ) -> None:
     pop909.configure_logging()
-    database_url = pop909.database_url(database_url)
+    database_url = pop909.database_url(database_url, remote_db)
     try:
         songs = pop909.filter_songs_by_id(
             pop909.read_index(dataset_root, song_limit=song_limit),
@@ -150,7 +158,8 @@ def main(
 
     if not dry_run and not database_url:
         raise click.ClickException(
-            "SUPABASE_DATABASE_URL is required. Set it in courses/.env or pass --database-url."
+            "SUPABASE_DATABASE_URL is required. Set it in the selected --remote-db env file "
+            "or pass --database-url."
         )
 
     pop909.logging.info("Starting POP909 processing for %s song(s)", len(songs))

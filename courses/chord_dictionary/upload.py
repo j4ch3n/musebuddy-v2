@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 import json
-import os
 import sys
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Any, TypeAlias, get_args
 
 import click
-from dotenv import load_dotenv
 from sqlalchemy import Column, Integer, Text, create_engine
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, ENUM, insert
 from sqlalchemy.orm import DeclarativeBase, Session
@@ -17,11 +15,11 @@ COURSES_DIR = Path(__file__).resolve().parents[1]
 if str(COURSES_DIR) not in sys.path:
     sys.path.insert(0, str(COURSES_DIR))
 
+import course_environment
 from chord_dictionary import generate
 
 
 DEFAULT_OUTPUT_DIR = Path(__file__).resolve().parent / "output"
-ENV_PATH = COURSES_DIR / ".env"
 
 JsonObject: TypeAlias = dict[str, Any]
 
@@ -371,17 +369,27 @@ def upsert_profiles(database_url: str, rows: list[dict[str, Any]]) -> None:
 )
 @click.option(
     "--database-url",
-    envvar="SUPABASE_DATABASE_URL",
-    help="Supabase Postgres SQLAlchemy URL. Defaults to SUPABASE_DATABASE_URL.",
+    help="Supabase Postgres SQLAlchemy URL. Overrides the selected --remote-db env file.",
+)
+@click.option(
+    "--remote-db",
+    type=click.Choice(("local", "prod")),
+    default="local",
+    show_default=True,
+    help="Named database environment file to load from courses/.env.local or courses/.env.prod.",
 )
 @click.option(
     "--dry-run",
     is_flag=True,
     help="Validate input files and print a summary without opening a database connection.",
 )
-def main(output_dir: Path, database_url: str | None, dry_run: bool) -> None:
-    load_dotenv(ENV_PATH)
-    database_url = database_url or os.environ.get("SUPABASE_DATABASE_URL")
+def main(
+    output_dir: Path,
+    database_url: str | None,
+    remote_db: course_environment.RemoteDb,
+    dry_run: bool,
+) -> None:
+    database_url = course_environment.database_url(database_url, remote_db)
 
     try:
         rows = load_profiles(output_dir)
@@ -394,7 +402,8 @@ def main(output_dir: Path, database_url: str | None, dry_run: bool) -> None:
 
     if not database_url:
         raise click.ClickException(
-            "SUPABASE_DATABASE_URL is required. Set it in courses/.env or pass --database-url."
+            "SUPABASE_DATABASE_URL is required. Set it in the selected --remote-db env file "
+            "or pass --database-url."
         )
 
     upsert_profiles(database_url, rows)

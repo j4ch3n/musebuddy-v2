@@ -3,7 +3,6 @@ from __future__ import annotations
 import csv
 import hashlib
 import logging
-import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,17 +11,16 @@ from typing import Any, TypeAlias
 import mir_eval.chord
 import music21.pitch
 import pretty_midi
-from dotenv import load_dotenv
 
 COURSES_DIR = Path(__file__).resolve().parents[1]
 REPO_DIR = COURSES_DIR.parent
 DEFAULT_DATASET_ROOT = COURSES_DIR / "companion" / "data" / "POP909-Dataset" / "POP909"
 RUN_LOG_PATH = COURSES_DIR / "companion" / "run.log"
-ENV_PATH = COURSES_DIR / ".env"
 
 if str(COURSES_DIR) not in sys.path:
     sys.path.insert(0, str(COURSES_DIR))
 
+import course_environment
 from chord_dictionary import generate
 
 JsonValue: TypeAlias = dict[str, Any] | list[Any] | str | int | float | bool | None
@@ -88,13 +86,15 @@ class ProcessedSong:
     audio_key_summary: str | None
 
 
-def load_environment() -> None:
-    load_dotenv(ENV_PATH)
+def load_environment(remote_db: course_environment.RemoteDb | None = None) -> None:
+    course_environment.load_environment(remote_db)
 
 
-def database_url(option_value: str | None) -> str | None:
-    load_environment()
-    return option_value or os.environ.get("SUPABASE_DATABASE_URL")
+def database_url(
+    option_value: str | None,
+    remote_db: course_environment.RemoteDb | None = None,
+) -> str | None:
+    return course_environment.database_url(option_value, remote_db)
 
 
 def configure_logging() -> None:
