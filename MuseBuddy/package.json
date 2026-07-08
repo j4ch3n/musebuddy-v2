@@ -51,6 +51,7 @@
     "@storybook/react-native": "^10.4.7",
     "@tamagui/babel-plugin": "^2.4.0",
     "@types/react": "~19.2.2",
+    "babel-preset-expo": "~56.0.15",
     "eslint": "^9.39.4",
     "eslint-config-expo": "^56.0.4",
     "husky": "^9.1.7",
