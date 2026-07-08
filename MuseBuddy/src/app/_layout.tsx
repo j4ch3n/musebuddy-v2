@@ -2,6 +2,7 @@ import { type ComponentType, useEffect } from 'react';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { TamaguiProvider } from 'tamagui';
 
 import tamaguiConfig from '../../tamagui.config';
@@ -33,21 +34,23 @@ export default function RootLayout() {
   }
 
   return (
-    <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
-      <TrainingSessionProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen
-            name="prepare-training-session-splash"
-            options={{ gestureEnabled: false }}
-          />
-          <Stack.Screen name="session-goal" options={{ gestureEnabled: false }} />
-          <Stack.Screen name="chord-learning" options={{ gestureEnabled: false }} />
-          <Stack.Screen name="rhythm-training" options={{ gestureEnabled: false }} />
-          <Stack.Screen name="pattern-training" options={{ gestureEnabled: false }} />
-          <Stack.Screen name="jam-session" options={{ gestureEnabled: false }} />
-        </Stack>
-      </TrainingSessionProvider>
-      <StatusBar style="dark" />
-    </TamaguiProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <TrainingSessionProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen
+              name="prepare-training-session-splash"
+              options={{ gestureEnabled: false }}
+            />
+            <Stack.Screen name="session-goal" options={{ gestureEnabled: false }} />
+            <Stack.Screen name="chord-learning" options={{ gestureEnabled: false }} />
+            <Stack.Screen name="rhythm-training" options={{ gestureEnabled: false }} />
+            <Stack.Screen name="pattern-training" options={{ gestureEnabled: false }} />
+            <Stack.Screen name="jam-session" options={{ gestureEnabled: false }} />
+          </Stack>
+        </TrainingSessionProvider>
+        <StatusBar style="dark" />
+      </TamaguiProvider>
+    </GestureHandlerRootView>
   );
 }

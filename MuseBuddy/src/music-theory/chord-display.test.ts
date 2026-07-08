@@ -60,6 +60,63 @@ describe('buildChordDisplay', () => {
     expect(display.notes.map((note) => note.text)).toEqual(['A', 'C#', 'E']);
   });
 
+  it('formats chord profile ids for friendly names', () => {
+    expect(
+      buildChordDisplay({
+        displayTokens: [{ type: 'root', value: 'Ab' }],
+        idName: 'a-flat-major-no-fifth',
+        normalizedSymbol: 'Ab',
+        qualityBaseFormula: ['1'],
+        root: 'Ab',
+        tones: [{ explanation: 'is the root. It names and anchors the chord.' }],
+      }).friendlyName,
+    ).toBe('A flat major no fifth');
+
+    expect(
+      buildChordDisplay({
+        displayTokens: [{ type: 'root', value: 'Ab' }],
+        idName: 'a-flat-minor-first-inversion-over-c-flat',
+        normalizedSymbol: 'Abm/Cb',
+        qualityBaseFormula: ['1'],
+        root: 'Ab',
+        tones: [{ explanation: 'is the root. It names and anchors the chord.' }],
+      }).friendlyName,
+    ).toBe('A flat minor over C flat');
+
+    expect(
+      buildChordDisplay({
+        displayTokens: [{ type: 'root', value: 'A' }],
+        idName: 'a-major-over-c',
+        normalizedSymbol: 'A/C',
+        qualityBaseFormula: ['1'],
+        root: 'A',
+        tones: [{ explanation: 'is the root. It names and anchors the chord.' }],
+      }).friendlyName,
+    ).toBe('A major over C');
+
+    expect(
+      buildChordDisplay({
+        displayTokens: [{ type: 'root', value: 'D' }],
+        idName: 'd-major-second-inversion-over-a',
+        normalizedSymbol: 'D/A',
+        qualityBaseFormula: ['1'],
+        root: 'D',
+        tones: [{ explanation: 'is the root. It names and anchors the chord.' }],
+      }).friendlyName,
+    ).toBe('D major over A');
+
+    expect(
+      buildChordDisplay({
+        displayTokens: [{ type: 'root', value: 'Ab' }],
+        idName: 'a-flat-suspended-fourth-second-inversion-over-e-flat',
+        normalizedSymbol: 'Absus4/Eb',
+        qualityBaseFormula: ['1'],
+        root: 'Ab',
+        tones: [{ explanation: 'is the root. It names and anchors the chord.' }],
+      }).friendlyName,
+    ).toBe('A flat suspended fourth over E flat');
+  });
+
   it('spells accidental roots for sheet display and keyboard highlighting', () => {
     const display = buildChordDisplay({
       displayTokens: [

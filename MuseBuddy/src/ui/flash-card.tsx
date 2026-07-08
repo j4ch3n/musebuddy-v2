@@ -1,29 +1,43 @@
-import type { ReactNode } from 'react';
-import { StyleSheet } from 'react-native';
+import { useState, type ReactNode } from 'react';
+import { Pressable, StyleSheet, Text } from 'react-native';
 import { YStack } from 'tamagui';
 
-import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
+import {
+  museBuddyBorders,
+  museBuddyColors,
+  museBuddyRadii,
+  museBuddyShadows,
+} from '@/constants/design-tokens';
 
 type FlashCardSurface = 'cream' | 'white';
 
 type FlashCardProps = {
   accessibilityLabel?: string;
-  children: ReactNode;
+  isFlipped?: boolean;
   isPressedStyleEnabled?: boolean;
+  onFlipChange?: (isFlipped: boolean) => void;
   onPress?: () => void;
   padded?: boolean;
+  sideA: ReactNode;
+  sideB?: ReactNode;
   surface?: FlashCardSurface;
 };
 
 export function FlashCard({
   accessibilityLabel,
-  children,
+  isFlipped: controlledIsFlipped,
   isPressedStyleEnabled = true,
+  onFlipChange,
   onPress,
   padded = true,
+  sideA,
+  sideB,
   surface = 'white',
 }: FlashCardProps) {
+  const [uncontrolledIsFlipped, setUncontrolledIsFlipped] = useState(false);
+  const isFlipped = controlledIsFlipped ?? uncontrolledIsFlipped;
   const backgroundStyle = surface === 'cream' ? styles.creamSurface : styles.whiteSurface;
+  const activeSide = isFlipped && sideB ? sideB : sideA;
 
   return (
     <YStack
@@ -34,7 +48,25 @@ export function FlashCard({
       style={[styles.card, backgroundStyle]}
     >
       <YStack style={[styles.inner, backgroundStyle, padded ? styles.padded : null]}>
-        {children}
+        {activeSide}
+        {sideB ? (
+          <Pressable
+            accessibilityLabel={isFlipped ? 'Show front of card' : 'Show back of card'}
+            accessibilityRole="button"
+            onPress={() => {
+              const nextIsFlipped = !isFlipped;
+
+              if (controlledIsFlipped === undefined) {
+                setUncontrolledIsFlipped(nextIsFlipped);
+              }
+
+              onFlipChange?.(nextIsFlipped);
+            }}
+            style={({ pressed }) => [styles.flipButton, pressed ? styles.flipButtonPressed : null]}
+          >
+            <Text style={styles.flipButtonText}>Tap to flip</Text>
+          </Pressable>
+        ) : null}
       </YStack>
     </YStack>
   );
@@ -54,6 +86,28 @@ const styles = StyleSheet.create({
   },
   creamSurface: {
     backgroundColor: museBuddyColors.surface,
+  },
+  flipButton: {
+    alignItems: 'center',
+    alignSelf: 'center',
+    backgroundColor: museBuddyColors.secondary,
+    borderColor: museBuddyColors.ink,
+    borderRadius: museBuddyRadii.round,
+    borderWidth: museBuddyBorders.bold,
+    boxShadow: `0 ${museBuddyShadows.dropSmall.y}px 0 ${museBuddyShadows.dropSmall.color}`,
+    marginTop: 16,
+    minHeight: 42,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  flipButtonPressed: {
+    boxShadow: `0 1px 0 ${museBuddyColors.ink}`,
+    transform: [{ translateY: 3 }],
+  },
+  flipButtonText: {
+    color: museBuddyColors.ink,
+    fontSize: 14,
+    fontWeight: '900',
   },
   inner: {
     gap: 0,

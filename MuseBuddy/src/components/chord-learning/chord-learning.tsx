@@ -8,9 +8,15 @@ import { ChordNameCard } from './chord-name-card';
 
 type ChordLearningProps = {
   display: ChordDisplay;
+  isKeyboardCardFlipped?: boolean;
+  onKeyboardCardFlipChange?: (isFlipped: boolean) => void;
 };
 
-export function ChordLearning({ display }: ChordLearningProps) {
+export function ChordLearning({
+  display,
+  isKeyboardCardFlipped,
+  onKeyboardCardFlipChange,
+}: ChordLearningProps) {
   return (
     <View style={styles.container}>
       <ChordNameCard display={display} />
@@ -19,7 +25,11 @@ export function ChordLearning({ display }: ChordLearningProps) {
         importantForAccessibility="no-hide-descendants"
         style={styles.link}
       />
-      <ChordKeyboardCard display={display} />
+      <ChordKeyboardCard
+        display={display}
+        isFlipped={isKeyboardCardFlipped}
+        onFlipChange={onKeyboardCardFlipChange}
+      />
     </View>
   );
 }

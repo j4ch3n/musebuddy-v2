@@ -80,7 +80,12 @@ export function buildChordDisplay(chord: TrainingSessionChord): ChordDisplay {
 }
 
 function formatChordIdName(idName: string) {
-  const displayName = idName.replaceAll('-', ' ');
+  const displayName = idName
+    .replaceAll('-', ' ')
+    .replace(/\b(?:first|second) inversion\b/g, '')
+    .replace(/\bover ([a-z])\b/g, (_, pitch: string) => `over ${pitch.toUpperCase()}`)
+    .replace(/\s+/g, ' ')
+    .trim();
 
   return `${displayName.charAt(0).toUpperCase()}${displayName.slice(1)}`;
 }

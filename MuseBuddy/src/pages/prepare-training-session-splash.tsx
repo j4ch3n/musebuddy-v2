@@ -40,22 +40,24 @@ export function PrepareTrainingSessionSplashPage() {
       subtitle="Preparing today's piano practice."
       title="MuseBuddy"
     >
-      <FlashCard>
-        <View style={styles.content}>
-          {phase === 'error' ? (
-            <>
-              <Text style={styles.title}>Could not prepare training</Text>
-              <Text style={styles.message}>{errorMessage}</Text>
-            </>
-          ) : (
-            <>
-              <ActivityIndicator color={museBuddyColors.accentPurple} size="large" />
-              <Text style={styles.title}>{"Loading today's session"}</Text>
-              <Text style={styles.message}>Model and training material are getting ready.</Text>
-            </>
-          )}
-        </View>
-      </FlashCard>
+      <FlashCard
+        sideA={
+          <View style={styles.content}>
+            {phase === 'error' ? (
+              <>
+                <Text style={styles.title}>Could not prepare training</Text>
+                <Text style={styles.message}>{errorMessage}</Text>
+              </>
+            ) : (
+              <>
+                <ActivityIndicator color={museBuddyColors.accentPurple} size="large" />
+                <Text style={styles.title}>{"Loading today's session"}</Text>
+                <Text style={styles.message}>Model and training material are getting ready.</Text>
+              </>
+            )}
+          </View>
+        }
+      />
     </TrainingScreenShell>
   );
 }

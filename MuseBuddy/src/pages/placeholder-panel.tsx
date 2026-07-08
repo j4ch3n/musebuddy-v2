@@ -12,17 +12,20 @@ type PlaceholderPanelProps = {
 
 export function PlaceholderPanel({ accent = 'blue', body, title }: PlaceholderPanelProps) {
   return (
-    <FlashCard surface="cream">
-      <YStack gap={12}>
-        <View style={[styles.accentMark, accentStyles[accent]]} />
-        <Text color={museBuddyColors.ink} fontSize={24} fontWeight="900" lineHeight={30}>
-          {title}
-        </Text>
-        <Text color={museBuddyColors.ink} fontSize={17} fontWeight="600" lineHeight={25}>
-          {body}
-        </Text>
-      </YStack>
-    </FlashCard>
+    <FlashCard
+      sideA={
+        <YStack gap={12}>
+          <View style={[styles.accentMark, accentStyles[accent]]} />
+          <Text color={museBuddyColors.ink} fontSize={24} fontWeight="900" lineHeight={30}>
+            {title}
+          </Text>
+          <Text color={museBuddyColors.ink} fontSize={17} fontWeight="600" lineHeight={25}>
+            {body}
+          </Text>
+        </YStack>
+      }
+      surface="cream"
+    />
   );
 }
 

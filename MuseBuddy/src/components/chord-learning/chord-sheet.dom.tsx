@@ -10,7 +10,7 @@ type ChordSheetProps = {
   notes: readonly ChordDisplayNote[];
 };
 
-const STAVE_HEIGHT = 148;
+const STAVE_HEIGHT = 120;
 const STAVE_WIDTH = 328;
 
 export default function ChordSheet({ notes }: ChordSheetProps) {
@@ -34,7 +34,7 @@ export default function ChordSheet({ notes }: ChordSheetProps) {
       },
     });
     const context = factory.getContext();
-    const stave = factory.Stave({ width: STAVE_WIDTH - 16, x: 8, y: 18 });
+    const stave = factory.Stave({ width: STAVE_WIDTH - 16, x: 8, y: 4 });
     stave.addClef('treble');
     stave.setContext(context).draw();
 

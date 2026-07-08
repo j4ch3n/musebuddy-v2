@@ -11,7 +11,7 @@ const meta = {
   title: 'UI/FlashCard',
   component: FlashCard,
   args: {
-    children: (
+    sideA: (
       <YStack gap={10}>
         <Text color={museBuddyColors.accentPurple} fontSize={12} fontWeight="900">
           DAILY CHORD
@@ -44,5 +44,20 @@ export const Pressable: Story = {
   args: {
     accessibilityLabel: 'Pressable flash card',
     onPress: noop,
+  },
+};
+
+export const Flippable: Story = {
+  args: {
+    sideB: (
+      <YStack gap={10}>
+        <Text color={museBuddyColors.accentBlue} fontSize={12} fontWeight="900">
+          CHORD NOTES
+        </Text>
+        <Text color={museBuddyColors.ink} fontSize={17} fontWeight="700">
+          C is the root, E is the major third, and G is the perfect fifth.
+        </Text>
+      </YStack>
+    ),
   },
 };

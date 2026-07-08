@@ -26,12 +26,16 @@ export function RhythmViewer({ currentStepIndex, pattern }: RhythmViewerProps) {
             ? currentStepIndex - barStartIndex
             : null;
         return (
-          <FlashCard key={barIndex} padded={false}>
-            <View style={styles.barGroupContent}>
-              <RhythmBarViewer currentStepIndex={currentStepInBar} steps={steps} />
-              <NoteBarViewer currentStepIndex={currentStepInBar} steps={steps} />
-            </View>
-          </FlashCard>
+          <FlashCard
+            key={barIndex}
+            padded={false}
+            sideA={
+              <View style={styles.barGroupContent}>
+                <RhythmBarViewer currentStepIndex={currentStepInBar} steps={steps} />
+                <NoteBarViewer currentStepIndex={currentStepInBar} steps={steps} />
+              </View>
+            }
+          />
         );
       })}
     </View>

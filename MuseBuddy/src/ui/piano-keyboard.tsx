@@ -57,15 +57,15 @@ function getMarkerPosition(key: CanonicalPianoKeyboardKeyName) {
   if (key in whiteKeyPositions) {
     return {
       cx: whiteKeyPositions[key as keyof typeof whiteKeyPositions] + 20,
-      cy: 108,
-      r: 11,
+      cy: 114,
+      r: 12,
     };
   }
 
   return {
     cx: blackKeyPositions[key as keyof typeof blackKeyPositions],
-    cy: 66,
-    r: 9,
+    cy: 72,
+    r: 10,
   };
 }
 
@@ -187,7 +187,7 @@ export function PianoKeyboard({
                 {label ? (
                   <SvgText
                     fill={museBuddyColors.white}
-                    fontSize={label.length > 1 ? 7 : 9}
+                    fontSize={label.length > 1 ? 9 : 11}
                     fontWeight="900"
                     textAnchor="middle"
                     x={cx}
