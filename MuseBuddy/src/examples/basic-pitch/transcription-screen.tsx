@@ -1,6 +1,18 @@
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Lucide from '@react-native-vector-icons/lucide';
+import { useRouter } from 'expo-router';
+import { useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import {
+  museBuddyBorders,
+  museBuddyColors,
+  museBuddyRadii,
+  museBuddyTypography,
+} from '@/constants/design-tokens';
+import { Button } from '@/ui';
+
+import { formatMilliseconds, groupDetectionNotesByMidi, type MidiNoteGroup } from './event-log';
 import { useTranscription } from './use-transcription';
 
 function formatElapsed(elapsedMs: number): string {
@@ -10,73 +22,91 @@ function formatElapsed(elapsedMs: number): string {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
-function formatMilliseconds(milliseconds: number): string {
-  return `${Math.round(milliseconds)} ms`;
-}
-
 export default function TranscriptionScreen() {
-  const { loadModel, phase, progress, recording, result, start, statusMessage, stop, transcribe } =
-    useTranscription();
-
-  const modelReady = phase !== 'loadingModel' && phase !== 'modelError';
-  const isBusy = ['starting', 'stopping', 'transcribing'].includes(phase);
-  const startEnabled = modelReady && phase !== 'recording' && !isBusy;
-  const stopEnabled = phase === 'recording';
-  const transcribeEnabled = modelReady && recording !== null && phase !== 'recording' && !isBusy;
+  const router = useRouter();
+  const listRef = useRef<FlatList<MidiNoteGroup>>(null);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const {
+    downloadRecording,
+    elapsedMs,
+    end,
+    hasRecording,
+    loadModel,
+    notes,
+    phase,
+    result,
+    start,
+    statusMessage,
+  } = useTranscription();
+  const noteGroups = useMemo(() => groupDetectionNotesByMidi(notes), [notes]);
+  const isBusy = ['loadingModel', 'starting', 'predicting'].includes(phase);
+  const startEnabled = ['ready', 'permissionDenied', 'failure'].includes(phase);
+  const endEnabled = phase === 'recording' && elapsedMs >= 2_000;
+  const downloadEnabled = hasRecording && !isBusy && phase !== 'recording';
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView
+      <FlatList
+        ref={listRef}
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic"
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.header}>
-          <Text style={styles.eyebrow}>ON-DEVICE PIANO TRANSCRIPTION</Text>
-          <Text style={styles.title}>MuseBuddy</Text>
-          <Text style={styles.subtitle}>
-            Record up to 60 seconds. Your audio stays on this device.
-          </Text>
-        </View>
-
-        {phase === 'modelError' ? (
-          <View style={styles.card}>
-            <Text selectable style={styles.errorTitle}>
-              Model unavailable
+        data={noteGroups}
+        keyExtractor={(item) => item.id}
+        ListEmptyComponent={
+          <View style={styles.emptyLog}>
+            <Text selectable style={styles.emptyText}>
+              Press Start and play the piano. Detected MIDI pitches will appear as Basic Pitch
+              finishes each detection.
             </Text>
-            <Text selectable style={styles.helpText}>
-              {statusMessage}
-            </Text>
-            <ActionButton label="Retry model loading" onPress={loadModel} />
           </View>
-        ) : (
-          <>
-            <View style={styles.card}>
+        }
+        ListHeaderComponent={
+          <View style={styles.headerContent}>
+            <Button
+              label="Back"
+              onPress={() => {
+                router.back();
+              }}
+              primary={false}
+            />
+
+            <View style={styles.header}>
+              <Text style={styles.eyebrow}>BASIC PITCH DEBUG</Text>
+              <Text style={styles.title}>Rolling transcription</Text>
+              <Text style={styles.subtitle}>
+                Native iOS recording runs Basic Pitch on the recording so far every second, then
+                sends the full recording again on Stop.
+              </Text>
+            </View>
+
+            <View style={styles.statusCard}>
               <View style={styles.statusRow}>
-                {isBusy && <ActivityIndicator color="#2457d6" />}
+                {isBusy && <ActivityIndicator color={museBuddyColors.accentBlue} />}
                 <Text selectable style={styles.statusText}>
                   {statusText(phase)}
                 </Text>
               </View>
 
-              {phase === 'recording' && (
-                <>
-                  <Text selectable style={styles.timer}>
-                    {formatElapsed(progress.elapsedMs)}
-                  </Text>
-                  <View
-                    accessibilityLabel={`Microphone level ${Math.round(progress.level * 100)} percent`}
-                    accessibilityRole="progressbar"
-                    style={styles.meterTrack}
-                  >
-                    <View style={[styles.meterFill, { width: `${progress.level * 100}%` }]} />
-                  </View>
-                </>
+              <Text selectable style={styles.timer}>
+                {formatElapsed(elapsedMs)}
+              </Text>
+
+              {result !== null && (
+                <Text selectable style={styles.processingText}>
+                  Latest processing {Math.round(result.processingDurationMs)} ms
+                </Text>
               )}
 
-              {recording && phase !== 'recording' && (
-                <Text selectable style={styles.recordedDuration}>
-                  {formatElapsed(recording.durationMs)}
+              {phase === 'recording' && elapsedMs < 2_000 && (
+                <Text style={styles.minimumText}>
+                  Stop unlocks in {Math.ceil((2_000 - elapsedMs) / 1_000)}s
+                </Text>
+              )}
+
+              {result !== null && (
+                <Text selectable style={styles.summaryText}>
+                  {notes.length} notes · {result.type} · window {Math.round(result.windowStartMs)}-
+                  {Math.round(result.windowEndMs)} ms
                 </Text>
               )}
 
@@ -88,281 +118,350 @@ export default function TranscriptionScreen() {
             </View>
 
             <View style={styles.controls}>
-              <ActionButton label="Start" onPress={start} disabled={!startEnabled} />
-              <ActionButton label="Stop" onPress={stop} disabled={!stopEnabled} tone="stop" />
-              <ActionButton label="Transcribe" onPress={transcribe} disabled={!transcribeEnabled} />
-            </View>
-          </>
-        )}
-
-        {result && phase === 'results' && (
-          <View style={styles.resultsSection}>
-            <View style={styles.summaryCard}>
-              <Text selectable style={styles.cardTitle}>
-                Transcription complete
-              </Text>
-              <Text selectable style={styles.summaryText}>
-                {result.notes.length} detected events ·{' '}
-                {formatMilliseconds(result.recordingDurationMs)}
-              </Text>
-              <Text selectable style={styles.processingText}>
-                Processed in {formatMilliseconds(result.processingDurationMs)}
-              </Text>
+              <Button disabled={!startEnabled} label="Start" onPress={start} tone="success" />
+              <Button disabled={!endEnabled} label="Stop" onPress={end} tone="danger" />
+              <Button
+                disabled={!downloadEnabled}
+                label="Download recording"
+                onPress={() => {
+                  void downloadRecording();
+                }}
+                primary={false}
+              />
+              {phase === 'modelError' && <Button label="Retry model loading" onPress={loadModel} />}
             </View>
 
-            {result.notes.length === 0 ? (
-              <View style={styles.card}>
-                <Text selectable style={styles.cardTitle}>
-                  No pitches detected
-                </Text>
-              </View>
-            ) : (
-              result.notes.map((note, index) => (
-                <View
-                  key={`${note.midiPitch}-${note.startTimeMs}-${index}`}
-                  style={styles.resultRow}
-                >
-                  <Text selectable style={styles.pitchText}>
-                    Pitch {note.midiPitch}
-                  </Text>
-                  <Text selectable style={styles.detailText}>
-                    Start {formatMilliseconds(note.startTimeMs)}
-                  </Text>
-                  <Text selectable style={styles.detailText}>
-                    End {formatMilliseconds(note.endTimeMs)}
-                  </Text>
-                  <Text selectable style={styles.detailText}>
-                    Duration {formatMilliseconds(note.durationMs)}
-                  </Text>
-                  <Text selectable style={styles.detailText}>
-                    Confidence {Math.round(note.confidence * 100)}% · Velocity {note.velocity}
-                  </Text>
-                </View>
-              ))
-            )}
+            <Text style={styles.logHeading}>
+              Detected pitches · {noteGroups.length} · {notes.length} events
+            </Text>
           </View>
+        }
+        onContentSizeChange={() => {
+          if (noteGroups.length > 0) {
+            listRef.current?.scrollToEnd({ animated: true });
+          }
+        }}
+        renderItem={({ item }) => (
+          <MidiGroupRow
+            expanded={expandedGroups[item.id] ?? false}
+            group={item}
+            onToggle={() => {
+              setExpandedGroups((current) => ({
+                ...current,
+                [item.id]: !(current[item.id] ?? false),
+              }));
+            }}
+          />
         )}
-      </ScrollView>
+      />
     </SafeAreaView>
+  );
+}
+
+type MidiGroupRowProps = {
+  expanded: boolean;
+  group: MidiNoteGroup;
+  onToggle: () => void;
+};
+
+function MidiGroupRow({ expanded, group, onToggle }: MidiGroupRowProps) {
+  return (
+    <View style={styles.pitchCard}>
+      <Pressable
+        accessibilityLabel={`MIDI ${group.midiPitch}, ${group.count} events`}
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+        onPress={onToggle}
+        style={({ pressed }) => [styles.pitchHeader, pressed && styles.pitchHeaderPressed]}
+      >
+        <View style={styles.pitchIdentity}>
+          <View style={styles.pitchBadge}>
+            <Text selectable style={styles.pitchBadgeText}>
+              {group.midiPitch}
+            </Text>
+          </View>
+          <View style={styles.pitchSummary}>
+            <Text selectable style={styles.pitchTitle}>
+              MIDI {group.midiPitch}
+            </Text>
+            <Text selectable style={styles.pitchMeta}>
+              {group.count} {group.count === 1 ? 'event' : 'events'} ·{' '}
+              {formatMilliseconds(group.firstAttackMs)}-{formatMilliseconds(group.lastReleaseMs)}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.pitchStats}>
+          <Text selectable style={styles.pitchStatText}>
+            avg {Math.round(group.averageConfidence * 100)}%
+          </Text>
+          <Text selectable style={styles.pitchStatText}>
+            vel {group.peakVelocity}
+          </Text>
+          <Lucide
+            color={museBuddyColors.ink}
+            name={expanded ? 'chevron-up' : 'chevron-down'}
+            size={24}
+          />
+        </View>
+      </Pressable>
+
+      {expanded && (
+        <View style={styles.eventList}>
+          {group.events.map((event) => (
+            <View
+              key={`${event.id}-${event.startTimeMs}-${event.endTimeMs}`}
+              style={styles.eventRow}
+            >
+              <Text selectable style={styles.eventTime}>
+                {formatMilliseconds(event.startTimeMs)}-{formatMilliseconds(event.endTimeMs)}
+              </Text>
+              <Text selectable style={styles.eventDetail}>
+                attack {Math.round(event.startTimeMs)} ms · release {Math.round(event.endTimeMs)} ms
+              </Text>
+              <Text selectable style={styles.eventDetail}>
+                confidence {Math.round(event.confidence * 100)}% · velocity {event.velocity}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
   );
 }
 
 function statusText(phase: ReturnType<typeof useTranscription>['phase']): string {
   switch (phase) {
     case 'loadingModel':
-      return 'Loading transcription model…';
+      return 'Loading model…';
+    case 'modelError':
+      return 'Model unavailable';
     case 'ready':
-      return 'Ready to record';
+      return 'Ready';
+    case 'permissionDenied':
+      return 'Microphone access denied';
     case 'starting':
       return 'Starting recording…';
     case 'recording':
       return 'Recording';
-    case 'stopping':
-      return 'Saving recording…';
-    case 'recorded':
-      return 'Recording ready to transcribe';
-    case 'transcribing':
-      return 'Transcribing recording…';
-    case 'results':
-      return 'Recording and results ready';
-    case 'modelError':
-      return 'Model unavailable';
+    case 'predicting':
+      return 'Predicting notes…';
+    case 'failure':
+      return 'Could not complete transcription';
   }
-}
-
-type ActionButtonProps = {
-  disabled?: boolean;
-  label: string;
-  onPress: () => void;
-  tone?: 'primary' | 'stop';
-};
-
-function ActionButton({ disabled = false, label, onPress, tone = 'primary' }: ActionButtonProps) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      disabled={disabled}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.button,
-        tone === 'stop' && styles.stopButton,
-        disabled && styles.buttonDisabled,
-        pressed && !disabled && styles.buttonPressed,
-      ]}
-    >
-      <Text style={[styles.buttonLabel, disabled && styles.buttonLabelDisabled]}>{label}</Text>
-    </Pressable>
-  );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
+    backgroundColor: museBuddyColors.background,
     flex: 1,
-    backgroundColor: '#f4f1e9',
   },
   content: {
     flexGrow: 1,
+    gap: 10,
+    paddingBottom: 36,
     paddingHorizontal: 20,
-    paddingTop: 36,
-    paddingBottom: 48,
-    gap: 20,
+    paddingTop: 20,
+  },
+  headerContent: {
+    gap: 18,
+    paddingBottom: 8,
   },
   header: {
-    gap: 8,
-    marginBottom: 8,
+    gap: 6,
   },
   eyebrow: {
-    color: '#2457d6',
+    color: museBuddyColors.accentPurple,
     fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 1.4,
+    fontWeight: '900',
+    letterSpacing: 0.8,
   },
   title: {
-    color: '#16191f',
-    fontSize: 44,
-    fontWeight: '800',
-    letterSpacing: -1.5,
+    color: museBuddyColors.ink,
+    fontSize: 36,
+    fontWeight: '900',
+    lineHeight: 40,
   },
   subtitle: {
-    color: '#60646c',
-    fontSize: 17,
-    lineHeight: 24,
-    maxWidth: 440,
+    color: museBuddyColors.ink,
+    fontSize: 16,
+    fontWeight: '600',
+    lineHeight: 22,
   },
-  card: {
+  statusCard: {
     alignItems: 'center',
-    backgroundColor: '#fffdf8',
-    borderColor: '#ded9cc',
-    borderRadius: 20,
-    borderWidth: 1,
-    gap: 20,
-    padding: 24,
-  },
-  controls: {
-    gap: 12,
-  },
-  summaryCard: {
-    backgroundColor: '#dce7ff',
-    borderRadius: 20,
-    gap: 8,
-    padding: 24,
-  },
-  cardTitle: {
-    color: '#16191f',
-    fontSize: 22,
-    fontWeight: '700',
-    textAlign: 'center',
+    backgroundColor: museBuddyColors.surface,
+    borderColor: museBuddyColors.ink,
+    borderRadius: museBuddyRadii.large,
+    borderWidth: museBuddyBorders.bold,
+    boxShadow: `0 6px 0 ${museBuddyColors.ink}`,
+    gap: 14,
+    padding: 18,
   },
   statusRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
   },
   statusText: {
-    color: '#16191f',
-    fontSize: 22,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  helpText: {
-    color: '#60646c',
-    fontSize: 16,
-    lineHeight: 23,
-    textAlign: 'center',
-  },
-  button: {
-    alignItems: 'center',
-    alignSelf: 'stretch',
-    backgroundColor: '#2457d6',
-    borderRadius: 14,
-    minHeight: 54,
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  buttonDisabled: {
-    backgroundColor: '#d7d3ca',
-  },
-  buttonPressed: {
-    opacity: 0.8,
-  },
-  stopButton: {
-    backgroundColor: '#c43b34',
-  },
-  buttonLabel: {
-    color: '#ffffff',
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  buttonLabelDisabled: {
-    color: '#8a877f',
+    color: museBuddyColors.ink,
+    fontSize: 19,
+    fontWeight: '900',
   },
   timer: {
-    color: '#16191f',
-    fontSize: 58,
+    color: museBuddyColors.ink,
+    fontSize: 46,
     fontVariant: ['tabular-nums'],
-    fontWeight: '700',
-    letterSpacing: -1,
+    fontWeight: '900',
   },
-  recordedDuration: {
-    color: '#16191f',
-    fontSize: 42,
-    fontVariant: ['tabular-nums'],
-    fontWeight: '700',
-    letterSpacing: -0.5,
-  },
-  meterTrack: {
-    backgroundColor: '#e4e0d7',
-    borderRadius: 7,
-    height: 14,
-    overflow: 'hidden',
-    width: '100%',
-  },
-  meterFill: {
-    backgroundColor: '#2a9d67',
-    borderRadius: 7,
-    height: '100%',
-  },
-  resultsSection: {
-    gap: 12,
-  },
-  summaryText: {
-    color: '#24365f',
-    fontSize: 17,
-    fontWeight: '600',
+  minimumText: {
+    color: museBuddyColors.accentPurple,
+    fontSize: 14,
+    fontWeight: '900',
   },
   processingText: {
-    color: '#52617d',
-    fontSize: 14,
-  },
-  resultRow: {
-    backgroundColor: '#fffdf8',
-    borderColor: '#ded9cc',
-    borderRadius: 16,
-    borderWidth: 1,
-    gap: 4,
-    padding: 18,
-  },
-  pitchText: {
-    color: '#16191f',
-    fontSize: 20,
-    fontWeight: '800',
-    marginBottom: 4,
-  },
-  detailText: {
-    color: '#4c5058',
+    color: museBuddyColors.accentBlue,
     fontSize: 14,
     fontVariant: ['tabular-nums'],
-    lineHeight: 19,
+    fontWeight: '900',
   },
-  errorTitle: {
-    color: '#a52d27',
-    fontSize: 22,
-    fontWeight: '700',
+  summaryText: {
+    color: museBuddyColors.ink,
+    fontSize: 14,
+    fontVariant: ['tabular-nums'],
+    fontWeight: '800',
+  },
+  controls: {
+    gap: 12,
   },
   errorText: {
-    color: '#a52d27',
-    fontSize: 15,
-    lineHeight: 21,
+    color: museBuddyColors.accentRed,
+    fontSize: 14,
+    fontWeight: '800',
+    lineHeight: 20,
     textAlign: 'center',
+  },
+  logHeading: {
+    color: museBuddyColors.ink,
+    fontSize: 20,
+    fontWeight: '900',
+    paddingTop: 4,
+  },
+  emptyLog: {
+    backgroundColor: museBuddyColors.surfaceMuted,
+    borderColor: museBuddyColors.ink,
+    borderRadius: museBuddyRadii.medium,
+    borderWidth: museBuddyBorders.bold,
+    padding: 18,
+  },
+  emptyText: {
+    color: museBuddyColors.ink,
+    fontSize: 15,
+    fontWeight: '600',
+    lineHeight: 21,
+  },
+  pitchCard: {
+    backgroundColor: museBuddyColors.surface,
+    borderColor: museBuddyColors.ink,
+    borderLeftColor: museBuddyColors.accentBlue,
+    borderLeftWidth: 8,
+    borderRadius: museBuddyRadii.medium,
+    borderWidth: 3,
+    boxShadow: `0 4px 0 ${museBuddyColors.ink}`,
+    overflow: 'hidden',
+  },
+  pitchHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+    minHeight: 74,
+    padding: 12,
+  },
+  pitchHeaderPressed: {
+    backgroundColor: museBuddyColors.surfaceMuted,
+  },
+  pitchIdentity: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    gap: 12,
+    minWidth: 0,
+  },
+  pitchBadge: {
+    alignItems: 'center',
+    backgroundColor: museBuddyColors.secondary,
+    borderColor: museBuddyColors.ink,
+    borderRadius: museBuddyRadii.small,
+    borderWidth: 3,
+    height: 46,
+    justifyContent: 'center',
+    width: 56,
+  },
+  pitchBadgeText: {
+    color: museBuddyColors.ink,
+    fontSize: 20,
+    fontVariant: ['tabular-nums'],
+    fontWeight: '900',
+  },
+  pitchSummary: {
+    flex: 1,
+    gap: 3,
+    minWidth: 0,
+  },
+  pitchTitle: {
+    color: museBuddyColors.ink,
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  pitchMeta: {
+    color: museBuddyColors.ink,
+    fontSize: 12,
+    fontVariant: ['tabular-nums'],
+    fontWeight: '800',
+    lineHeight: 17,
+  },
+  pitchStats: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexShrink: 0,
+    gap: 8,
+  },
+  pitchStatText: {
+    color: museBuddyColors.ink,
+    fontSize: 12,
+    fontVariant: ['tabular-nums'],
+    fontWeight: '900',
+  },
+  eventList: {
+    backgroundColor: museBuddyColors.surfaceMuted,
+    borderTopColor: museBuddyColors.ink,
+    borderTopWidth: 3,
+    gap: 8,
+    padding: 12,
+  },
+  eventRow: {
+    backgroundColor: museBuddyColors.surface,
+    borderColor: museBuddyColors.ink,
+    borderRadius: museBuddyRadii.small,
+    borderWidth: 2,
+    gap: 3,
+    padding: 10,
+  },
+  eventTime: {
+    color: museBuddyColors.ink,
+    fontFamily: museBuddyTypography.mono,
+    fontSize: 13,
+    fontVariant: ['tabular-nums'],
+    fontWeight: '900',
+    lineHeight: 18,
+  },
+  eventDetail: {
+    color: museBuddyColors.ink,
+    fontFamily: museBuddyTypography.mono,
+    fontSize: 12,
+    fontVariant: ['tabular-nums'],
+    fontWeight: '700',
+    lineHeight: 17,
   },
 });

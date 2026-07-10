@@ -9,7 +9,7 @@ that compiled artifact, not the source `.mlpackage`.
 Run `pnpm compile:basic-pitch-model` from `MuseBuddy/` before CocoaPods installs or
 copies resources. The podspec also has a `prepare_command` that compiles `nmp.mlpackage`
 to `nmp.mlmodelc` during pod installation. The local `BasicPitch` Expo module owns model
-loading, microphone capture, audio conversion, inference, and decoding.
+loading, audio conversion, inference, and decoding. Expo Audio owns microphone capture.
 
 ## Model capability
 
@@ -28,18 +28,17 @@ Import the typed bridge from `MuseBuddy/modules/basic-pitch`:
 
 ```ts
 await initialize();
-await startRecording();
-const recording = await stopRecording();
-const result = await transcribeRecording();
+const result = await predict(encodedRecordingBytes);
 ```
 
-`stopRecording()` returns the private local recording URI and duration. The latest WAV is
-kept in Application Support until a new recording starts or recording is cancelled.
+`predict()` accepts the encoded bytes of a completed recording as a `Uint8Array`. It
+returns the converted audio duration, processing duration, and time-sorted attack/release
+events. An attack and release for the same note share an ID.
 
-Call `initialize()` before transcription. Core ML loading, audio conversion, inference,
-and decoding must remain off the main thread. Native errors cross the bridge with stable
-`BasicPitchErrorCode` values and retain their native diagnostic message for console
-logging.
+Call `initialize()` before prediction. Core ML loading, audio conversion, inference, and
+decoding remain off the main thread. Converted audio must contain at least three seconds
+at 22,050 Hz. Native errors cross the bridge with stable `BasicPitchErrorCode` values and
+retain their native diagnostic message for console logging.
 
 ## Native rebuild requirement
 

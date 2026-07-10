@@ -1,4 +1,5 @@
-export type TranscriptionNote = {
+export type DetectionNote = {
+  id: number;
   midiPitch: number;
   startTimeMs: number;
   endTimeMs: number;
@@ -7,31 +8,36 @@ export type TranscriptionNote = {
   velocity: number;
 };
 
-export type TranscriptionResult = {
-  recordingDurationMs: number;
+export type DetectionResult = {
+  detectionId: number;
+  type: 'periodic' | 'final';
+  recordedDurationMs: number;
+  windowStartMs: number;
+  windowEndMs: number;
   processingDurationMs: number;
-  notes: TranscriptionNote[];
+  notes: DetectionNote[];
 };
 
-export type RecordingArtifact = {
-  uri: string;
-  durationMs: number;
+export type RecognitionOptions = {
+  detectionIntervalMs?: number;
+  rollingWindowMs?: number;
 };
 
-export type RecordingProgress = {
-  elapsedMs: number;
-  level: number;
+export type BasicPitchModuleEvents = {
+  onDetectionFinish: (event: DetectionResult) => void;
 };
 
 export type BasicPitchErrorCode =
   | 'ERR_MODEL_RESOURCE_MISSING'
   | 'ERR_MODEL_LOAD_FAILED'
   | 'ERR_MODEL_VALIDATION_FAILED'
-  | 'ERR_MICROPHONE_PERMISSION_DENIED'
-  | 'ERR_RECORDING_ALREADY_ACTIVE'
-  | 'ERR_RECORDING_NOT_ACTIVE'
-  | 'ERR_AUDIO_SESSION_INTERRUPTED'
   | 'ERR_AUDIO_CONVERSION_FAILED'
+  | 'ERR_AUDIO_TOO_SHORT'
   | 'ERR_INFERENCE_FAILED'
-  | 'ERR_TRANSCRIPTION_ALREADY_RUNNING'
+  | 'ERR_MICROPHONE_PERMISSION_DENIED'
+  | 'ERR_AUDIO_START_FAILED'
+  | 'ERR_ALREADY_RECOGNIZING'
+  | 'ERR_NOT_RECOGNIZING'
+  | 'ERR_RECORDING_UNAVAILABLE'
+  | 'ERR_SHARE_FAILED'
   | 'ERR_UNSUPPORTED_PLATFORM';

@@ -12,6 +12,8 @@ readonly EXPECTED_MANIFEST_SHA256="c1fa5ef8acc34703edcd4e90e9a8640bd4673d9f3a687
 readonly EXPECTED_MODEL_SHA256="af7bf7d49bc167e0bf0c30aa2ca6b432c3e10df048d2dd4173ff3a738c020858"
 readonly EXPECTED_WEIGHTS_SHA256="691a6b63c7ddcdde0ee131ff3986dcb1250df47cd738612efde966ba9b4c99cd"
 readonly SWIFT_CACHE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/musebuddy-basic-pitch.XXXXXX")"
+audio_path=""
+swift_args=()
 
 trap 'rm -rf "${SWIFT_CACHE_DIR}"' EXIT
 
@@ -35,6 +37,42 @@ check_hash() {
   fi
   pass "${relative_path} matches Spotify basic-pitch ${SPOTIFY_BASIC_PITCH_COMMIT}"
 }
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --interval | --window)
+      [[ $# -ge 2 ]] || fail "$1 requires a seconds value"
+      swift_args+=("$1" "$2")
+      shift 2
+      ;;
+    --help | -h)
+      cat <<'USAGE'
+Usage: pnpm diagnose:basic-pitch [audio-file] [--interval seconds] [--window seconds]
+
+Runs the host Basic Pitch model checks, compiles the model for macOS, then simulates
+rolling-window detection over the provided audio file.
+
+Defaults:
+  audio-file  data/test-record.mp3
+  --interval  0.5
+  --window    2.9
+USAGE
+      exit 0
+      ;;
+    --*)
+      fail "Unknown option: $1"
+      ;;
+    *)
+      [[ -z "${audio_path}" ]] || fail "Only one audio file can be provided"
+      audio_path="$1"
+      shift
+      ;;
+  esac
+done
+
+if [[ -n "${audio_path}" ]]; then
+  swift_args=("${audio_path}" "${swift_args[@]}")
+fi
 
 command -v pnpm >/dev/null || fail "pnpm is not installed"
 command -v xcrun >/dev/null || fail "Xcode command-line tools are not installed"
@@ -93,11 +131,13 @@ readonly COMPILED_MODEL_PATH="${SWIFT_CACHE_DIR}/nmp.mlmodelc"
 pass "Core ML compiled the package for macOS"
 
 HOME="${SWIFT_CACHE_DIR}" XDG_CACHE_HOME="${SWIFT_CACHE_DIR}" \
-  swift -module-cache-path "${SWIFT_CACHE_DIR}" "${SWIFT_DIAGNOSTIC}" "${COMPILED_MODEL_PATH}"
+  swift -module-cache-path "${SWIFT_CACHE_DIR}" "${SWIFT_DIAGNOSTIC}" "${COMPILED_MODEL_PATH}" "${swift_args[@]}"
 
 printf '\nSpotify helper constants checked by this diagnostic:\n'
 printf '  sample rate: 22050 Hz\n'
 printf '  input samples: 43844\n'
+printf '  default rolling detection interval: 0.5 seconds\n'
+printf '  default rolling detection window: 2.9 seconds\n'
 printf '  overlap: 30 frames / 7680 samples\n'
 printf '  hop: 36164 samples\n'
 printf '  retained output: 142 frames per window\n'

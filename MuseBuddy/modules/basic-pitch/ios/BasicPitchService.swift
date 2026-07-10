@@ -1,48 +1,58 @@
 import AVFoundation
 import CoreML
 import Foundation
+import UIKit
 
+// swiftlint:disable file_length type_body_length
 final class BasicPitchService: @unchecked Sendable {
-  private enum State {
-    case idle
-    case preparing
-    case recording
-    case captured
-    case interrupted
-    case transcribing
-  }
+  private static let sampleRate = 22_050
+  private static let fftHop = 256
+  private static let modelSampleCount = 43_844
+  private static let defaultDetectionIntervalMs = 500.0
+  private static let defaultRollingWindowMs = 2_900.0
+  private static let maximumAnalysisIntervalMs = 500.0
+  private static let commitDelayMs = 1_000.0
+  private static let minimumWindowRMS: Float = 0.0015
+  private static let minimumWindowPeak: Float = 0.02
+  private static let minimumNoteConfidence: Float = 0.5
+  private static let finalOverlapFrameCount = 30
+  private static let finalOverlapSampleCount = finalOverlapFrameCount * fftHop
+  private static let finalHopSampleCount = modelSampleCount - finalOverlapSampleCount
 
+  private let audioEngine = AVAudioEngine()
   private let workQueue = DispatchQueue(
     label: "com.musebuddy.basic-pitch",
     qos: .userInitiated
   )
-  private let meterLock = NSLock()
-  private let audioEngine = AVAudioEngine()
-  private let maximumRecordingDuration: TimeInterval = 60
-  private var state: State = .idle
+
   private var model: MLModel?
-  private var recordingFile: AVAudioFile?
-  private var recordingURL: URL?
-  private var recordingStartedAt: Date?
-  private var progressTimer: DispatchSourceTimer?
-  private var latestLevel: Double = 0
-  private var recordingWriteError: Error?
-
-  var onProgress: (([String: Any]) -> Void)?
-  var onRecordingFinished: (([String: Any]) -> Void)?
-
-  init() {
-    NotificationCenter.default.addObserver(
-      self,
-      selector: #selector(handleAudioSessionInterruption(_:)),
-      name: AVAudioSession.interruptionNotification,
-      object: AVAudioSession.sharedInstance()
-    )
+  private var recognizing = false
+  private var detectionInFlight = false
+  private var detectionTimer: DispatchSourceTimer?
+  private var detectionId = 0
+  private var recordedSamples: [Float] = []
+  private var rollingWindowSampleCount = modelSampleCount
+  private var analysisIntervalSampleCount = 1
+  private var nextAnalysisEndSample = 0
+  private var lastCommittedTimeMs = 0.0
+  private var committedNotes: [TimedNote] = []
+  private var recordingConverter: AVAudioConverter?
+  private var modelAudioFormat: AVAudioFormat?
+  private var recordingFileURL: URL {
+    artifactDirectoryURL.appendingPathComponent("basic-pitch-recording.wav")
   }
 
-  deinit {
-    NotificationCenter.default.removeObserver(self)
-    cleanupRecording(removeFile: false)
+  private var artifactDirectoryURL: URL {
+    FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+      .appendingPathComponent("BasicPitch", isDirectory: true)
+  }
+
+  var onDetectionFinish: (([String: Any]) -> Void)?
+
+  var isRecognizing: Bool {
+    workQueue.sync {
+      recognizing
+    }
   }
 
   func initialize() async throws {
@@ -69,147 +79,87 @@ final class BasicPitchService: @unchecked Sendable {
     }
   }
 
-  func startRecording() async throws {
+  func startRecognition(options: [String: Double]) async throws {
+    try await initialize()
+
     guard await requestMicrophonePermission() else {
       throw BasicPitchError.microphonePermissionDenied
     }
-    try await reserveRecording()
-    do {
-      try await perform {
-        try self.beginRecording()
-      }
-    } catch {
-      await resetPreparingState()
-      throw error
-    }
-  }
 
-  func transcribeRecording() async throws -> TranscriptionResultRecord {
     try await perform {
-      guard self.model != nil else {
-        throw BasicPitchError.modelLoadFailed("The model has not been initialized.")
-      }
-
-      switch self.state {
-      case .captured:
-        self.state = .transcribing
-      case .transcribing:
-        throw BasicPitchError.transcriptionAlreadyRunning
-      case .interrupted:
-        self.cleanupRecording(removeFile: true)
-        self.state = .idle
-        throw BasicPitchError.audioSessionInterrupted
-      case .idle, .preparing, .recording:
-        throw BasicPitchError.recordingNotActive
-      }
-
-      guard let recordingURL = self.recordingURL else {
-        self.state = .idle
-        throw BasicPitchError.recordingNotActive
-      }
-
-      let processingStartedAt = Date()
-      defer {
-        self.state = .captured
-      }
-
-      do {
-        let samples = try self.convertRecordingToModelSamples(url: recordingURL)
-        let duration = Double(samples.count) / 22_050
-        let output = try self.runInference(samples: samples)
-        let decodedNotes = BasicPitchDecoder.decode(output)
-        let result = TranscriptionResultRecord()
-        result.recordingDurationMs = duration * 1_000
-        result.processingDurationMs = Date().timeIntervalSince(processingStartedAt) * 1_000
-        result.notes = decodedNotes.compactMap { note in
-          let start = min(duration, BasicPitchDecoder.time(forFrame: note.startFrame))
-          let end = min(duration, BasicPitchDecoder.time(forFrame: note.endFrame))
-          guard end > start else {
-            return nil
-          }
-          let record = TranscriptionNoteRecord()
-          record.midiPitch = note.midiPitch
-          record.startTimeMs = start * 1_000
-          record.endTimeMs = end * 1_000
-          record.durationMs = (end - start) * 1_000
-          record.confidence = Double(note.confidence)
-          record.velocity = min(127, max(0, Int((note.confidence * 127).rounded())))
-          return record
-        }
-        return result
-      } catch let error as BasicPitchError {
-        throw error
-      } catch {
-        throw BasicPitchError.inferenceFailed(error.localizedDescription)
-      }
+      try self.startRecognitionOnQueue(options: options)
     }
   }
 
-  func stopRecording() async throws -> RecordingArtifactRecord {
+  func stopRecognition() async throws -> DetectionResultRecord {
     try await perform {
-      switch self.state {
-      case .recording:
-        try self.finishRecordingCapture(nextState: .captured)
-      case .captured:
-        break
-      case .interrupted:
-        self.cleanupRecording(removeFile: true)
-        self.state = .idle
-        throw BasicPitchError.audioSessionInterrupted
-      case .transcribing:
-        throw BasicPitchError.transcriptionAlreadyRunning
-      case .idle, .preparing:
-        throw BasicPitchError.recordingNotActive
+      guard self.recognizing else {
+        throw BasicPitchError.notRecognizing
       }
-      return try self.makeRecordingArtifact()
+
+      self.stopRecordingOnQueue()
+      guard self.recordedSamples.count >= Self.modelSampleCount else {
+        self.recordedSamples.removeAll(keepingCapacity: true)
+        throw BasicPitchError.audioTooShort
+      }
+
+      let result = try self.detectRolling(
+        type: "final",
+        samples: self.recordedSamples,
+        recordedSampleCount: self.recordedSamples.count,
+        isFinal: true
+      )
+      try self.writeRecordingFile(samples: self.recordedSamples)
+      self.recordedSamples.removeAll(keepingCapacity: true)
+      self.committedNotes.removeAll(keepingCapacity: true)
+      self.emit(result)
+      return result
     }
   }
 
-  func cancelRecording() async throws {
-    try await perform {
-      switch self.state {
-      case .recording:
-        self.stopAudioEngine()
-      case .captured, .interrupted, .preparing:
-        break
-      case .transcribing:
-        throw BasicPitchError.transcriptionAlreadyRunning
-      case .idle:
-        throw BasicPitchError.recordingNotActive
+  func shareRecording() async throws {
+    let fileURL = try workQueue.sync {
+      guard FileManager.default.fileExists(atPath: self.recordingFileURL.path) else {
+        throw BasicPitchError.recordingUnavailable("No completed recording has been written yet.")
       }
-      self.cleanupRecording(removeFile: true)
-      self.state = .idle
+      return self.recordingFileURL
+    }
+
+    try await MainActor.run {
+      guard let presenter = Self.topViewController() else {
+        throw BasicPitchError.shareFailed("No active view controller is available.")
+      }
+
+      let activity = UIActivityViewController(activityItems: [fileURL], applicationActivities: nil)
+      if let popover = activity.popoverPresentationController {
+        popover.sourceView = presenter.view
+        popover.sourceRect = CGRect(
+          x: presenter.view.bounds.midX,
+          y: presenter.view.bounds.midY,
+          width: 1,
+          height: 1
+        )
+      }
+      presenter.present(activity, animated: true)
     }
   }
 
-  private func reserveRecording() async throws {
-    try await perform {
-      switch self.state {
-      case .idle, .captured:
-        self.cleanupRecording(removeFile: true)
-        self.state = .preparing
-      case .transcribing:
-        throw BasicPitchError.transcriptionAlreadyRunning
-      default:
-        throw BasicPitchError.recordingAlreadyActive
+  func cancelRecognition() {
+    workQueue.async {
+      guard self.recognizing else {
+        return
       }
+      self.stopRecordingOnQueue()
+      self.recordedSamples.removeAll(keepingCapacity: true)
     }
   }
 
-  private func resetPreparingState() async {
-    await withCheckedContinuation { continuation in
-      workQueue.async {
-        if self.state == .preparing {
-          self.state = .idle
-        }
-        continuation.resume()
-      }
+  private func startRecognitionOnQueue(options: [String: Double]) throws {
+    guard !recognizing else {
+      throw BasicPitchError.alreadyRecognizing
     }
-  }
-
-  private func beginRecording() throws {
-    guard state == .preparing else {
-      throw BasicPitchError.recordingAlreadyActive
+    guard model != nil else {
+      throw BasicPitchError.modelLoadFailed("The model has not been initialized.")
     }
 
     let session = AVAudioSession.sharedInstance()
@@ -217,265 +167,250 @@ final class BasicPitchService: @unchecked Sendable {
       try session.setCategory(.record, mode: .measurement, options: [.allowBluetoothHFP])
       try session.setActive(true)
     } catch {
-      throw BasicPitchError.audioConversionFailed(error.localizedDescription)
+      throw BasicPitchError.audioStartFailed(error.localizedDescription)
     }
 
-    let url = try recordingFileURL()
     let inputNode = audioEngine.inputNode
-    let format = inputNode.outputFormat(forBus: 0)
+    let inputFormat = inputNode.outputFormat(forBus: 0)
+    guard inputFormat.sampleRate > 0, inputFormat.channelCount > 0 else {
+      throw BasicPitchError.audioStartFailed("The microphone returned an invalid format.")
+    }
+    guard let modelFormat = Self.makeModelAudioFormat() else {
+      throw BasicPitchError.audioStartFailed("Could not create the model audio format.")
+    }
+    guard let converter = AVAudioConverter(from: inputFormat, to: modelFormat) else {
+      throw BasicPitchError.audioStartFailed("Could not create the audio converter.")
+    }
 
-    guard format.sampleRate > 0, format.channelCount > 0 else {
-      throw BasicPitchError.audioConversionFailed("The microphone returned an invalid format.")
+    try prepareRecordingArtifact()
+    recordingConverter = converter
+    modelAudioFormat = modelFormat
+    recordedSamples.removeAll(keepingCapacity: true)
+    detectionId = 0
+    detectionInFlight = false
+    let detectionIntervalMs = options["detectionIntervalMs"] ?? Self.defaultDetectionIntervalMs
+    let rollingWindowMs = options["rollingWindowMs"] ?? Self.defaultRollingWindowMs
+    rollingWindowSampleCount = max(
+      Self.modelSampleCount,
+      Self.sampleCount(forMilliseconds: rollingWindowMs)
+    )
+    analysisIntervalSampleCount = max(
+      1,
+      Self.sampleCount(forMilliseconds: min(detectionIntervalMs, Self.maximumAnalysisIntervalMs))
+    )
+    nextAnalysisEndSample = rollingWindowSampleCount
+    lastCommittedTimeMs = 0
+    committedNotes.removeAll(keepingCapacity: true)
+    recognizing = true
+
+    inputNode.removeTap(onBus: 0)
+    inputNode.installTap(onBus: 0, bufferSize: 1_024, format: inputFormat) { [weak self] buffer, _ in
+      guard let copiedBuffer = Self.copy(buffer: buffer) else {
+        return
+      }
+      self?.append(buffer: copiedBuffer)
     }
 
     do {
-      let file = try AVAudioFile(forWriting: url, settings: format.settings)
-      recordingFile = file
-      recordingURL = url
-      recordingWriteError = nil
-      latestLevel = 0
-
-      inputNode.removeTap(onBus: 0)
-      inputNode.installTap(
-        onBus: 0,
-        bufferSize: 1_024,
-        format: format
-      ) { [weak self] buffer, _ in
-        guard let self else {
-          return
-        }
-        do {
-          try file.write(from: buffer)
-        } catch {
-          recordingWriteError = error
-        }
-        updateLevel(from: buffer)
-      }
-
       audioEngine.prepare()
       try audioEngine.start()
-      recordingStartedAt = Date()
-      state = .recording
-      startProgressTimer()
+      startDetectionTimer(intervalMs: detectionIntervalMs)
     } catch {
-      cleanupRecording(removeFile: true)
-      throw BasicPitchError.audioConversionFailed(error.localizedDescription)
+      inputNode.removeTap(onBus: 0)
+      recordingConverter = nil
+      modelAudioFormat = nil
+      recognizing = false
+      try? session.setActive(false, options: .notifyOthersOnDeactivation)
+      throw BasicPitchError.audioStartFailed(error.localizedDescription)
     }
   }
 
-  private func finishRecordingCapture(nextState: State) throws {
-    stopAudioEngine()
-    if let recordingWriteError {
-      cleanupRecording(removeFile: true)
-      state = .idle
-      throw BasicPitchError.audioConversionFailed(recordingWriteError.localizedDescription)
-    }
-    state = nextState
-  }
+  private func stopRecordingOnQueue() {
+    detectionTimer?.cancel()
+    detectionTimer = nil
 
-  private func stopAudioEngine() {
-    progressTimer?.cancel()
-    progressTimer = nil
     if audioEngine.isRunning {
       audioEngine.stop()
     }
     audioEngine.inputNode.removeTap(onBus: 0)
-    recordingFile = nil
-    try? AVAudioSession.sharedInstance().setActive(
-      false,
-      options: .notifyOthersOnDeactivation
-    )
+    try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+
+    recognizing = false
+    detectionInFlight = false
+    recordingConverter = nil
+    modelAudioFormat = nil
   }
 
-  private func startProgressTimer() {
+  private func startDetectionTimer(intervalMs: Double) {
+    let interval = max(100, intervalMs) / 1_000
     let timer = DispatchSource.makeTimerSource(queue: workQueue)
-    timer.schedule(deadline: .now(), repeating: .milliseconds(100))
+    timer.schedule(deadline: .now() + interval, repeating: interval)
     timer.setEventHandler { [weak self] in
-      guard let self, state == .recording, let startedAt = recordingStartedAt else {
-        return
-      }
-
-      let elapsed = min(Date().timeIntervalSince(startedAt), maximumRecordingDuration)
-      meterLock.lock()
-      let level = latestLevel
-      meterLock.unlock()
-      onProgress?([
-        "elapsedMs": Int((elapsed * 1_000).rounded()),
-        "level": level,
-      ])
-
-      if elapsed >= maximumRecordingDuration {
-        do {
-          try finishRecordingCapture(nextState: .captured)
-          let recording = try makeRecordingArtifact()
-          onRecordingFinished?([
-            "uri": recording.uri,
-            "durationMs": recording.durationMs,
-          ])
-        } catch {
-          state = .interrupted
-        }
-      }
+      self?.runPeriodicDetectionIfReady()
     }
-    progressTimer = timer
+    detectionTimer = timer
     timer.resume()
   }
 
-  private func updateLevel(from buffer: AVAudioPCMBuffer) {
-    guard let channels = buffer.floatChannelData else {
-      return
-    }
-    let frameLength = Int(buffer.frameLength)
-    guard frameLength > 0 else {
-      return
-    }
-
-    var squareSum: Float = 0
-    for channel in 0 ..< Int(buffer.format.channelCount) {
-      let samples = channels[channel]
-      for frame in 0 ..< frameLength {
-        let value = samples[frame]
-        squareSum += value * value
+  private func append(buffer: AVAudioPCMBuffer) {
+    workQueue.async {
+      guard self.recognizing else {
+        return
       }
-    }
-    let sampleCount = frameLength * Int(buffer.format.channelCount)
-    let rms = sqrt(squareSum / Float(sampleCount))
-    let decibels = 20 * log10(max(rms, 0.000_01))
-    let normalized = Double(min(1, max(0, (decibels + 60) / 60)))
 
-    meterLock.lock()
-    latestLevel = normalized
-    meterLock.unlock()
-  }
-
-  private func requestMicrophonePermission() async -> Bool {
-    let session = AVAudioSession.sharedInstance()
-    switch session.recordPermission {
-    case .granted:
-      return true
-    case .denied:
-      return false
-    case .undetermined:
-      return await withCheckedContinuation { continuation in
-        session.requestRecordPermission { granted in
-          continuation.resume(returning: granted)
-        }
+      do {
+        try self.recordedSamples.append(contentsOf: self.convertToModelSamples(buffer: buffer))
+      } catch {
+        // The next explicit stop/start call will surface state. Dropping a malformed tap buffer is safer
+        // than stopping recognition from the audio render callback path.
+        return
       }
-    @unknown default:
-      return false
     }
   }
 
-  private func convertRecordingToModelSamples(url: URL) throws -> [Float] {
+  private func runPeriodicDetectionIfReady() {
+    guard recognizing,
+          !detectionInFlight,
+          recordedSamples.count >= nextAnalysisEndSample
+    else {
+      return
+    }
+
+    detectionInFlight = true
+    let recordedSampleCount = recordedSamples.count
+    let samples = recordedSamples
+
     do {
-      let inputFile = try AVAudioFile(forReading: url)
-      guard
-        let outputFormat = AVAudioFormat(
-          commonFormat: .pcmFormatFloat32,
-          sampleRate: 22_050,
-          channels: 1,
-          interleaved: false
-        ),
-        let converter = AVAudioConverter(from: inputFile.processingFormat, to: outputFormat)
-      else {
-        throw BasicPitchError.audioConversionFailed("Unable to create the audio converter.")
-      }
-
-      var samples: [Float] = []
-      let inputCapacity: AVAudioFrameCount = 4_096
-      var reachedEnd = false
-
-      while !reachedEnd {
-        let ratio = outputFormat.sampleRate / inputFile.processingFormat.sampleRate
-        let outputCapacity = AVAudioFrameCount(ceil(Double(inputCapacity) * ratio)) + 32
-        guard let outputBuffer = AVAudioPCMBuffer(
-          pcmFormat: outputFormat,
-          frameCapacity: outputCapacity
-        ) else {
-          throw BasicPitchError.audioConversionFailed("Unable to allocate an audio buffer.")
-        }
-
-        var inputSupplied = false
-        var conversionError: NSError?
-        let status = converter.convert(
-          to: outputBuffer,
-          error: &conversionError
-        ) { _, inputStatus in
-          if inputSupplied {
-            inputStatus.pointee = .noDataNow
-            return nil
-          }
-
-          let remaining = inputFile.length - inputFile.framePosition
-          guard remaining > 0 else {
-            inputStatus.pointee = .endOfStream
-            reachedEnd = true
-            return nil
-          }
-
-          let frameCount = min(inputCapacity, AVAudioFrameCount(remaining))
-          guard let inputBuffer = AVAudioPCMBuffer(
-            pcmFormat: inputFile.processingFormat,
-            frameCapacity: frameCount
-          ) else {
-            inputStatus.pointee = .endOfStream
-            reachedEnd = true
-            return nil
-          }
-
-          do {
-            try inputFile.read(into: inputBuffer, frameCount: frameCount)
-            inputSupplied = true
-            inputStatus.pointee = .haveData
-            return inputBuffer
-          } catch {
-            conversionError = error as NSError
-            inputStatus.pointee = .endOfStream
-            reachedEnd = true
-            return nil
-          }
-        }
-
-        if let conversionError {
-          throw conversionError
-        }
-        if status == .error {
-          throw BasicPitchError.audioConversionFailed("AVAudioConverter reported an error.")
-        }
-
-        if let channel = outputBuffer.floatChannelData?[0] {
-          samples.append(contentsOf: UnsafeBufferPointer(
-            start: channel,
-            count: Int(outputBuffer.frameLength)
-          ))
-        }
-        if status == .endOfStream {
-          reachedEnd = true
-        }
-      }
-
-      return samples
-    } catch let error as BasicPitchError {
-      throw error
+      let result = try detectRolling(
+        type: "periodic",
+        samples: samples,
+        recordedSampleCount: recordedSampleCount,
+        isFinal: false
+      )
+      detectionInFlight = false
+      emit(result)
     } catch {
-      throw BasicPitchError.audioConversionFailed(error.localizedDescription)
+      detectionInFlight = false
     }
   }
 
-  private func runInference(samples: [Float]) throws -> ModelOutputs {
-    guard let model else {
-      throw BasicPitchError.modelLoadFailed("The model has not been initialized.")
+  private func detectRolling(
+    type: String,
+    samples: [Float],
+    recordedSampleCount: Int,
+    isFinal: Bool
+  ) throws -> DetectionResultRecord {
+    guard samples.count >= Self.modelSampleCount else {
+      throw BasicPitchError.audioTooShort
     }
+
+    let processingStartedAt = Date()
+    let recordedDurationMs = milliseconds(forSampleCount: recordedSampleCount)
+    let endSamples = rollingAnalysisEndSamples(sampleCount: samples.count, isFinal: isFinal)
+    var detectionWindowStartSample = max(0, recordedSampleCount - rollingWindowSampleCount)
+
+    for endSample in endSamples {
+      let startSample = max(0, endSample - rollingWindowSampleCount)
+      detectionWindowStartSample = min(detectionWindowStartSample, startSample)
+      let windowNotes = try detectWindow(
+        samples: Array(samples[startSample ..< endSample]),
+        absoluteStartSample: startSample,
+        absoluteEndSample: endSample,
+        recordedDurationMs: recordedDurationMs
+      )
+      let analysisEndMs = milliseconds(forSampleCount: endSample)
+      let commitThroughMs = isFinal && endSample == endSamples.last
+        ? recordedDurationMs
+        : max(0, analysisEndMs - Self.commitDelayMs)
+
+      if commitThroughMs > lastCommittedTimeMs {
+        committedNotes.append(contentsOf: windowNotes.filter { note in
+          note.startTimeMs >= lastCommittedTimeMs && note.startTimeMs < commitThroughMs
+        })
+        lastCommittedTimeMs = commitThroughMs
+      }
+
+      nextAnalysisEndSample = max(nextAnalysisEndSample, endSample + analysisIntervalSampleCount)
+    }
+
+    detectionId += 1
+    let result = DetectionResultRecord()
+    result.detectionId = detectionId
+    result.type = type
+    result.recordedDurationMs = recordedDurationMs
+    result.windowStartMs = milliseconds(forSampleCount: detectionWindowStartSample)
+    result.windowEndMs = recordedDurationMs
+    result.processingDurationMs = Date().timeIntervalSince(processingStartedAt) * 1_000
+    result.notes = makeNoteRecords(notes: merge(notes: committedNotes))
+    return result
+  }
+
+  private func rollingAnalysisEndSamples(sampleCount: Int, isFinal: Bool) -> [Int] {
+    var endSamples: [Int] = []
+    var candidateEndSample = nextAnalysisEndSample
+    while candidateEndSample <= sampleCount {
+      endSamples.append(candidateEndSample)
+      if candidateEndSample == sampleCount {
+        break
+      }
+      candidateEndSample += analysisIntervalSampleCount
+    }
+
+    if isFinal,
+       sampleCount >= Self.modelSampleCount,
+       endSamples.last != sampleCount {
+      endSamples.append(sampleCount)
+    }
+
+    return endSamples
+  }
+
+  private func detectWindow(
+    samples: [Float],
+    absoluteStartSample: Int,
+    absoluteEndSample: Int,
+    recordedDurationMs: Double
+  ) throws -> [TimedNote] {
+    guard containsAudibleSignal(samples) else {
+      return []
+    }
+
+    let output = try runStitchedInference(samples: samples)
+    let absoluteWindowStartMs = milliseconds(forSampleCount: absoluteStartSample)
+    let absoluteWindowEndMs = milliseconds(forSampleCount: absoluteEndSample)
+    return BasicPitchDecoder.decode(output).compactMap { note in
+      let startTimeMs = min(
+        recordedDurationMs,
+        absoluteWindowStartMs + BasicPitchDecoder.time(forFrame: note.startFrame) * 1_000
+      )
+      let endTimeMs = min(
+        recordedDurationMs,
+        absoluteWindowStartMs + BasicPitchDecoder.time(forFrame: note.endFrame) * 1_000
+      )
+      guard endTimeMs > startTimeMs,
+            endTimeMs <= absoluteWindowEndMs,
+            note.confidence >= Self.minimumNoteConfidence
+      else {
+        return nil
+      }
+
+      return TimedNote(
+        midiPitch: note.midiPitch,
+        startTimeMs: startTimeMs,
+        endTimeMs: endTimeMs,
+        confidence: note.confidence
+      )
+    }
+  }
+
+  private func runStitchedInference(samples: [Float]) throws -> ModelOutputs {
     guard !samples.isEmpty else {
       return ModelOutputs(frameCount: 0, notes: [], onsets: [])
     }
 
-    let sampleCount = 43_844
-    let overlapSampleCount = 30 * 256
-    let leadingPadding = overlapSampleCount / 2
-    let hopSize = sampleCount - overlapSampleCount
+    let leadingPadding = Self.finalOverlapSampleCount / 2
+    let overlapFramesPerSide = Self.finalOverlapFrameCount / 2
     let framesPerWindow = 172
-    let overlapFramesPerSide = 15
     let retainedFramesPerWindow = framesPerWindow - (overlapFramesPerSide * 2)
     var paddedSamples = [Float](repeating: 0, count: leadingPadding)
     paddedSamples.append(contentsOf: samples)
@@ -483,55 +418,31 @@ final class BasicPitchService: @unchecked Sendable {
     var onsetWindows: [[Float]] = []
     var windowStart = 0
 
-    do {
-      while windowStart < paddedSamples.count {
-        let input = try MLMultiArray(
-          shape: [1, NSNumber(value: sampleCount), 1],
-          dataType: .float32
-        )
-        for sampleIndex in 0 ..< sampleCount {
-          let sourceIndex = windowStart + sampleIndex
-          input[sampleIndex] = NSNumber(
-            value: sourceIndex < paddedSamples.count ? paddedSamples[sourceIndex] : 0
-          )
-        }
-
-        let provider = try MLDictionaryFeatureProvider(dictionary: [
-          "input_2": MLFeatureValue(multiArray: input),
-        ])
-        let prediction = try model.prediction(from: provider)
-        guard
-          let noteArray = prediction.featureValue(for: "Identity_1")?.multiArrayValue,
-          let onsetArray = prediction.featureValue(for: "Identity_2")?.multiArrayValue
-        else {
-          throw BasicPitchError.inferenceFailed("The model did not return note and onset tensors.")
-        }
-        noteWindows.append(
-          extract(
-            noteArray,
-            startFrame: overlapFramesPerSide,
-            frameCount: retainedFramesPerWindow,
-            pitchCount: 88
-          )
-        )
-        onsetWindows.append(
-          extract(
-            onsetArray,
-            startFrame: overlapFramesPerSide,
-            frameCount: retainedFramesPerWindow,
-            pitchCount: 88
-          )
-        )
-        windowStart += hopSize
+    while windowStart < paddedSamples.count {
+      var inputSamples = [Float](repeating: 0, count: Self.modelSampleCount)
+      for sampleIndex in 0 ..< Self.modelSampleCount {
+        let sourceIndex = windowStart + sampleIndex
+        inputSamples[sampleIndex] = sourceIndex < paddedSamples.count ? paddedSamples[sourceIndex] : 0
       }
-    } catch let error as BasicPitchError {
-      throw error
-    } catch {
-      throw BasicPitchError.inferenceFailed(error.localizedDescription)
+
+      let output = try runInference(samples: inputSamples)
+      noteWindows.append(extractFrames(
+        output.notes,
+        startFrame: overlapFramesPerSide,
+        frameCount: retainedFramesPerWindow,
+        pitchCount: 88
+      ))
+      onsetWindows.append(extractFrames(
+        output.onsets,
+        startFrame: overlapFramesPerSide,
+        frameCount: retainedFramesPerWindow,
+        pitchCount: 88
+      ))
+      windowStart += Self.finalHopSampleCount
     }
 
     let expectedFrameCount = Int(
-      (Double(samples.count) / Double(hopSize)) * Double(retainedFramesPerWindow)
+      (Double(samples.count) / Double(Self.finalHopSampleCount)) * Double(retainedFramesPerWindow)
     )
     let availableFrameCount = noteWindows.count * retainedFramesPerWindow
     let frameCount = min(expectedFrameCount, availableFrameCount)
@@ -543,18 +454,330 @@ final class BasicPitchService: @unchecked Sendable {
     )
   }
 
-  private func extract(
-    _ array: MLMultiArray,
+  private func runInference(samples: [Float]) throws -> ModelOutputs {
+    guard let model else {
+      throw BasicPitchError.modelLoadFailed("The model has not been initialized.")
+    }
+
+    do {
+      let input = try MLMultiArray(
+        shape: [1, NSNumber(value: Self.modelSampleCount), 1],
+        dataType: .float32
+      )
+      for (index, sample) in samples.enumerated() {
+        input[index] = NSNumber(value: sample)
+      }
+      let provider = try MLDictionaryFeatureProvider(dictionary: [
+        "input_2": MLFeatureValue(multiArray: input),
+      ])
+      let prediction = try model.prediction(from: provider)
+      guard
+        let noteArray = prediction.featureValue(for: "Identity_1")?.multiArrayValue,
+        let onsetArray = prediction.featureValue(for: "Identity_2")?.multiArrayValue
+      else {
+        throw BasicPitchError.inferenceFailed("The model did not return note and onset tensors.")
+      }
+      return ModelOutputs(
+        frameCount: 172,
+        notes: extract(noteArray, frameCount: 172, pitchCount: 88),
+        onsets: extract(onsetArray, frameCount: 172, pitchCount: 88)
+      )
+    } catch let error as BasicPitchError {
+      throw error
+    } catch {
+      throw BasicPitchError.inferenceFailed(error.localizedDescription)
+    }
+  }
+
+  private func containsAudibleSignal(_ samples: [Float]) -> Bool {
+    guard !samples.isEmpty else {
+      return false
+    }
+
+    var squareSum: Float = 0
+    var peak: Float = 0
+    for sample in samples {
+      let absoluteSample = abs(sample)
+      squareSum += sample * sample
+      peak = max(peak, absoluteSample)
+    }
+
+    let rms = sqrt(squareSum / Float(samples.count))
+    return rms >= Self.minimumWindowRMS || peak >= Self.minimumWindowPeak
+  }
+
+  private func convertToModelSamples(buffer: AVAudioPCMBuffer) throws -> [Float] {
+    guard let modelFormat = modelAudioFormat,
+          let converter = recordingConverter
+    else {
+      throw BasicPitchError.audioConversionFailed("The audio converter is not available.")
+    }
+
+    let ratio = modelFormat.sampleRate / buffer.format.sampleRate
+    let outputCapacity = AVAudioFrameCount(ceil(Double(buffer.frameLength) * ratio)) + 32
+    guard let outputBuffer = AVAudioPCMBuffer(
+      pcmFormat: modelFormat,
+      frameCapacity: outputCapacity
+    ) else {
+      throw BasicPitchError.audioConversionFailed("Unable to allocate an audio buffer.")
+    }
+
+    var didProvideInput = false
+    var conversionError: NSError?
+    let status = converter.convert(to: outputBuffer, error: &conversionError) { _, inputStatus in
+      if didProvideInput {
+        inputStatus.pointee = .noDataNow
+        return nil
+      }
+
+      didProvideInput = true
+      inputStatus.pointee = .haveData
+      return buffer
+    }
+
+    if let conversionError {
+      throw BasicPitchError.audioConversionFailed(conversionError.localizedDescription)
+    }
+    if status == .error {
+      throw BasicPitchError.audioConversionFailed("AVAudioConverter reported an error.")
+    }
+    guard let channel = outputBuffer.floatChannelData?[0] else {
+      return []
+    }
+
+    return UnsafeBufferPointer(
+      start: channel,
+      count: Int(outputBuffer.frameLength)
+    ).map { min(1, max(-1, $0)) }
+  }
+
+  private static func makeModelAudioFormat() -> AVAudioFormat? {
+    AVAudioFormat(
+      commonFormat: .pcmFormatFloat32,
+      sampleRate: Double(sampleRate),
+      channels: 1,
+      interleaved: false
+    )
+  }
+
+  private static func copy(buffer: AVAudioPCMBuffer) -> AVAudioPCMBuffer? {
+    guard let copiedBuffer = AVAudioPCMBuffer(
+      pcmFormat: buffer.format,
+      frameCapacity: buffer.frameLength
+    ) else {
+      return nil
+    }
+
+    copiedBuffer.frameLength = buffer.frameLength
+    let sourceBuffers = UnsafeMutableAudioBufferListPointer(buffer.mutableAudioBufferList)
+    let copiedBuffers = UnsafeMutableAudioBufferListPointer(copiedBuffer.mutableAudioBufferList)
+    for index in 0 ..< min(sourceBuffers.count, copiedBuffers.count) {
+      guard let sourceData = sourceBuffers[index].mData,
+            let copiedData = copiedBuffers[index].mData
+      else {
+        continue
+      }
+
+      let byteCount = Int(sourceBuffers[index].mDataByteSize)
+      memcpy(copiedData, sourceData, byteCount)
+      copiedBuffers[index].mDataByteSize = sourceBuffers[index].mDataByteSize
+    }
+
+    return copiedBuffer
+  }
+
+  private func makeNoteRecords(notes: [TimedNote]) -> [DetectionNoteRecord] {
+    notes.sorted {
+      if $0.startTimeMs == $1.startTimeMs {
+        return $0.midiPitch < $1.midiPitch
+      }
+      return $0.startTimeMs < $1.startTimeMs
+    }.enumerated().map { offset, note in
+      let record = DetectionNoteRecord()
+      record.id = offset + 1
+      record.midiPitch = note.midiPitch
+      record.startTimeMs = note.startTimeMs
+      record.endTimeMs = note.endTimeMs
+      record.durationMs = note.durationMs
+      record.confidence = Double(note.confidence)
+      record.velocity = note.velocity
+      return record
+    }
+  }
+
+  private func merge(notes: [TimedNote]) -> [TimedNote] {
+    let sortedNotes = notes.sorted {
+      if $0.midiPitch == $1.midiPitch {
+        return $0.startTimeMs < $1.startTimeMs
+      }
+      return $0.midiPitch < $1.midiPitch
+    }
+    var merged: [TimedNote] = []
+
+    for note in sortedNotes {
+      if let index = merged.lastIndex(where: { candidate in
+        candidate.midiPitch == note.midiPitch
+          && note.startTimeMs <= candidate.endTimeMs + 240
+      }) {
+        let existing = merged[index]
+        let confidence = max(existing.confidence, note.confidence)
+        merged[index] = TimedNote(
+          midiPitch: existing.midiPitch,
+          startTimeMs: min(existing.startTimeMs, note.startTimeMs),
+          endTimeMs: max(existing.endTimeMs, note.endTimeMs),
+          confidence: confidence
+        )
+      } else {
+        merged.append(note)
+      }
+    }
+
+    return merged.sorted {
+      if $0.startTimeMs == $1.startTimeMs {
+        return $0.midiPitch < $1.midiPitch
+      }
+      return $0.startTimeMs < $1.startTimeMs
+    }
+  }
+
+  private func prepareRecordingArtifact() throws {
+    do {
+      try FileManager.default.createDirectory(
+        at: artifactDirectoryURL,
+        withIntermediateDirectories: true
+      )
+      if FileManager.default.fileExists(atPath: recordingFileURL.path) {
+        try FileManager.default.removeItem(at: recordingFileURL)
+      }
+    } catch {
+      throw BasicPitchError.audioStartFailed("Could not prepare recording file: \(error.localizedDescription)")
+    }
+  }
+
+  private func writeRecordingFile(samples: [Float]) throws {
+    do {
+      try FileManager.default.createDirectory(
+        at: artifactDirectoryURL,
+        withIntermediateDirectories: true
+      )
+
+      var data = wavHeader(sampleCount: samples.count, sampleRate: Self.sampleRate)
+      for sample in samples {
+        let clamped = min(max(sample, -1.0), 1.0)
+        let scaled = Int16(clamped * Float(Int16.max))
+        var littleEndianSample = scaled.littleEndian
+        withUnsafeBytes(of: &littleEndianSample) { bytes in
+          data.append(contentsOf: bytes)
+        }
+      }
+
+      try data.write(to: recordingFileURL, options: .atomic)
+    } catch {
+      throw BasicPitchError.recordingUnavailable("Could not write recording file: \(error.localizedDescription)")
+    }
+  }
+
+  private func wavHeader(sampleCount: Int, sampleRate: Int) -> Data {
+    let channelCount = 1
+    let bitsPerSample = 16
+    let bytesPerSample = bitsPerSample / 8
+    let byteRate = sampleRate * channelCount * bytesPerSample
+    let blockAlign = channelCount * bytesPerSample
+    let dataSize = sampleCount * bytesPerSample
+    let riffSize = 36 + dataSize
+    var data = Data()
+
+    func appendString(_ value: String) {
+      data.append(Data(value.utf8))
+    }
+
+    func appendUInt16(_ value: UInt16) {
+      var littleEndianValue = value.littleEndian
+      withUnsafeBytes(of: &littleEndianValue) { data.append(contentsOf: $0) }
+    }
+
+    func appendUInt32(_ value: UInt32) {
+      var littleEndianValue = value.littleEndian
+      withUnsafeBytes(of: &littleEndianValue) { data.append(contentsOf: $0) }
+    }
+
+    appendString("RIFF")
+    appendUInt32(UInt32(riffSize))
+    appendString("WAVE")
+    appendString("fmt ")
+    appendUInt32(16)
+    appendUInt16(1)
+    appendUInt16(UInt16(channelCount))
+    appendUInt32(UInt32(sampleRate))
+    appendUInt32(UInt32(byteRate))
+    appendUInt16(UInt16(blockAlign))
+    appendUInt16(UInt16(bitsPerSample))
+    appendString("data")
+    appendUInt32(UInt32(dataSize))
+
+    return data
+  }
+
+  private func emit(_ result: DetectionResultRecord) {
+    let payload: [String: Any] = [
+      "detectionId": result.detectionId,
+      "type": result.type,
+      "recordedDurationMs": result.recordedDurationMs,
+      "windowStartMs": result.windowStartMs,
+      "windowEndMs": result.windowEndMs,
+      "processingDurationMs": result.processingDurationMs,
+      "notes": result.notes.map { note in
+        [
+          "id": note.id,
+          "midiPitch": note.midiPitch,
+          "startTimeMs": note.startTimeMs,
+          "endTimeMs": note.endTimeMs,
+          "durationMs": note.durationMs,
+          "confidence": note.confidence,
+          "velocity": note.velocity,
+        ]
+      },
+    ]
+
+    DispatchQueue.main.async { [weak self] in
+      self?.onDetectionFinish?(payload)
+    }
+  }
+
+  private func milliseconds(forSampleCount sampleCount: Int) -> Double {
+    Double(sampleCount) / Double(Self.sampleRate) * 1_000
+  }
+
+  private static func sampleCount(forMilliseconds milliseconds: Double) -> Int {
+    max(1, Int((milliseconds / 1_000 * Double(sampleRate)).rounded()))
+  }
+
+  private func extractFrames(
+    _ values: [Float],
     startFrame: Int,
     frameCount: Int,
     pitchCount: Int
   ) -> [Float] {
-    var values = [Float]()
-    values.reserveCapacity(frameCount * pitchCount)
+    var frames: [Float] = []
+    frames.reserveCapacity(frameCount * pitchCount)
     for frame in startFrame ..< (startFrame + frameCount) {
       for pitch in 0 ..< pitchCount {
-        let offset = frame * pitchCount + pitch
-        values.append(array[offset].floatValue)
+        frames.append(values[frame * pitchCount + pitch])
+      }
+    }
+    return frames
+  }
+
+  private func extract(
+    _ array: MLMultiArray,
+    frameCount: Int,
+    pitchCount: Int
+  ) -> [Float] {
+    var values: [Float] = []
+    values.reserveCapacity(frameCount * pitchCount)
+    for frame in 0 ..< frameCount {
+      for pitch in 0 ..< pitchCount {
+        values.append(array[frame * pitchCount + pitch].floatValue)
       }
     }
     return values
@@ -610,87 +833,49 @@ final class BasicPitchService: @unchecked Sendable {
     return nil
   }
 
-  private func makeRecordingArtifact() throws -> RecordingArtifactRecord {
-    guard let recordingURL else {
-      throw BasicPitchError.recordingNotActive
-    }
-
-    do {
-      let file = try AVAudioFile(forReading: recordingURL)
-      let sampleRate = file.processingFormat.sampleRate
-      guard sampleRate > 0 else {
-        throw BasicPitchError.audioConversionFailed("The recording has an invalid sample rate.")
+  private func requestMicrophonePermission() async -> Bool {
+    let session = AVAudioSession.sharedInstance()
+    switch session.recordPermission {
+    case .granted:
+      return true
+    case .denied:
+      return false
+    case .undetermined:
+      return await withCheckedContinuation { continuation in
+        session.requestRecordPermission { granted in
+          continuation.resume(returning: granted)
+        }
       }
-      let recording = RecordingArtifactRecord()
-      recording.uri = recordingURL.absoluteString
-      recording.durationMs = (Double(file.length) / sampleRate) * 1_000
-      return recording
-    } catch let error as BasicPitchError {
-      throw error
-    } catch {
-      throw BasicPitchError.audioConversionFailed(error.localizedDescription)
+    @unknown default:
+      return false
     }
   }
 
-  private func recordingFileURL() throws -> URL {
-    let fileManager = FileManager.default
-    let applicationSupportURL = try fileManager.url(
-      for: .applicationSupportDirectory,
-      in: .userDomainMask,
-      appropriateFor: nil,
-      create: true
-    )
-    let recordingsURL = applicationSupportURL.appendingPathComponent(
-      "MuseBuddy/Recordings",
-      isDirectory: true
-    )
-    try fileManager.createDirectory(
-      at: recordingsURL,
-      withIntermediateDirectories: true,
-      attributes: nil
-    )
-    return recordingsURL.appendingPathComponent("latest-recording.wav")
-  }
+  @MainActor
+  private static func topViewController(base: UIViewController? = nil) -> UIViewController? {
+    let root = base ?? UIApplication.shared.connectedScenes
+      .compactMap { $0 as? UIWindowScene }
+      .flatMap(\.windows)
+      .first { $0.isKeyWindow }?
+      .rootViewController
 
-  private func cleanupRecording(removeFile: Bool) {
-    progressTimer?.cancel()
-    progressTimer = nil
-    if audioEngine.isRunning {
-      audioEngine.stop()
-    }
-    audioEngine.inputNode.removeTap(onBus: 0)
-    recordingFile = nil
-    recordingStartedAt = nil
-    recordingWriteError = nil
-    if removeFile, let recordingURL {
-      try? FileManager.default.removeItem(at: recordingURL)
-    }
-    if removeFile {
-      recordingURL = nil
-    }
-    try? AVAudioSession.sharedInstance().setActive(
-      false,
-      options: .notifyOthersOnDeactivation
-    )
-  }
-
-  @objc
-  private func handleAudioSessionInterruption(_ notification: Notification) {
-    guard
-      let rawType = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
-      let type = AVAudioSession.InterruptionType(rawValue: rawType),
-      type == .began
-    else {
-      return
+    guard let root else {
+      return nil
     }
 
-    workQueue.async {
-      guard self.state == .recording else {
-        return
-      }
-      self.stopAudioEngine()
-      self.state = .interrupted
+    if let navigation = root as? UINavigationController {
+      return topViewController(base: navigation.visibleViewController)
     }
+
+    if let tab = root as? UITabBarController {
+      return topViewController(base: tab.selectedViewController)
+    }
+
+    if let presented = root.presentedViewController {
+      return topViewController(base: presented)
+    }
+
+    return root
   }
 
   private func perform<T>(_ operation: @escaping () throws -> T) async throws -> T {
@@ -705,3 +890,5 @@ final class BasicPitchService: @unchecked Sendable {
     }
   }
 }
+
+// swiftlint:enable file_length type_body_length

@@ -4,13 +4,15 @@ enum BasicPitchError: Error {
   case modelResourceMissing
   case modelLoadFailed(String)
   case modelValidationFailed(String)
-  case microphonePermissionDenied
-  case recordingAlreadyActive
-  case recordingNotActive
-  case audioSessionInterrupted
   case audioConversionFailed(String)
+  case audioTooShort
   case inferenceFailed(String)
-  case transcriptionAlreadyRunning
+  case microphonePermissionDenied
+  case audioStartFailed(String)
+  case alreadyRecognizing
+  case notRecognizing
+  case recordingUnavailable(String)
+  case shareFailed(String)
 
   var code: String {
     switch self {
@@ -20,20 +22,24 @@ enum BasicPitchError: Error {
       "ERR_MODEL_LOAD_FAILED"
     case .modelValidationFailed:
       "ERR_MODEL_VALIDATION_FAILED"
-    case .microphonePermissionDenied:
-      "ERR_MICROPHONE_PERMISSION_DENIED"
-    case .recordingAlreadyActive:
-      "ERR_RECORDING_ALREADY_ACTIVE"
-    case .recordingNotActive:
-      "ERR_RECORDING_NOT_ACTIVE"
-    case .audioSessionInterrupted:
-      "ERR_AUDIO_SESSION_INTERRUPTED"
     case .audioConversionFailed:
       "ERR_AUDIO_CONVERSION_FAILED"
+    case .audioTooShort:
+      "ERR_AUDIO_TOO_SHORT"
     case .inferenceFailed:
       "ERR_INFERENCE_FAILED"
-    case .transcriptionAlreadyRunning:
-      "ERR_TRANSCRIPTION_ALREADY_RUNNING"
+    case .microphonePermissionDenied:
+      "ERR_MICROPHONE_PERMISSION_DENIED"
+    case .audioStartFailed:
+      "ERR_AUDIO_START_FAILED"
+    case .alreadyRecognizing:
+      "ERR_ALREADY_RECOGNIZING"
+    case .notRecognizing:
+      "ERR_NOT_RECOGNIZING"
+    case .recordingUnavailable:
+      "ERR_RECORDING_UNAVAILABLE"
+    case .shareFailed:
+      "ERR_SHARE_FAILED"
     }
   }
 
@@ -45,20 +51,24 @@ enum BasicPitchError: Error {
       "The Basic Pitch model could not be loaded: \(detail)"
     case let .modelValidationFailed(detail):
       "The Basic Pitch model has an unexpected interface: \(detail)"
-    case .microphonePermissionDenied:
-      "Microphone permission was denied."
-    case .recordingAlreadyActive:
-      "A recording is already active."
-    case .recordingNotActive:
-      "No recording is active."
-    case .audioSessionInterrupted:
-      "The audio session was interrupted."
     case let .audioConversionFailed(detail):
       "Audio conversion failed: \(detail)"
+    case .audioTooShort:
+      "The recording must contain at least one Basic Pitch window."
     case let .inferenceFailed(detail):
       "Basic Pitch inference failed: \(detail)"
-    case .transcriptionAlreadyRunning:
-      "A transcription is already running."
+    case .microphonePermissionDenied:
+      "Microphone access is required for Basic Pitch recognition."
+    case let .audioStartFailed(detail):
+      "Basic Pitch audio input could not start: \(detail)"
+    case .alreadyRecognizing:
+      "Basic Pitch recognition is already running."
+    case .notRecognizing:
+      "Basic Pitch recognition is not running."
+    case let .recordingUnavailable(detail):
+      "The Basic Pitch recording is unavailable: \(detail)"
+    case let .shareFailed(detail):
+      "The Basic Pitch recording could not be shared: \(detail)"
     }
   }
 }
@@ -80,7 +90,8 @@ final class BasicPitchException: Exception, @unchecked Sendable {
   }
 }
 
-struct TranscriptionNoteRecord: Record {
+struct DetectionNoteRecord: Record {
+  @Field var id: Int = 0
   @Field var midiPitch: Int = 0
   @Field var startTimeMs: Double = 0
   @Field var endTimeMs: Double = 0
@@ -89,15 +100,14 @@ struct TranscriptionNoteRecord: Record {
   @Field var velocity: Int = 0
 }
 
-struct TranscriptionResultRecord: Record {
-  @Field var recordingDurationMs: Double = 0
+struct DetectionResultRecord: Record {
+  @Field var detectionId: Int = 0
+  @Field var type: String = ""
+  @Field var recordedDurationMs: Double = 0
+  @Field var windowStartMs: Double = 0
+  @Field var windowEndMs: Double = 0
   @Field var processingDurationMs: Double = 0
-  @Field var notes: [TranscriptionNoteRecord] = []
-}
-
-struct RecordingArtifactRecord: Record {
-  @Field var uri: String = ""
-  @Field var durationMs: Double = 0
+  @Field var notes: [DetectionNoteRecord] = []
 }
 
 struct DecodedNote {
@@ -105,6 +115,21 @@ struct DecodedNote {
   let endFrame: Int
   let midiPitch: Int
   let confidence: Float
+}
+
+struct TimedNote {
+  let midiPitch: Int
+  let startTimeMs: Double
+  let endTimeMs: Double
+  let confidence: Float
+
+  var durationMs: Double {
+    endTimeMs - startTimeMs
+  }
+
+  var velocity: Int {
+    min(127, max(0, Int((confidence * 127).rounded())))
+  }
 }
 
 struct ModelOutputs {

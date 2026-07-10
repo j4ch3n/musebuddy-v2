@@ -52,7 +52,16 @@
         }
       ],
       "expo-audio",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "react-native-audio-api",
+        {
+          "iosBackgroundMode": false,
+          "androidPermissions": [],
+          "androidForegroundService": false
+        }
+      ],
+      "./plugins/with-rn-audio-api-ffmpeg-linkage"
     ],
     "experiments": {
       "typedRoutes": true,

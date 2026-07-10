@@ -1,35 +1,31 @@
 import * as SplashScreen from 'expo-splash-screen';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
-  addRecordingFinishedListener,
-  addRecordingProgressListener,
+  addDetectionFinishListener,
   BasicPitchError,
   initialize,
-  startRecording,
-  stopRecording,
-  transcribeRecording,
-  type RecordingArtifact,
-  type RecordingProgress,
-  type TranscriptionResult,
+  shareRecording,
+  startRecognition,
+  stopRecognition,
+  type DetectionNote,
+  type DetectionResult,
 } from '../../../modules/basic-pitch';
 import { createLogger } from '@/utils/logger';
+
+import { formatDetectionNote } from './event-log';
 
 export type TranscriptionPhase =
   | 'loadingModel'
   | 'modelError'
   | 'ready'
   | 'starting'
+  | 'permissionDenied'
   | 'recording'
-  | 'stopping'
-  | 'recorded'
-  | 'transcribing'
-  | 'results';
+  | 'predicting'
+  | 'failure';
 
-const initialProgress: RecordingProgress = {
-  elapsedMs: 0,
-  level: 0,
-};
+const minimumRecordingDurationMs = 2_000;
 const logger = createLogger('BasicPitchExample');
 
 function messageFor(error: unknown, fallback: string): string {
@@ -40,9 +36,9 @@ function logError(context: string, error: unknown): void {
   if (error instanceof BasicPitchError) {
     logger.error(context, {
       code: error.code,
+      error,
       message: error.message,
       nativeMessage: error.nativeMessage,
-      error,
     });
     return;
   }
@@ -51,21 +47,56 @@ function logError(context: string, error: unknown): void {
 
 export function useTranscription() {
   const [phase, setPhase] = useState<TranscriptionPhase>('loadingModel');
-  const [progress, setProgress] = useState<RecordingProgress>(initialProgress);
-  const [recording, setRecording] = useState<RecordingArtifact | null>(null);
-  const [result, setResult] = useState<TranscriptionResult | null>(null);
+  const [elapsedMs, setElapsedMs] = useState(0);
+  const [result, setResult] = useState<DetectionResult | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
+  const [notes, setNotes] = useState<DetectionNote[]>([]);
+  const [hasRecording, setHasRecording] = useState(false);
+  const isMountedRef = useRef(true);
+  const recordingStartedAtRef = useRef<number | null>(null);
+  const elapsedTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const stopElapsedTimer = useCallback(() => {
+    if (elapsedTimerRef.current !== null) {
+      clearInterval(elapsedTimerRef.current);
+      elapsedTimerRef.current = null;
+    }
+  }, []);
+
+  const startElapsedTimer = useCallback(() => {
+    stopElapsedTimer();
+    recordingStartedAtRef.current = Date.now();
+    setElapsedMs(0);
+    elapsedTimerRef.current = setInterval(() => {
+      if (recordingStartedAtRef.current !== null) {
+        setElapsedMs(Date.now() - recordingStartedAtRef.current);
+      }
+    }, 100);
+  }, [stopElapsedTimer]);
+
+  const handleDetection = useCallback((detection: DetectionResult) => {
+    setResult(detection);
+    setNotes(detection.notes);
+
+    for (const note of detection.notes) {
+      logger.info(formatDetectionNote(note));
+    }
+  }, []);
 
   const loadModel = useCallback(async () => {
     setPhase('loadingModel');
     setStatusMessage('');
     try {
       await initialize();
-      setPhase('ready');
+      if (isMountedRef.current) {
+        setPhase('ready');
+      }
     } catch (error) {
       logError('Basic Pitch model initialization failed.', error);
-      setStatusMessage(messageFor(error, 'The transcription model could not be initialized.'));
-      setPhase('modelError');
+      if (isMountedRef.current) {
+        setStatusMessage(messageFor(error, 'The transcription model could not be initialized.'));
+        setPhase('modelError');
+      }
     } finally {
       await SplashScreen.hideAsync();
     }
@@ -74,95 +105,122 @@ export function useTranscription() {
   useEffect(() => {
     void initialize()
       .then(() => {
-        setPhase('ready');
+        if (isMountedRef.current) {
+          setPhase('ready');
+        }
       })
       .catch((error: unknown) => {
         logError('Basic Pitch model initialization failed.', error);
-        setStatusMessage(messageFor(error, 'The transcription model could not be initialized.'));
-        setPhase('modelError');
+        if (isMountedRef.current) {
+          setStatusMessage(messageFor(error, 'The transcription model could not be initialized.'));
+          setPhase('modelError');
+        }
       })
       .finally(() => SplashScreen.hideAsync());
   }, []);
 
   useEffect(() => {
-    let progressSubscription: ReturnType<typeof addRecordingProgressListener> | undefined;
-    let finishedSubscription: ReturnType<typeof addRecordingFinishedListener> | undefined;
-
-    try {
-      progressSubscription = addRecordingProgressListener(setProgress);
-      finishedSubscription = addRecordingFinishedListener((artifact) => {
-        setRecording(artifact);
-        setProgress((current) => ({ ...current, elapsedMs: artifact.durationMs }));
-        setPhase('recorded');
-      });
-    } catch {
-      // Model initialization reports unsupported or unavailable native modules.
-    }
+    const subscription = addDetectionFinishListener((detection) => {
+      if (isMountedRef.current) {
+        handleDetection(detection);
+      }
+    });
 
     return () => {
-      progressSubscription?.remove();
-      finishedSubscription?.remove();
+      subscription.remove();
     };
-  }, []);
+  }, [handleDetection]);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      stopElapsedTimer();
+      void stopRecognition().catch(() => {});
+    };
+  }, [stopElapsedTimer]);
 
   const start = useCallback(async () => {
+    setNotes([]);
+    setResult(null);
+    setHasRecording(false);
     setStatusMessage('');
     setPhase('starting');
+
     try {
-      await startRecording();
-      setProgress(initialProgress);
-      setRecording(null);
-      setResult(null);
+      await startRecognition();
+      if (!isMountedRef.current) {
+        return;
+      }
+      startElapsedTimer();
       setPhase('recording');
     } catch (error) {
-      logError('Basic Pitch recording failed to start.', error);
+      logError('Basic Pitch recognition failed to start.', error);
+      if (!isMountedRef.current) {
+        return;
+      }
+      stopElapsedTimer();
+      recordingStartedAtRef.current = null;
+      setElapsedMs(0);
       setStatusMessage(messageFor(error, 'Recording could not start.'));
-      setPhase(recording ? 'recorded' : 'ready');
+      setPhase(
+        error instanceof BasicPitchError && error.code === 'ERR_MICROPHONE_PERMISSION_DENIED'
+          ? 'permissionDenied'
+          : 'failure',
+      );
     }
-  }, [recording]);
+  }, [startElapsedTimer, stopElapsedTimer]);
 
-  const stop = useCallback(async () => {
-    setStatusMessage('');
-    setPhase('stopping');
-    try {
-      const artifact = await stopRecording();
-      setRecording(artifact);
-      setProgress((current) => ({ ...current, elapsedMs: artifact.durationMs }));
-      setPhase('recorded');
-    } catch (error) {
-      logError('Basic Pitch recording failed to stop.', error);
-      setStatusMessage(messageFor(error, 'Recording could not be stopped.'));
-      setRecording(null);
-      setPhase('ready');
-    }
-  }, []);
-
-  const transcribe = useCallback(async () => {
-    if (!recording) {
+  const end = useCallback(async () => {
+    if (elapsedMs < minimumRecordingDurationMs) {
       return;
     }
 
     setStatusMessage('');
-    setPhase('transcribing');
+    setPhase('predicting');
     try {
-      const transcription = await transcribeRecording();
-      setResult(transcription);
-      setPhase('results');
+      const finalDetection = await stopRecognition();
+      if (!isMountedRef.current) {
+        return;
+      }
+      stopElapsedTimer();
+      recordingStartedAtRef.current = null;
+      setElapsedMs(finalDetection.recordedDurationMs);
+      handleDetection(finalDetection);
+      setHasRecording(true);
+      setPhase('ready');
     } catch (error) {
-      logError('Basic Pitch transcription failed.', error);
-      setPhase('recorded');
+      logError('Basic Pitch final detection failed.', error);
+      if (isMountedRef.current) {
+        stopElapsedTimer();
+        setStatusMessage(messageFor(error, 'Recording or transcription failed.'));
+        setPhase('failure');
+      }
     }
-  }, [recording]);
+  }, [elapsedMs, handleDetection, stopElapsedTimer]);
+
+  const downloadRecording = useCallback(async () => {
+    setStatusMessage('');
+    try {
+      await shareRecording();
+    } catch (error) {
+      logError('Basic Pitch recording download failed.', error);
+      if (isMountedRef.current) {
+        setStatusMessage(messageFor(error, 'Recording could not be downloaded.'));
+      }
+    }
+  }, []);
 
   return {
+    downloadRecording,
+    elapsedMs,
+    end,
+    hasRecording,
     loadModel,
+    notes,
     phase,
-    progress,
-    recording,
     result,
     start,
     statusMessage,
-    stop,
-    transcribe,
   };
 }

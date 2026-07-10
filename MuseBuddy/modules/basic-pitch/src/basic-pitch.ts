@@ -1,41 +1,32 @@
-import { requireNativeModule } from 'expo';
+import { NativeModule, requireNativeModule } from 'expo';
 import { Platform } from 'react-native';
 
 import type {
   BasicPitchErrorCode,
-  RecordingArtifact,
-  RecordingProgress,
-  TranscriptionResult,
+  BasicPitchModuleEvents,
+  DetectionResult,
+  RecognitionOptions,
 } from './basic-pitch.types';
 
 export type {
   BasicPitchErrorCode,
-  RecordingArtifact,
-  RecordingProgress,
-  TranscriptionNote,
-  TranscriptionResult,
+  BasicPitchModuleEvents,
+  DetectionNote,
+  DetectionResult,
+  RecognitionOptions,
 } from './basic-pitch.types';
 
 type EventSubscription = {
   remove(): void;
 };
 
-type BasicPitchEvents = {
-  onRecordingProgress(progress: RecordingProgress): void;
-  onRecordingFinished(recording: RecordingArtifact): void;
-};
-
-type NativeBasicPitchModule = {
+declare class NativeBasicPitchModule extends NativeModule<BasicPitchModuleEvents> {
   initialize(): Promise<void>;
-  startRecording(): Promise<void>;
-  stopRecording(): Promise<RecordingArtifact>;
-  transcribeRecording(): Promise<TranscriptionResult>;
-  cancelRecording(): Promise<void>;
-  addListener<EventName extends keyof BasicPitchEvents>(
-    eventName: EventName,
-    listener: BasicPitchEvents[EventName],
-  ): EventSubscription;
-};
+  startRecognition(options: Required<RecognitionOptions>): Promise<void>;
+  stopRecognition(): Promise<DetectionResult>;
+  shareRecording(): Promise<void>;
+  isRecognizing(): boolean;
+}
 
 type NativeError = Error & {
   code?: string;
@@ -57,14 +48,16 @@ const errorMessages: Record<BasicPitchErrorCode, string> = {
     'The bundled transcription model is missing. Rebuild the development client.',
   ERR_MODEL_LOAD_FAILED: 'The transcription model could not be loaded.',
   ERR_MODEL_VALIDATION_FAILED: 'The bundled transcription model is incompatible.',
+  ERR_AUDIO_CONVERSION_FAILED: 'The recording could not be prepared for transcription.',
+  ERR_AUDIO_TOO_SHORT: 'Record for at least two seconds before stopping.',
+  ERR_INFERENCE_FAILED: 'The recording could not be transcribed.',
   ERR_MICROPHONE_PERMISSION_DENIED:
     'Microphone access is required. Enable it for MuseBuddy in Settings.',
-  ERR_RECORDING_ALREADY_ACTIVE: 'A recording is already in progress.',
-  ERR_RECORDING_NOT_ACTIVE: 'There is no active recording to finish.',
-  ERR_AUDIO_SESSION_INTERRUPTED: 'Recording was interrupted. Please start again.',
-  ERR_AUDIO_CONVERSION_FAILED: 'The recording could not be prepared for transcription.',
-  ERR_INFERENCE_FAILED: 'The recording could not be transcribed.',
-  ERR_TRANSCRIPTION_ALREADY_RUNNING: 'A transcription is already in progress.',
+  ERR_AUDIO_START_FAILED: 'The microphone could not start.',
+  ERR_ALREADY_RECOGNIZING: 'Basic Pitch recognition is already running.',
+  ERR_NOT_RECOGNIZING: 'Basic Pitch recognition is not running.',
+  ERR_RECORDING_UNAVAILABLE: 'No completed recording is available to download.',
+  ERR_SHARE_FAILED: 'The recording could not be opened for download.',
   ERR_UNSUPPORTED_PLATFORM:
     'On-device transcription is available only in the MuseBuddy iOS development client.',
 };
@@ -110,30 +103,29 @@ export function initialize(): Promise<void> {
   return callNative(() => getNativeModule().initialize());
 }
 
-export function startRecording(): Promise<void> {
-  return callNative(() => getNativeModule().startRecording());
+export function startRecognition(options: RecognitionOptions = {}): Promise<void> {
+  return callNative(() =>
+    getNativeModule().startRecognition({
+      detectionIntervalMs: options.detectionIntervalMs ?? 500,
+      rollingWindowMs: options.rollingWindowMs ?? 2_900,
+    }),
+  );
 }
 
-export function stopRecording(): Promise<RecordingArtifact> {
-  return callNative(() => getNativeModule().stopRecording());
+export function stopRecognition(): Promise<DetectionResult> {
+  return callNative(() => getNativeModule().stopRecognition());
 }
 
-export function transcribeRecording(): Promise<TranscriptionResult> {
-  return callNative(() => getNativeModule().transcribeRecording());
+export function shareRecording(): Promise<void> {
+  return callNative(() => getNativeModule().shareRecording());
 }
 
-export function cancelRecording(): Promise<void> {
-  return callNative(() => getNativeModule().cancelRecording());
+export function isRecognizing(): boolean {
+  return getNativeModule().isRecognizing();
 }
 
-export function addRecordingProgressListener(
-  listener: (progress: RecordingProgress) => void,
+export function addDetectionFinishListener(
+  listener: (event: DetectionResult) => void,
 ): EventSubscription {
-  return getNativeModule().addListener('onRecordingProgress', listener);
-}
-
-export function addRecordingFinishedListener(
-  listener: (recording: RecordingArtifact) => void,
-): EventSubscription {
-  return getNativeModule().addListener('onRecordingFinished', listener);
+  return getNativeModule().addListener('onDetectionFinish', listener);
 }
