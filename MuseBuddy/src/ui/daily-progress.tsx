@@ -70,7 +70,7 @@ export function DailyProgress({ currentStep }: DailyProgressProps) {
   const currentStepIndex = dailyProgressSteps.findIndex((step) => step.id === currentStep);
 
   return (
-    <XStack accessibilityRole="summary" gap={10}>
+    <XStack accessibilityRole="summary" flex={1} gap={6}>
       {dailyProgressSteps.map((step, index) => {
         const isActive = step.id === currentStep;
         const isComplete = index < currentStepIndex;
@@ -88,13 +88,13 @@ export function DailyProgress({ currentStep }: DailyProgressProps) {
             ]}
           >
             {step.iconFamily === 'lucide' ? (
-              <Lucide color={museBuddyColors.ink} name={step.iconName} size={24} />
+              <Lucide color={museBuddyColors.ink} name={step.iconName} size={20} />
             ) : (
               <FontAwesome5
                 color={museBuddyColors.ink}
                 iconStyle="solid"
                 name={step.iconName}
-                size={22}
+                size={18}
               />
             )}
             <View style={[styles.stepAccent, accentStyle]} />
@@ -126,11 +126,11 @@ const styles = StyleSheet.create({
     backgroundColor: museBuddyColors.surface,
     borderRadius: museBuddyRadii.medium,
     justifyContent: 'center',
-    minHeight: 52,
+    minHeight: 42,
     overflow: 'hidden',
-    paddingBottom: 8,
+    paddingBottom: 7,
     paddingHorizontal: 4,
-    paddingTop: 8,
+    paddingTop: 7,
   },
   stepItemActive: {
     boxShadow: `0 5px 0 ${museBuddyColors.active}`,
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
   },
   stepAccent: {
     bottom: 0,
-    height: 7,
+    height: 6,
     left: 0,
     position: 'absolute',
     right: 0,

@@ -1,156 +1,69 @@
-import { AudioContext } from 'react-native-audio-api';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { collectRhythmEvents } from './rhythm-pattern';
-import type { RhythmAttack, RhythmPattern } from './types';
+import { buildRhythmSoundFontPlaybackConfiguration } from '@/music-theory/sound-font-playback';
+
+import {
+  stop as stopSoundFontPlayback,
+  play,
+  SoundFontPlayerError,
+} from '../../../modules/sound-font-player';
+import type { RhythmPattern } from './types';
 
 type UseSequencerPlaybackOptions = {
   bpm: number;
   pattern: RhythmPattern;
 };
 
-type ScheduledNode = {
-  stop: (when?: number) => void;
-};
-
-const LOOKAHEAD_SECONDS = 0.45;
-const SCHEDULER_INTERVAL_MS = 90;
 const VISUAL_INTERVAL_MS = 30;
-const ATTACK_DURATION_SECONDS = 0.055;
-
-const ATTACK_SOUND: Record<RhythmAttack, { frequency: number; gain: number }> = {
-  s: { frequency: 880, gain: 0.28 },
-  w: { frequency: 1174.66, gain: 0.18 },
-};
 
 export function useSequencerPlayback({ bpm, pattern }: UseSequencerPlaybackOptions) {
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const startTimeRef = useRef<number | null>(null);
-  const scheduledUntilRef = useRef(0);
-  const scheduledNodesRef = useRef<ScheduledNode[]>([]);
+  const startTimeRef = useRef(0);
   const patternRef = useRef(pattern);
   const bpmRef = useRef(bpm);
   const previousBpmRef = useRef(bpm);
   const [currentStepIndex, setCurrentStepIndex] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
+  const stopPlayback = useCallback(() => {
+    void stopSoundFontPlayback();
+    setIsPlaying(false);
+    setCurrentStepIndex(null);
+  }, []);
+
   useEffect(() => {
     patternRef.current = pattern;
   }, [pattern]);
 
-  const getAudioContext = useCallback(() => {
-    if (!audioContextRef.current) {
-      audioContextRef.current = new AudioContext();
+  const startPlayback = useCallback(async () => {
+    if (patternRef.current.length === 0) {
+      return;
     }
 
-    return audioContextRef.current;
-  }, []);
-
-  const stopScheduledNodes = useCallback(() => {
-    const audioContext = audioContextRef.current;
-    const stopTime = audioContext?.currentTime ?? 0;
-
-    scheduledNodesRef.current.forEach((node) => {
-      try {
-        node.stop(stopTime);
-      } catch {
-        // Some nodes may have already ended by the time stop is requested.
-      }
-    });
-    scheduledNodesRef.current = [];
-  }, []);
-
-  const scheduleAttack = useCallback(
-    (audioContext: AudioContext, attack: RhythmAttack, startTime: number) => {
-      const sound = ATTACK_SOUND[attack];
-      const oscillator = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-      const endTime = startTime + ATTACK_DURATION_SECONDS;
-
-      oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(sound.frequency, startTime);
-      gain.gain.setValueAtTime(0.0001, startTime);
-      gain.gain.linearRampToValueAtTime(sound.gain, startTime + 0.006);
-      gain.gain.exponentialRampToValueAtTime(0.0001, endTime);
-
-      oscillator.connect(gain);
-      gain.connect(audioContext.destination);
-      oscillator.start(startTime);
-      oscillator.stop(endTime + 0.01);
-      scheduledNodesRef.current.push(oscillator);
-    },
-    [],
-  );
-
-  const scheduleThrough = useCallback(
-    (audioContext: AudioContext, targetTime: number) => {
-      const startTime = startTimeRef.current;
-
-      if (startTime === null) {
-        return;
-      }
-
-      const stepDurationSeconds = 15 / bpmRef.current;
-      const cycleDurationSeconds = patternRef.current.length * stepDurationSeconds;
-      const events = collectRhythmEvents(patternRef.current).filter(
-        (event) => event.kind === 'attack' && event.attack !== null,
-      );
-      let cycleStartTime =
-        startTime +
-        Math.floor((scheduledUntilRef.current - startTime) / cycleDurationSeconds) *
-          cycleDurationSeconds;
-
-      while (cycleStartTime < targetTime) {
-        events.forEach((event) => {
-          const eventStartTime = cycleStartTime + event.startStep * stepDurationSeconds;
-
-          if (eventStartTime >= scheduledUntilRef.current && eventStartTime < targetTime) {
-            scheduleAttack(audioContext, event.attack as RhythmAttack, eventStartTime);
-          }
-        });
-
-        cycleStartTime += cycleDurationSeconds;
-      }
-
-      scheduledUntilRef.current = targetTime;
-    },
-    [scheduleAttack],
-  );
-
-  const stopPlayback = useCallback(() => {
-    stopScheduledNodes();
-    startTimeRef.current = null;
-    scheduledUntilRef.current = 0;
-    setIsPlaying(false);
-    setCurrentStepIndex(null);
-  }, [stopScheduledNodes]);
-
-  const startPlayback = useCallback(async () => {
-    const audioContext = getAudioContext();
-
-    await audioContext.resume();
-    stopScheduledNodes();
-
-    const startTime = audioContext.currentTime + 0.08;
-    startTimeRef.current = startTime;
-    scheduledUntilRef.current = startTime;
+    const configuration = buildRhythmSoundFontPlaybackConfiguration(
+      patternRef.current,
+      bpmRef.current,
+    );
+    await play(configuration);
+    startTimeRef.current = Date.now();
     setCurrentStepIndex(0);
     setIsPlaying(true);
-    scheduleThrough(audioContext, startTime + LOOKAHEAD_SECONDS);
-  }, [getAudioContext, scheduleThrough, stopScheduledNodes]);
+  }, []);
 
   const restartPlayback = useCallback(async () => {
-    const audioContext = getAudioContext();
+    if (patternRef.current.length === 0) {
+      return;
+    }
 
-    await audioContext.resume();
-    stopScheduledNodes();
-
-    const startTime = audioContext.currentTime + 0.08;
-    startTimeRef.current = startTime;
-    scheduledUntilRef.current = startTime;
-    setCurrentStepIndex(0);
-    scheduleThrough(audioContext, startTime + LOOKAHEAD_SECONDS);
-  }, [getAudioContext, scheduleThrough, stopScheduledNodes]);
+    try {
+      await play(buildRhythmSoundFontPlaybackConfiguration(patternRef.current, bpmRef.current));
+      startTimeRef.current = Date.now();
+      setCurrentStepIndex(0);
+    } catch (error) {
+      setIsPlaying(false);
+      setCurrentStepIndex(null);
+      throw error;
+    }
+  }, []);
 
   const togglePlayback = useCallback(() => {
     if (isPlaying) {
@@ -158,28 +71,15 @@ export function useSequencerPlayback({ bpm, pattern }: UseSequencerPlaybackOptio
       return;
     }
 
-    void startPlayback();
-  }, [isPlaying, startPlayback, stopPlayback]);
-
-  useEffect(() => {
-    if (!isPlaying) {
-      return;
-    }
-
-    const intervalId = setInterval(() => {
-      const audioContext = audioContextRef.current;
-
-      if (!audioContext) {
-        return;
+    void startPlayback().catch((error: unknown) => {
+      if (__DEV__) {
+        const detail = error instanceof SoundFontPlayerError ? error.nativeMessage : undefined;
+        console.warn('Rhythm playback failed.', detail ?? error);
       }
-
-      scheduleThrough(audioContext, audioContext.currentTime + LOOKAHEAD_SECONDS);
-    }, SCHEDULER_INTERVAL_MS);
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [isPlaying, scheduleThrough]);
+      setIsPlaying(false);
+      setCurrentStepIndex(null);
+    });
+  }, [isPlaying, startPlayback, stopPlayback]);
 
   useEffect(() => {
     const didChangeBpm = previousBpmRef.current !== bpm;
@@ -191,7 +91,14 @@ export function useSequencerPlayback({ bpm, pattern }: UseSequencerPlaybackOptio
       return;
     }
 
-    void restartPlayback();
+    void restartPlayback().catch((error: unknown) => {
+      if (__DEV__) {
+        const detail = error instanceof SoundFontPlayerError ? error.nativeMessage : undefined;
+        console.warn('Rhythm playback restart failed.', detail ?? error);
+      }
+      setIsPlaying(false);
+      setCurrentStepIndex(null);
+    });
   }, [bpm, isPlaying, restartPlayback]);
 
   useEffect(() => {
@@ -200,33 +107,30 @@ export function useSequencerPlayback({ bpm, pattern }: UseSequencerPlaybackOptio
     }
 
     const intervalId = setInterval(() => {
-      const audioContext = audioContextRef.current;
       const startTime = startTimeRef.current;
+      const patternLength = patternRef.current.length;
 
-      if (!audioContext || startTime === null || audioContext.currentTime < startTime) {
-        setCurrentStepIndex(0);
+      if (patternLength === 0) {
+        stopPlayback();
         return;
       }
 
       const stepDurationSeconds = 15 / bpmRef.current;
-      const elapsedSeconds = audioContext.currentTime - startTime;
-      const stepIndex =
-        Math.floor(elapsedSeconds / stepDurationSeconds) % patternRef.current.length;
+      const elapsedSeconds = (Date.now() - startTime) / 1_000;
+      const stepIndex = Math.floor(elapsedSeconds / stepDurationSeconds) % patternLength;
       setCurrentStepIndex(stepIndex);
     }, VISUAL_INTERVAL_MS);
 
     return () => {
       clearInterval(intervalId);
     };
-  }, [isPlaying]);
+  }, [isPlaying, stopPlayback]);
 
   useEffect(
     () => () => {
-      stopScheduledNodes();
-      void audioContextRef.current?.close();
-      audioContextRef.current = null;
+      void stopSoundFontPlayback();
     },
-    [stopScheduledNodes],
+    [],
   );
 
   return {

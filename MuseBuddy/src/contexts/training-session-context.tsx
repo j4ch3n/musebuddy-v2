@@ -7,15 +7,24 @@ import { fetchDailyTrainingSession } from './training-session-api';
 
 type TrainingSessionPhase = 'idle' | 'loading' | 'ready' | 'error';
 
+export type TrainingLearningConfig = {
+  bpm: number;
+};
+
 type TrainingSessionContextValue = {
   errorMessage: string;
+  learningConfig: TrainingLearningConfig;
   phase: TrainingSessionPhase;
   prepareTrainingSession: () => Promise<void>;
   session: PreparedTrainingSession | null;
+  setBpm: (bpm: number) => void;
 };
 
 const TrainingSessionContext = createContext<TrainingSessionContextValue | null>(null);
 const logger = createLogger('TrainingSession');
+const DEFAULT_LEARNING_CONFIG: TrainingLearningConfig = {
+  bpm: 95,
+};
 
 type TrainingSessionProviderProps = {
   children: ReactNode;
@@ -35,8 +44,17 @@ function messageFor(error: unknown) {
 
 export function TrainingSessionProvider({ children }: TrainingSessionProviderProps) {
   const [errorMessage, setErrorMessage] = useState('');
+  const [learningConfig, setLearningConfig] =
+    useState<TrainingLearningConfig>(DEFAULT_LEARNING_CONFIG);
   const [phase, setPhase] = useState<TrainingSessionPhase>('idle');
   const [session, setSession] = useState<PreparedTrainingSession | null>(null);
+
+  const setBpm = useCallback((bpm: number) => {
+    setLearningConfig((currentConfig) => ({
+      ...currentConfig,
+      bpm,
+    }));
+  }, []);
 
   const prepareTrainingSession = useCallback(async () => {
     setErrorMessage('');
@@ -61,11 +79,13 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
   const value = useMemo(
     () => ({
       errorMessage,
+      learningConfig,
       phase,
       prepareTrainingSession,
       session,
+      setBpm,
     }),
-    [errorMessage, phase, prepareTrainingSession, session],
+    [errorMessage, learningConfig, phase, prepareTrainingSession, session, setBpm],
   );
 
   return (

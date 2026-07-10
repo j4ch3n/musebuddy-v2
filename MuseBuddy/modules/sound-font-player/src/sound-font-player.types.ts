@@ -1,19 +1,20 @@
-export type SoundFontInstrument = 'piano';
+export type SoundFontInstrument = 'piano' | 'bass' | 'guitar';
 
-export type SoundFontPlaybackNote = {
-  channel: 0;
-  durationSeconds: number;
-  id: string;
-  midi: number;
-  startTimeSeconds: number;
-  velocity: number;
+export type SoundFontPlaybackCell = {
+  midi: number | null;
+  velocity: number | null;
+};
+
+export type SoundFontPlaybackStep = SoundFontPlaybackCell[];
+
+export type SoundFontPlaybackTrack = {
+  instrument: SoundFontInstrument;
+  parts: SoundFontPlaybackStep[][];
 };
 
 export type SoundFontPlaybackConfiguration = {
-  bpm: 100;
-  instrument: SoundFontInstrument;
-  notes: SoundFontPlaybackNote[];
-  slotDurationSeconds: number;
+  bpm: number;
+  tracks: SoundFontPlaybackTrack[];
 };
 
 export type SoundFontPlayerErrorCode =

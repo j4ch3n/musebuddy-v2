@@ -8,8 +8,10 @@ import type {
 
 export type {
   SoundFontInstrument,
+  SoundFontPlaybackCell,
   SoundFontPlaybackConfiguration,
-  SoundFontPlaybackNote,
+  SoundFontPlaybackStep,
+  SoundFontPlaybackTrack,
   SoundFontPlayerErrorCode,
 } from './sound-font-player.types';
 
@@ -24,15 +26,14 @@ type NativeError = Error & {
 };
 
 const errorMessages: Record<SoundFontPlayerErrorCode, string> = {
-  ERR_SOUNDFONT_ALREADY_PLAYING: 'The piano player is already playing.',
-  ERR_SOUNDFONT_EMPTY_CONFIGURATION: 'There are no notes to play.',
-  ERR_SOUNDFONT_ENGINE_START_FAILED: 'The piano player could not start audio playback.',
-  ERR_SOUNDFONT_INVALID_CONFIGURATION: 'The piano playback configuration is invalid.',
-  ERR_SOUNDFONT_LOAD_FAILED: 'The piano sound could not be loaded.',
-  ERR_SOUNDFONT_RESOURCE_MISSING:
-    'The bundled piano sound is missing. Rebuild the development client.',
+  ERR_SOUNDFONT_ALREADY_PLAYING: 'The SoundFont player is already playing.',
+  ERR_SOUNDFONT_EMPTY_CONFIGURATION: 'There are no playable tracks.',
+  ERR_SOUNDFONT_ENGINE_START_FAILED: 'The SoundFont player could not start audio playback.',
+  ERR_SOUNDFONT_INVALID_CONFIGURATION: 'The SoundFont playback configuration is invalid.',
+  ERR_SOUNDFONT_LOAD_FAILED: 'The SoundFont sound could not be loaded.',
+  ERR_SOUNDFONT_RESOURCE_MISSING: 'A bundled SoundFont is missing. Rebuild the development client.',
   ERR_UNSUPPORTED_PLATFORM:
-    'Piano playback is available only in the MuseBuddy iOS development client.',
+    'SoundFont playback is available only in the MuseBuddy iOS development client.',
 };
 
 export class SoundFontPlayerError extends Error {

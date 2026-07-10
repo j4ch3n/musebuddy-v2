@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { museBuddyColors } from '@/constants/design-tokens';
+import { useTrainingSession } from '@/contexts/training-session-context';
 import type { TrainingSessionKeyArrangement } from '@/contexts/training-session-schema';
 import { buildSoundFontPlaybackConfiguration } from '@/music-theory/sound-font-playback';
 import { Button } from '@/ui';
@@ -13,51 +14,56 @@ type SessionGoalPlayButtonProps = {
 };
 
 export function SessionGoalPlayButton({ keyArrangement }: SessionGoalPlayButtonProps) {
-  const playbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { learningConfig } = useTrainingSession();
+  const previousBpmRef = useRef(learningConfig.bpm);
   const [errorMessage, setErrorMessage] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
   const configuration = useMemo(
-    () => (keyArrangement ? buildSoundFontPlaybackConfiguration(keyArrangement) : null),
-    [keyArrangement],
+    () =>
+      keyArrangement
+        ? buildSoundFontPlaybackConfiguration(keyArrangement, learningConfig.bpm)
+        : null,
+    [keyArrangement, learningConfig.bpm],
   );
-  const isDisabled = !configuration || configuration.notes.length === 0;
+  const isDisabled = !configuration || configuration.tracks.length === 0;
 
   useEffect(
     () => () => {
-      clearPlaybackTimeout(playbackTimeoutRef);
       void stop();
     },
     [],
   );
 
+  useEffect(() => {
+    const didChangeBpm = previousBpmRef.current !== learningConfig.bpm;
+    previousBpmRef.current = learningConfig.bpm;
+
+    if (!didChangeBpm || !isPlaying || !configuration) {
+      return;
+    }
+
+    void play(configuration).catch((error: unknown) => {
+      setIsPlaying(false);
+      setErrorMessage(messageFor(error));
+    });
+  }, [configuration, isPlaying, learningConfig.bpm]);
+
   async function handlePress() {
     setErrorMessage('');
 
     if (isPlaying) {
-      clearPlaybackTimeout(playbackTimeoutRef);
       setIsPlaying(false);
       await stop();
       return;
     }
 
-    if (!configuration || configuration.notes.length === 0) {
+    if (!configuration || configuration.tracks.length === 0) {
       return;
     }
 
     try {
       await play(configuration);
       setIsPlaying(true);
-
-      const playbackDurationSeconds = Math.max(
-        ...configuration.notes.map((note) => note.startTimeSeconds + note.durationSeconds),
-      );
-      playbackTimeoutRef.current = setTimeout(
-        () => {
-          setIsPlaying(false);
-          playbackTimeoutRef.current = null;
-        },
-        playbackDurationSeconds * 1_000 + 150,
-      );
     } catch (error) {
       setIsPlaying(false);
       setErrorMessage(messageFor(error));
@@ -91,17 +97,6 @@ function messageFor(error: unknown) {
   }
 
   return 'Piano playback failed.';
-}
-
-function clearPlaybackTimeout(playbackTimeoutRef: {
-  current: ReturnType<typeof setTimeout> | null;
-}) {
-  if (!playbackTimeoutRef.current) {
-    return;
-  }
-
-  clearTimeout(playbackTimeoutRef.current);
-  playbackTimeoutRef.current = null;
 }
 
 const styles = StyleSheet.create({

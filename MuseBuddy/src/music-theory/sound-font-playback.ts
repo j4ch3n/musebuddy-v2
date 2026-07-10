@@ -1,101 +1,107 @@
 import type { TrainingSessionKeyArrangement } from '@/contexts/training-session-schema';
 
+import { splitRhythmPatternBars } from '@/components/rhythm-trainer/rhythm-pattern';
+import type { RhythmPattern } from '@/components/rhythm-trainer/types';
 import type {
+  SoundFontPlaybackCell,
   SoundFontPlaybackConfiguration,
-  SoundFontPlaybackNote,
+  SoundFontPlaybackStep,
 } from '../../modules/sound-font-player';
 
-type ArrangementCell = TrainingSessionKeyArrangement['rows'][number]['slots'][number][number];
-
-type ActiveNote = {
-  laneIndex: number;
-  midi: number;
-  startSlotIndex: number;
-  velocity: number;
-};
-
+const DEFAULT_SESSION_GOAL_BPM = 95;
 const HOLD_MIDI = -50;
-const DEFAULT_PLAYBACK_BPM = 100;
-const SOURCE_SLOTS_PER_QUARTER_NOTE = 8;
-export const DEFAULT_SOUND_FONT_SLOT_DURATION_SECONDS =
-  60 / DEFAULT_PLAYBACK_BPM / SOURCE_SLOTS_PER_QUARTER_NOTE;
+const STRONG_RHYTHM_NOTE: SoundFontPlaybackCell = {
+  midi: 67,
+  velocity: 112,
+};
+const WEAK_RHYTHM_NOTE: SoundFontPlaybackCell = {
+  midi: 60,
+  velocity: 74,
+};
+const HOLD_CELL: SoundFontPlaybackCell = {
+  midi: HOLD_MIDI,
+  velocity: null,
+};
+const REST_CELL: SoundFontPlaybackCell = {
+  midi: null,
+  velocity: null,
+};
 
 export function buildSoundFontPlaybackConfiguration(
   keyArrangement: TrainingSessionKeyArrangement,
+  bpm: number = DEFAULT_SESSION_GOAL_BPM,
 ): SoundFontPlaybackConfiguration {
-  const slots = flattenArrangementSlots(keyArrangement);
-  const notes = collectPlaybackNotes(slots);
-
   return {
-    bpm: DEFAULT_PLAYBACK_BPM,
-    instrument: 'piano',
-    notes,
-    slotDurationSeconds: DEFAULT_SOUND_FONT_SLOT_DURATION_SECONDS,
+    bpm,
+    tracks: [
+      {
+        instrument: 'piano',
+        parts: buildPartsFromKeyArrangement(keyArrangement),
+      },
+    ],
   };
 }
 
-function flattenArrangementSlots(keyArrangement: TrainingSessionKeyArrangement) {
+export function buildRhythmSoundFontPlaybackConfiguration(
+  pattern: RhythmPattern,
+  bpm: number,
+): SoundFontPlaybackConfiguration {
+  return {
+    bpm,
+    tracks: [
+      {
+        instrument: 'piano',
+        parts: splitRhythmPatternBars(pattern).map((part) =>
+          part.map((step): SoundFontPlaybackStep => {
+            if (step === 's') {
+              return [STRONG_RHYTHM_NOTE];
+            }
+
+            if (step === 'w') {
+              return [WEAK_RHYTHM_NOTE];
+            }
+
+            if (step === 'h') {
+              return [HOLD_CELL];
+            }
+
+            return [REST_CELL];
+          }),
+        ),
+      },
+    ],
+  };
+}
+
+function buildPartsFromKeyArrangement(
+  keyArrangement: TrainingSessionKeyArrangement,
+): SoundFontPlaybackStep[][] {
   return [...keyArrangement.rows]
     .sort((left, right) => left.beatIndex - right.beatIndex)
-    .flatMap((row) => row.slots);
+    .map((row) =>
+      Array.from({ length: row.slots.length / 2 }, (_, stepIndex) => {
+        const firstSlot = row.slots[stepIndex * 2] ?? [];
+        const secondSlot = row.slots[stepIndex * 2 + 1] ?? [];
+
+        return mergeSourceSlotsIntoPlaybackStep(firstSlot, secondSlot);
+      }),
+    );
 }
 
-function collectPlaybackNotes(slots: ArrangementCell[][]): SoundFontPlaybackNote[] {
-  const activeNotes = new Map<number, ActiveNote>();
-  const notes: SoundFontPlaybackNote[] = [];
+function mergeSourceSlotsIntoPlaybackStep(
+  firstSlot: SoundFontPlaybackStep,
+  secondSlot: SoundFontPlaybackStep,
+): SoundFontPlaybackStep {
+  const laneCount = Math.max(firstSlot.length, secondSlot.length);
 
-  slots.forEach((slot, slotIndex) => {
-    slot.forEach((cell, laneIndex) => {
-      if (isHoldCell(cell)) {
-        return;
-      }
+  return Array.from({ length: laneCount }, (_, laneIndex) => {
+    const firstCell = firstSlot[laneIndex] ?? REST_CELL;
+    const secondCell = secondSlot[laneIndex] ?? REST_CELL;
 
-      const activeNote = activeNotes.get(laneIndex);
-      if (activeNote) {
-        notes.push(createPlaybackNote(activeNote, slotIndex));
-        activeNotes.delete(laneIndex);
-      }
+    if (firstCell.midi !== null) {
+      return firstCell;
+    }
 
-      if (isAttackCell(cell)) {
-        activeNotes.set(laneIndex, {
-          laneIndex,
-          midi: cell.midi,
-          startSlotIndex: slotIndex,
-          velocity: cell.velocity,
-        });
-      }
-    });
+    return secondCell;
   });
-
-  activeNotes.forEach((activeNote) => {
-    notes.push(createPlaybackNote(activeNote, slots.length));
-  });
-
-  return notes.sort(
-    (left, right) => left.startTimeSeconds - right.startTimeSeconds || left.midi - right.midi,
-  );
-}
-
-function createPlaybackNote(activeNote: ActiveNote, endSlotIndex: number): SoundFontPlaybackNote {
-  const durationSlots = Math.max(1, endSlotIndex - activeNote.startSlotIndex);
-
-  return {
-    channel: 0,
-    durationSeconds: durationSlots * DEFAULT_SOUND_FONT_SLOT_DURATION_SECONDS,
-    id: `note-${activeNote.startSlotIndex}-${activeNote.laneIndex}-${activeNote.midi}`,
-    midi: activeNote.midi,
-    startTimeSeconds: activeNote.startSlotIndex * DEFAULT_SOUND_FONT_SLOT_DURATION_SECONDS,
-    velocity: activeNote.velocity,
-  };
-}
-
-function isAttackCell(cell: ArrangementCell): cell is ArrangementCell & {
-  midi: number;
-  velocity: number;
-} {
-  return typeof cell.midi === 'number' && cell.midi > 0 && typeof cell.velocity === 'number';
-}
-
-function isHoldCell(cell: ArrangementCell) {
-  return cell.midi === HOLD_MIDI;
 }

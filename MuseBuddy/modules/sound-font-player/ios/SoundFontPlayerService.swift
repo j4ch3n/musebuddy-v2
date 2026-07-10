@@ -3,30 +3,66 @@ import AVFoundation
 import Foundation
 
 final class SoundFontPlayerService: @unchecked Sendable {
-  private struct ScheduledNote {
-    let channel: UInt8
-    let durationSeconds: TimeInterval
+  private struct InstrumentDefinition {
+    let bankLSB: UInt8
+    let bankMSB: UInt8
+    let program: UInt8
+    let resourceName: String
+  }
+
+  private struct ActiveNote {
     let midi: UInt8
-    let startTimeSeconds: TimeInterval
+    let startStepIndex: Int
     let velocity: UInt8
   }
 
-  private enum PianoSoundFont {
-    static let bankLSB = UInt8(kAUSampler_DefaultBankLSB)
-    static let bankMSB = UInt8(kAUSampler_DefaultMelodicBankMSB)
-    static let program: UInt8 = 0
+  private struct PlaybackTrack {
+    let instrument: String
+    let loopLengthBeats: Double
+    let notes: [ScheduledNote]
   }
+
+  private struct ScheduledNote {
+    let durationBeats: Double
+    let midi: UInt8
+    let startBeat: Double
+    let velocity: UInt8
+  }
+
+  private static let stepsPerPart = 16
+  private static let maxPartCount = 8
+  private static let stepDurationBeats = 0.25
+  private static let instruments: [String: InstrumentDefinition] = [
+    "piano": InstrumentDefinition(
+      bankLSB: UInt8(kAUSampler_DefaultBankLSB),
+      bankMSB: UInt8(kAUSampler_DefaultMelodicBankMSB),
+      program: 0,
+      resourceName: "piano-yamaha-PSRF50"
+    ),
+    "bass": InstrumentDefinition(
+      bankLSB: UInt8(kAUSampler_DefaultBankLSB),
+      bankMSB: UInt8(kAUSampler_DefaultMelodicBankMSB),
+      program: 0,
+      resourceName: "bass-jazz"
+    ),
+    "guitar": InstrumentDefinition(
+      bankLSB: UInt8(kAUSampler_DefaultBankLSB),
+      bankMSB: UInt8(kAUSampler_DefaultMelodicBankMSB),
+      program: 0,
+      resourceName: "guitar-custom-classical"
+    ),
+  ]
+  private static let holdMidi = -50
 
   private let workQueue = DispatchQueue(
     label: "com.musebuddy.sound-font-player",
     qos: .userInitiated
   )
   private let audioEngine = AVAudioEngine()
-  private let sampler = AVAudioUnitSampler()
-  private var completionWorkItem: DispatchWorkItem?
   private var isEngineConfigured = false
-  private var isSamplerLoaded = false
   private var isPlaybackActive = false
+  private var loadedInstruments = Set<String>()
+  private var samplersByInstrument: [String: AVAudioUnitSampler] = [:]
   private var sequencer: AVAudioSequencer?
 
   var isPlaying: Bool {
@@ -68,32 +104,22 @@ final class SoundFontPlayerService: @unchecked Sendable {
       stopPlayback()
     }
 
-    guard configuration.instrument == "piano" else {
-      throw SoundFontPlayerError.invalidConfiguration("Unsupported instrument \(configuration.instrument).")
-    }
-
     guard configuration.bpm.isFinite, configuration.bpm > 0 else {
       throw SoundFontPlayerError.invalidConfiguration("BPM must be positive.")
     }
 
-    guard configuration.slotDurationSeconds.isFinite, configuration.slotDurationSeconds > 0 else {
-      throw SoundFontPlayerError.invalidConfiguration("Slot duration must be positive.")
-    }
-
-    let notes = try configuration.notes.map(Self.validatedNote)
-    guard !notes.isEmpty else {
+    let tracks = try Self.validatedTracks(configuration.tracks)
+    guard tracks.contains(where: { !$0.notes.isEmpty }) else {
       throw SoundFontPlayerError.emptyConfiguration
     }
 
-    try startAudioEngineIfNeeded()
-    try loadSamplerIfNeeded()
-
-    let playbackLength = notes.reduce(TimeInterval(0)) {
-      max($0, $1.startTimeSeconds + $1.durationSeconds)
+    for track in tracks {
+      try loadSamplerIfNeeded(for: track.instrument)
     }
+    try startAudioEngineIfNeeded()
 
     do {
-      sequencer = try makeSequencer(for: notes)
+      sequencer = try makeSequencer(for: tracks, bpm: configuration.bpm)
       sequencer?.prepareToPlay()
       sequencer?.currentPositionInBeats = 0
       try sequencer?.start()
@@ -104,15 +130,6 @@ final class SoundFontPlayerService: @unchecked Sendable {
     }
 
     isPlaybackActive = true
-
-    let finishItem = DispatchWorkItem { [weak self] in
-      self?.finishPlayback()
-    }
-    completionWorkItem = finishItem
-    workQueue.asyncAfter(
-      deadline: DispatchTime.now() + .milliseconds(Int(((playbackLength + 0.1) * 1_000).rounded())),
-      execute: finishItem
-    )
   }
 
   private func configureAudioEngineIfNeeded() throws {
@@ -120,28 +137,38 @@ final class SoundFontPlayerService: @unchecked Sendable {
       return
     }
 
-    audioEngine.attach(sampler)
-    audioEngine.connect(sampler, to: audioEngine.mainMixerNode, format: nil)
     isEngineConfigured = true
   }
 
-  private func loadSamplerIfNeeded() throws {
-    guard !isSamplerLoaded else {
+  private func loadSamplerIfNeeded(for instrument: String) throws {
+    guard loadedInstruments.contains(instrument) == false else {
       return
     }
 
-    guard let soundFontURL = findSoundFontURL() else {
+    guard let definition = Self.instruments[instrument] else {
+      throw SoundFontPlayerError.invalidConfiguration("Unsupported instrument \(instrument).")
+    }
+
+    guard let soundFontURL = findSoundFontURL(resourceName: definition.resourceName) else {
       throw SoundFontPlayerError.resourceMissing
+    }
+
+    let sampler = samplersByInstrument[instrument] ?? AVAudioUnitSampler()
+
+    if samplersByInstrument[instrument] == nil {
+      audioEngine.attach(sampler)
+      audioEngine.connect(sampler, to: audioEngine.mainMixerNode, format: nil)
+      samplersByInstrument[instrument] = sampler
     }
 
     do {
       try sampler.loadSoundBankInstrument(
         at: soundFontURL,
-        program: PianoSoundFont.program,
-        bankMSB: PianoSoundFont.bankMSB,
-        bankLSB: PianoSoundFont.bankLSB
+        program: definition.program,
+        bankMSB: definition.bankMSB,
+        bankLSB: definition.bankLSB
       )
-      isSamplerLoaded = true
+      loadedInstruments.insert(instrument)
     } catch {
       throw SoundFontPlayerError.loadFailed(error.localizedDescription)
     }
@@ -164,55 +191,111 @@ final class SoundFontPlayerService: @unchecked Sendable {
     }
   }
 
-  private func makeSequencer(for notes: [ScheduledNote]) throws -> AVAudioSequencer {
+  private func makeSequencer(for tracks: [PlaybackTrack], bpm: Double) throws -> AVAudioSequencer {
     let nextSequencer = AVAudioSequencer(audioEngine: audioEngine)
-    nextSequencer.tempoTrack.addEvent(AVExtendedTempoEvent(tempo: 60), at: 0)
+    nextSequencer.tempoTrack.addEvent(AVExtendedTempoEvent(tempo: bpm), at: 0)
 
-    let track = nextSequencer.createAndAppendTrack()
-    track.destinationAudioUnit = sampler
+    for playbackTrack in tracks {
+      guard let sampler = samplersByInstrument[playbackTrack.instrument] else {
+        throw SoundFontPlayerError.invalidConfiguration(
+          "Sampler for \(playbackTrack.instrument) is not loaded."
+        )
+      }
 
-    for note in notes {
-      let event = AVMIDINoteEvent(
-        channel: UInt32(note.channel),
-        key: UInt32(note.midi),
-        velocity: UInt32(note.velocity),
-        duration: note.durationSeconds
-      )
-      track.addEvent(event, at: note.startTimeSeconds)
+      let track = nextSequencer.createAndAppendTrack()
+      track.destinationAudioUnit = sampler
+      track.loopRange = AVBeatRange(start: 0, length: playbackTrack.loopLengthBeats)
+      track.isLoopingEnabled = true
+      track.numberOfLoops = -1
+
+      for note in playbackTrack.notes {
+        let event = AVMIDINoteEvent(
+          channel: 0,
+          key: UInt32(note.midi),
+          velocity: UInt32(note.velocity),
+          duration: note.durationBeats
+        )
+        track.addEvent(event, at: note.startBeat)
+      }
     }
 
     return nextSequencer
   }
 
+  private static func validatedTracks(
+    _ trackRecords: [SoundFontPlaybackTrackRecord]
+  ) throws -> [PlaybackTrack] {
+    guard !trackRecords.isEmpty else {
+      throw SoundFontPlayerError.emptyConfiguration
+    }
+
+    return try trackRecords.map { record in
+      guard instruments[record.instrument] != nil else {
+        throw SoundFontPlayerError.invalidConfiguration(
+          "Unsupported instrument \(record.instrument)."
+        )
+      }
+
+      guard (1 ... maxPartCount).contains(record.parts.count) else {
+        throw SoundFontPlayerError.invalidConfiguration(
+          "Instrument \(record.instrument) must contain 1 to \(maxPartCount) parts."
+        )
+      }
+
+      let steps = try record.parts.enumerated().flatMap { partIndex, part in
+        guard part.count == stepsPerPart else {
+          throw SoundFontPlayerError.invalidConfiguration(
+            "Instrument \(record.instrument) part \(partIndex) must contain \(stepsPerPart) steps."
+          )
+        }
+
+        try part.enumerated().forEach { stepIndex, step in
+          try validateStep(
+            step,
+            instrument: record.instrument,
+            partIndex: partIndex,
+            stepIndex: stepIndex
+          )
+        }
+
+        return part
+      }
+
+      return PlaybackTrack(
+        instrument: record.instrument,
+        loopLengthBeats: Double(steps.count) * stepDurationBeats,
+        notes: notes(from: steps)
+      )
+    }
+  }
+
   private func finishPlayback() {
     sequencer?.stop()
     sequencer = nil
-    completionWorkItem?.cancel()
-    completionWorkItem = nil
     silenceAllChannels()
     isPlaybackActive = false
   }
 
   private func stopPlayback() {
-    completionWorkItem?.cancel()
-    completionWorkItem = nil
     finishPlayback()
   }
 
   private func silenceAllChannels() {
-    for channel in UInt8(0) ... UInt8(15) {
-      sampler.sendController(120, withValue: 0, onChannel: channel)
-      sampler.sendController(123, withValue: 0, onChannel: channel)
+    for sampler in samplersByInstrument.values {
+      for channel in UInt8(0) ... UInt8(15) {
+        sampler.sendController(120, withValue: 0, onChannel: channel)
+        sampler.sendController(123, withValue: 0, onChannel: channel)
+      }
     }
   }
 
-  private func findSoundFontURL() -> URL? {
+  private func findSoundFontURL(resourceName: String) -> URL? {
     let candidateBundles = [Bundle.main, Bundle(for: SoundFontPlayerService.self)]
       + Bundle.allFrameworks
       + Bundle.allBundles
 
     for bundle in candidateBundles {
-      if let url = bundle.url(forResource: "piano-yamaha-PSRF50", withExtension: "sf2") {
+      if let url = bundle.url(forResource: resourceName, withExtension: "sf2") {
         return url
       }
     }
@@ -220,33 +303,105 @@ final class SoundFontPlayerService: @unchecked Sendable {
     return nil
   }
 
-  private static func validatedNote(_ note: SoundFontPlaybackNoteRecord) throws -> ScheduledNote {
-    guard note.startTimeSeconds.isFinite, note.startTimeSeconds >= 0 else {
-      throw SoundFontPlayerError.invalidConfiguration("Note \(note.id) has an invalid start time.")
+  private static func notes(
+    from steps: [[SoundFontPlaybackCellRecord]]
+  ) -> [ScheduledNote] {
+    var activeNotesByLane: [Int: ActiveNote] = [:]
+    var notes: [ScheduledNote] = []
+
+    for (stepIndex, step) in steps.enumerated() {
+      for (laneIndex, cell) in step.enumerated() {
+        if cell.midi == holdMidi {
+          continue
+        }
+
+        if let activeNote = activeNotesByLane[laneIndex] {
+          notes.append(note(from: activeNote, endStepIndex: stepIndex))
+          activeNotesByLane.removeValue(forKey: laneIndex)
+        }
+
+        if let midi = cell.midi, midi > 0, let velocity = cell.velocity {
+          activeNotesByLane[laneIndex] = ActiveNote(
+            midi: UInt8(midi),
+            startStepIndex: stepIndex,
+            velocity: UInt8(max(1, velocity))
+          )
+        }
+      }
     }
 
-    guard note.durationSeconds.isFinite, note.durationSeconds > 0 else {
-      throw SoundFontPlayerError.invalidConfiguration("Note \(note.id) has an invalid duration.")
+    for activeNote in activeNotesByLane.values {
+      notes.append(note(from: activeNote, endStepIndex: steps.count))
     }
 
-    guard (1 ... 127).contains(note.midi) else {
-      throw SoundFontPlayerError.invalidConfiguration("Note \(note.id) has an invalid MIDI value.")
-    }
+    return notes.sorted {
+      if $0.startBeat == $1.startBeat {
+        return $0.midi < $1.midi
+      }
 
-    guard (0 ... 127).contains(note.velocity) else {
-      throw SoundFontPlayerError.invalidConfiguration("Note \(note.id) has an invalid velocity.")
+      return $0.startBeat < $1.startBeat
     }
+  }
 
-    guard (0 ... 15).contains(note.channel) else {
-      throw SoundFontPlayerError.invalidConfiguration("Note \(note.id) has an invalid channel.")
-    }
+  private static func note(from activeNote: ActiveNote, endStepIndex: Int) -> ScheduledNote {
+    let durationSteps = max(1, endStepIndex - activeNote.startStepIndex)
 
     return ScheduledNote(
-      channel: UInt8(note.channel),
-      durationSeconds: note.durationSeconds,
-      midi: UInt8(note.midi),
-      startTimeSeconds: note.startTimeSeconds,
-      velocity: UInt8(max(1, note.velocity))
+      durationBeats: Double(durationSteps) * stepDurationBeats,
+      midi: activeNote.midi,
+      startBeat: Double(activeNote.startStepIndex) * stepDurationBeats,
+      velocity: activeNote.velocity
     )
+  }
+
+  private static func validateStep(
+    _ step: [SoundFontPlaybackCellRecord],
+    instrument: String,
+    partIndex: Int,
+    stepIndex: Int
+  ) throws {
+    guard !step.isEmpty else {
+      throw SoundFontPlayerError.invalidConfiguration(
+        "Instrument \(instrument) part \(partIndex) step \(stepIndex) must contain at least one lane."
+      )
+    }
+
+    try step.enumerated().forEach { laneIndex, cell in
+      guard let midi = cell.midi else {
+        if cell.velocity != nil {
+          let detail = "Instrument \(instrument) part \(partIndex) step \(stepIndex) " +
+            "lane \(laneIndex) rest must not carry velocity."
+          throw SoundFontPlayerError.invalidConfiguration(
+            detail
+          )
+        }
+
+        return
+      }
+
+      if midi == holdMidi {
+        if cell.velocity != nil {
+          let detail = "Instrument \(instrument) part \(partIndex) step \(stepIndex) " +
+            "lane \(laneIndex) hold must not carry velocity."
+          throw SoundFontPlayerError.invalidConfiguration(
+            detail
+          )
+        }
+
+        return
+      }
+
+      guard (1 ... 127).contains(midi) else {
+        throw SoundFontPlayerError.invalidConfiguration(
+          "Instrument \(instrument) part \(partIndex) step \(stepIndex) lane \(laneIndex) has invalid MIDI value."
+        )
+      }
+
+      guard let velocity = cell.velocity, (0 ... 127).contains(velocity) else {
+        throw SoundFontPlayerError.invalidConfiguration(
+          "Instrument \(instrument) part \(partIndex) step \(stepIndex) lane \(laneIndex) has invalid velocity."
+        )
+      }
+    }
   }
 }

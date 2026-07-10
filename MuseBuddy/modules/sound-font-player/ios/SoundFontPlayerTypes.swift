@@ -30,7 +30,7 @@ enum SoundFontPlayerError: Error {
     case .alreadyPlaying:
       "The SoundFont player is already playing."
     case .emptyConfiguration:
-      "The SoundFont playback configuration does not contain any notes."
+      "The SoundFont playback configuration does not contain any playable tracks."
     case let .engineStartFailed(detail):
       "The SoundFont player could not start audio playback: \(detail)"
     case let .invalidConfiguration(detail):
@@ -38,7 +38,7 @@ enum SoundFontPlayerError: Error {
     case let .loadFailed(detail):
       "The SoundFont could not be loaded: \(detail)"
     case .resourceMissing:
-      "The bundled piano SoundFont could not be found."
+      "A bundled SoundFont could not be found."
     }
   }
 }
@@ -60,18 +60,17 @@ final class SoundFontPlayerException: Exception, @unchecked Sendable {
   }
 }
 
-struct SoundFontPlaybackNoteRecord: Record {
-  @Field var channel: Int = 0
-  @Field var durationSeconds: Double = 0
-  @Field var id: String = ""
-  @Field var midi: Int = 0
-  @Field var startTimeSeconds: Double = 0
-  @Field var velocity: Int = 0
+struct SoundFontPlaybackCellRecord: Record {
+  @Field var midi: Int?
+  @Field var velocity: Int?
+}
+
+struct SoundFontPlaybackTrackRecord: Record {
+  @Field var instrument: String = "piano"
+  @Field var parts: [[[SoundFontPlaybackCellRecord]]] = []
 }
 
 struct SoundFontPlaybackConfigurationRecord: Record {
   @Field var bpm: Double = 100
-  @Field var instrument: String = "piano"
-  @Field var notes: [SoundFontPlaybackNoteRecord] = []
-  @Field var slotDurationSeconds: Double = 0.075
+  @Field var tracks: [SoundFontPlaybackTrackRecord] = []
 }

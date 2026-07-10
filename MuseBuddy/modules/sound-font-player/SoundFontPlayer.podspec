@@ -17,5 +17,5 @@ Pod::Spec.new do |s|
   s.dependency "ExpoModulesCore"
 
   s.source_files = "ios/**/*.swift"
-  s.resources = ["ios/Resources/piano-yamaha-PSRF50.sf2"]
+  s.resources = ["ios/Resources/*.sf2"]
 end

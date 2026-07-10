@@ -3,7 +3,8 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { museBuddyColors } from '@/constants/design-tokens';
-import { DailyProgress, type DailyProgressStep } from '@/ui';
+import { useTrainingSession } from '@/contexts/training-session-context';
+import { BpmControl, DailyProgress, type DailyProgressStep } from '@/ui';
 
 type TrainingStepId = DailyProgressStep;
 
@@ -30,12 +31,16 @@ type TrainingScreenShellProps = StepTrainingScreenShellProps | HeaderTrainingScr
 
 export function TrainingScreenShell(props: TrainingScreenShellProps) {
   const { children, footer } = props;
+  const { learningConfig, setBpm } = useTrainingSession();
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic">
         {props.currentStep !== undefined ? (
-          <DailyProgress currentStep={props.currentStep} />
+          <View style={styles.trainingHeader}>
+            <DailyProgress currentStep={props.currentStep} />
+            <BpmControl onChange={setBpm} value={learningConfig.bpm} />
+          </View>
         ) : (
           <View style={styles.header}>
             <Text style={styles.eyebrow}>{props.eyebrow}</Text>
@@ -63,6 +68,12 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
     paddingHorizontal: 20,
     paddingTop: 28,
+  },
+  trainingHeader: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 10,
+    zIndex: 10,
   },
   header: {
     gap: 8,

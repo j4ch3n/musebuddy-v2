@@ -1,3 +1,4 @@
+export { BpmControl, BPM_OPTIONS, DEFAULT_BPM } from './bpm-control';
 export { Button } from './button';
 export { Carousel, type CarouselProps } from './carousel';
 export {
