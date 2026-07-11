@@ -88,8 +88,12 @@ Consult the relevant file in `.agents/references/` before changing an area it co
 
 - `basic-pitch-coreml.md`: Basic Pitch model conversion, Core ML integration, audio
   preprocessing, inference, and note decoding.
-- `sound-font-player.md`: SoundFont playback module architecture, instruments, sequencer
-  behavior, events, and error handling.
+- `performance-guidance.md`: React performance guidance provider/button state model,
+  page integration, and visual treatment.
+- `performance-soundfont-integration.md`: Integration contract between performance
+  guidance UI and native SoundFont playback events.
+- `sound-font-player.md`: SoundFont native module architecture, playback configuration,
+  instruments, native cycle behavior, events, and error handling.
 
 ## Design System
 
