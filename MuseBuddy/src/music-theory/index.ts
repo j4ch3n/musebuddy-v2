@@ -16,5 +16,9 @@ export {
   prepareTrainingSessionDisplay,
   type PreparedTrainingSession,
 } from './training-session-display';
+export {
+  buildChordPreviewSoundFontPlaybackConfiguration,
+  buildChordSummarySoundFontPlaybackConfiguration,
+} from './sound-font-playback';
 export { deriveRhythmFromKeyArrangement } from './rhythm-arrangement';
 export { BPM_OPTIONS, DEFAULT_BPM } from './tempo';

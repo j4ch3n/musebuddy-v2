@@ -31,6 +31,7 @@ export type CarouselProps<T> = {
   getItemAccessibilityLabel?: (item: T, index: number) => string;
   items: readonly T[];
   keyExtractor: (item: T, index: number) => string;
+  onCurrentIndexChange?: (index: number) => void;
   renderItem: (item: T, index: number) => ReactNode;
 };
 
@@ -107,6 +108,7 @@ export function Carousel<T>({
   getItemAccessibilityLabel,
   items,
   keyExtractor,
+  onCurrentIndexChange,
   renderItem,
 }: CarouselProps<T>) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -140,6 +142,10 @@ export function Carousel<T>({
     animatedCurrentIndex.value = safeCurrentIndex;
     dragOffset.value = 0;
   }, [animatedCurrentIndex, dragOffset, safeCurrentIndex]);
+
+  useEffect(() => {
+    onCurrentIndexChange?.(safeCurrentIndex);
+  }, [onCurrentIndexChange, safeCurrentIndex]);
 
   const canMove = useCallback(
     (direction: CarouselDirection) =>

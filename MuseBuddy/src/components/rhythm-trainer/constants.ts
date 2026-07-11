@@ -4,7 +4,7 @@ export const MAX_BAR_COUNT = 2;
 export const ONE_BAR_STEP_COUNT = STEPS_PER_BAR;
 export const TWO_BAR_STEP_COUNT = STEPS_PER_BAR * MAX_BAR_COUNT;
 
-export { BPM_OPTIONS as RHYTHM_SPEED_OPTIONS, DEFAULT_BPM } from '@/music-theory';
+export { BPM_OPTIONS as RHYTHM_SPEED_OPTIONS, DEFAULT_BPM } from '@/music-theory/tempo';
 
 export const RHYTHM_PATTERN_PROBABILITY_CONFIG = {
   strongBeat: 0.92,

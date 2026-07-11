@@ -7,8 +7,9 @@ import type {
   SoundFontPlaybackConfiguration,
   SoundFontPlaybackStep,
 } from '@modules/sound-font-player';
+import type { ChordDisplay } from './chord-display';
+import { DEFAULT_BPM } from './tempo';
 
-const DEFAULT_SESSION_GOAL_BPM = 96;
 const HOLD_MIDI = -50;
 const STRONG_RHYTHM_NOTE: SoundFontPlaybackCell = {
   midi: 67,
@@ -18,6 +19,9 @@ const WEAK_RHYTHM_NOTE: SoundFontPlaybackCell = {
   midi: 60,
   velocity: 74,
 };
+const CHORD_NOTE_VELOCITY = 96;
+const CHORD_NOTE_STRONG_VELOCITY = 96;
+const CHORD_NOTE_WEAK_VELOCITY = 65;
 const HOLD_CELL: SoundFontPlaybackCell = {
   midi: HOLD_MIDI,
   velocity: null,
@@ -29,7 +33,7 @@ const REST_CELL: SoundFontPlaybackCell = {
 
 export function buildSoundFontPlaybackConfiguration(
   keyArrangement: TrainingSessionKeyArrangement,
-  bpm: number = DEFAULT_SESSION_GOAL_BPM,
+  bpm: number = DEFAULT_BPM,
 ): SoundFontPlaybackConfiguration {
   return {
     bpm,
@@ -73,6 +77,54 @@ export function buildRhythmSoundFontPlaybackConfiguration(
   };
 }
 
+export function buildChordPreviewSoundFontPlaybackConfiguration(
+  display: ChordDisplay,
+  bpm: number,
+): SoundFontPlaybackConfiguration {
+  return {
+    bpm,
+    tracks: [
+      {
+        instrument: 'piano',
+        parts: [
+          buildChordPart(
+            display,
+            [
+              { durationSteps: 4, startStep: 0, velocity: CHORD_NOTE_STRONG_VELOCITY },
+              { durationSteps: 4, startStep: 4, velocity: CHORD_NOTE_WEAK_VELOCITY },
+              { durationSteps: 4, startStep: 8, velocity: CHORD_NOTE_STRONG_VELOCITY },
+              { durationSteps: 4, startStep: 12, velocity: CHORD_NOTE_WEAK_VELOCITY },
+            ],
+            { includeRootSubOctave: true },
+          ),
+        ],
+      },
+    ],
+  };
+}
+
+export function buildChordSummarySoundFontPlaybackConfiguration(
+  displays: readonly ChordDisplay[],
+  bpm: number,
+): SoundFontPlaybackConfiguration {
+  return {
+    bpm,
+    tracks: [
+      {
+        instrument: 'piano',
+        parts: displays.map((display) =>
+          buildChordPart(display, [
+            { durationSteps: 4, startStep: 0, velocity: 96 },
+            { durationSteps: 4, startStep: 4, velocity: 75 },
+            { durationSteps: 4, startStep: 8, velocity: 80 },
+            { durationSteps: 4, startStep: 12, velocity: 96 },
+          ]),
+        ),
+      },
+    ],
+  };
+}
+
 function buildPartsFromKeyArrangement(
   keyArrangement: TrainingSessionKeyArrangement,
 ): SoundFontPlaybackStep[][] {
@@ -104,4 +156,67 @@ function mergeSourceSlotsIntoPlaybackStep(
 
     return secondCell;
   });
+}
+
+type ChordAttack = {
+  durationSteps: number;
+  startStep: number;
+  velocity: number;
+};
+
+function buildChordPart(
+  display: ChordDisplay,
+  attacks: readonly ChordAttack[],
+  options: { includeRootSubOctave?: boolean } = {},
+): SoundFontPlaybackStep[] {
+  const chordMidis = display.notes.map((note) => note.midi);
+
+  if (options.includeRootSubOctave) {
+    const rootNote = display.notes.find((note) => note.isRoot) ?? display.notes[0];
+
+    if (rootNote) {
+      chordMidis.push(rootNote.midi - 12);
+    }
+  }
+
+  const stepModes = Array.from({ length: 16 }, () => 'rest' as 'hold' | 'note' | 'rest');
+  const stepVelocities = Array.from({ length: 16 }, () => CHORD_NOTE_VELOCITY);
+
+  attacks.forEach(({ durationSteps, startStep, velocity }) => {
+    if (startStep >= stepModes.length) {
+      return;
+    }
+
+    stepModes[startStep] = 'note';
+    stepVelocities[startStep] = velocity;
+
+    for (let stepIndex = startStep + 1; stepIndex < startStep + durationSteps; stepIndex += 1) {
+      if (stepIndex < stepModes.length) {
+        stepModes[stepIndex] = 'hold';
+      }
+    }
+  });
+
+  return stepModes.map((mode, stepIndex) =>
+    chordMidis.map((midi) => cellForChordStep(mode, midi, stepVelocities[stepIndex])),
+  );
+}
+
+function cellForChordStep(
+  mode: 'hold' | 'note' | 'rest',
+  midi: number,
+  velocity: number,
+): SoundFontPlaybackCell {
+  if (mode === 'note') {
+    return {
+      midi,
+      velocity,
+    };
+  }
+
+  if (mode === 'hold') {
+    return HOLD_CELL;
+  }
+
+  return REST_CELL;
 }
