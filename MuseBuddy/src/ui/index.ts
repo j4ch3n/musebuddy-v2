@@ -2,10 +2,8 @@ export { BpmControl, BPM_OPTIONS, DEFAULT_BPM } from './bpm-control';
 export { Button } from './button';
 export { Carousel, type CarouselProps } from './carousel';
 export {
-  buildInitialCarouselSlots,
+  getBoundedCarouselIndex,
   getCarouselSwipeDirection,
-  getWrappedCarouselIndex,
-  rotateCarouselSlots,
   shouldCommitCarouselSwipe,
 } from './carousel-utils';
 export {

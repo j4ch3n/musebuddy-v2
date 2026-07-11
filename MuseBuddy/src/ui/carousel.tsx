@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+  Easing,
   ReduceMotion,
   runOnJS,
   type SharedValue,
@@ -19,10 +20,8 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import {
-  buildInitialCarouselSlots,
+  getBoundedCarouselIndex,
   getCarouselSwipeDirection,
-  getWrappedCarouselIndex,
-  rotateCarouselSlots,
   shouldCommitCarouselSwipe,
   type CarouselDirection,
 } from './carousel-utils';
@@ -38,36 +37,37 @@ export type CarouselProps<T> = {
 type CarouselItemProps = {
   accessibilityHidden?: boolean;
   children: ReactNode;
+  currentIndex: SharedValue<number>;
   dragOffset: SharedValue<number>;
-  layoutIndex: number;
-  loopOffset?: number;
-  slotPositions: SharedValue<number[]>;
   stride: number;
   width: number;
 };
 
 const ACTIVE_OFFSET = 12;
-const FLY_DURATION_MS = 180;
+const EDGE_DRAG_LIMIT = 44;
+const EDGE_DRAG_RESISTANCE = 0.28;
+const FLY_DURATION_MS = 170;
 const ITEM_GAP = 20;
+const SLIDE_SPRING = {
+  damping: 19,
+  mass: 0.55,
+  reduceMotion: ReduceMotion.System,
+  stiffness: 230,
+};
 
 function CarouselItem({
   accessibilityHidden = false,
   children,
+  currentIndex,
   dragOffset,
-  layoutIndex,
-  loopOffset = 0,
-  slotPositions,
   stride,
   width,
 }: CarouselItemProps) {
   const animatedStyle = useAnimatedStyle(() => {
-    const itemIndex = layoutIndex % slotPositions.value.length;
-    const slot = slotPositions.value[itemIndex] ?? 0;
-
     return {
       transform: [
         {
-          translateX: (slot + loopOffset - layoutIndex) * stride + dragOffset.value,
+          translateX: -currentIndex.value * stride + dragOffset.value,
         },
       ],
     };
@@ -84,6 +84,24 @@ function CarouselItem({
   );
 }
 
+function getResistedDragOffset(
+  translationX: number,
+  currentIndex: number,
+  itemCount: number,
+): number {
+  'worklet';
+
+  const isPullingBeforeFirst = currentIndex <= 0 && translationX > 0;
+  const isPullingAfterLast = currentIndex >= itemCount - 1 && translationX < 0;
+
+  if (!isPullingBeforeFirst && !isPullingAfterLast) {
+    return translationX;
+  }
+
+  const resistedOffset = translationX * EDGE_DRAG_RESISTANCE;
+  return Math.max(-EDGE_DRAG_LIMIT, Math.min(resistedOffset, EDGE_DRAG_LIMIT));
+}
+
 export function Carousel<T>({
   accessibilityLabel = 'Carousel',
   getItemAccessibilityLabel,
@@ -93,12 +111,12 @@ export function Carousel<T>({
 }: CarouselProps<T>) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [width, setWidth] = useState(0);
+  const animatedCurrentIndex = useSharedValue(0);
   const dragOffset = useSharedValue(0);
   const isTransitioning = useSharedValue(false);
-  const slotPositions = useSharedValue(buildInitialCarouselSlots(items.length));
   const hasAnnouncedItem = useRef(false);
   const itemCount = items.length;
-  const safeCurrentIndex = currentIndex < itemCount ? currentIndex : 0;
+  const safeCurrentIndex = itemCount > 0 ? Math.min(currentIndex, itemCount - 1) : 0;
   const currentItem = items[safeCurrentIndex];
   const stride = width + ITEM_GAP;
   const itemLabel = currentItem
@@ -114,24 +132,44 @@ export function Carousel<T>({
     AccessibilityInfo.announceForAccessibility(itemLabel);
   }, [itemLabel]);
 
-  const updateCurrentIndex = useCallback(
-    (direction: CarouselDirection) => {
-      setCurrentIndex((current) => getWrappedCarouselIndex(current, direction, itemCount));
+  const updateCurrentIndex = useCallback((nextIndex: number) => {
+    setCurrentIndex(nextIndex);
+  }, []);
+
+  useEffect(() => {
+    animatedCurrentIndex.value = safeCurrentIndex;
+    dragOffset.value = 0;
+  }, [animatedCurrentIndex, dragOffset, safeCurrentIndex]);
+
+  const canMove = useCallback(
+    (direction: CarouselDirection) =>
+      getBoundedCarouselIndex(safeCurrentIndex, direction, itemCount) !== safeCurrentIndex,
+    [itemCount, safeCurrentIndex],
+  );
+
+  const completeMove = useCallback(
+    (nextIndex: number) => {
+      animatedCurrentIndex.value = nextIndex;
+      dragOffset.value = 0;
+      isTransitioning.value = false;
+      updateCurrentIndex(nextIndex);
     },
-    [itemCount],
+    [animatedCurrentIndex, dragOffset, isTransitioning, updateCurrentIndex],
   );
 
   const move = useCallback(
     (direction: CarouselDirection) => {
-      if (itemCount <= 1 || width <= 0 || isTransitioning.value) {
+      if (itemCount <= 1 || width <= 0 || isTransitioning.value || !canMove(direction)) {
         return;
       }
 
+      const nextIndex = getBoundedCarouselIndex(safeCurrentIndex, direction, itemCount);
       isTransitioning.value = true;
       dragOffset.value = withTiming(
         -direction * stride,
         {
           duration: FLY_DURATION_MS,
+          easing: Easing.out(Easing.cubic),
           reduceMotion: ReduceMotion.System,
         },
         (finished) => {
@@ -140,14 +178,20 @@ export function Carousel<T>({
             return;
           }
 
-          slotPositions.value = rotateCarouselSlots(slotPositions.value, direction, itemCount);
-          dragOffset.value = 0;
-          isTransitioning.value = false;
-          runOnJS(updateCurrentIndex)(direction);
+          runOnJS(completeMove)(nextIndex);
         },
       );
     },
-    [dragOffset, isTransitioning, itemCount, slotPositions, stride, updateCurrentIndex, width],
+    [
+      canMove,
+      completeMove,
+      dragOffset,
+      isTransitioning,
+      itemCount,
+      safeCurrentIndex,
+      stride,
+      width,
+    ],
   );
 
   const panGesture = useMemo(
@@ -158,7 +202,11 @@ export function Carousel<T>({
         .failOffsetY([-ACTIVE_OFFSET, ACTIVE_OFFSET])
         .onUpdate((event) => {
           if (!isTransitioning.value) {
-            dragOffset.value = event.translationX;
+            dragOffset.value = getResistedDragOffset(
+              event.translationX,
+              animatedCurrentIndex.value,
+              itemCount,
+            );
           }
         })
         .onEnd((event) => {
@@ -168,11 +216,23 @@ export function Carousel<T>({
 
           if (shouldCommitCarouselSwipe(event.translationX, event.velocityX, width)) {
             const direction = getCarouselSwipeDirection(event.translationX, event.velocityX);
+            const nextIndex = getBoundedCarouselIndex(
+              animatedCurrentIndex.value,
+              direction,
+              itemCount,
+            );
+
+            if (nextIndex === animatedCurrentIndex.value) {
+              dragOffset.value = withSpring(0, SLIDE_SPRING);
+              return;
+            }
+
             isTransitioning.value = true;
             dragOffset.value = withTiming(
               -direction * stride,
               {
                 duration: FLY_DURATION_MS,
+                easing: Easing.out(Easing.cubic),
                 reduceMotion: ReduceMotion.System,
               },
               (finished) => {
@@ -181,26 +241,15 @@ export function Carousel<T>({
                   return;
                 }
 
-                slotPositions.value = rotateCarouselSlots(
-                  slotPositions.value,
-                  direction,
-                  itemCount,
-                );
-                dragOffset.value = 0;
-                isTransitioning.value = false;
-                runOnJS(updateCurrentIndex)(direction);
+                runOnJS(completeMove)(nextIndex);
               },
             );
             return;
           }
 
-          dragOffset.value = withSpring(0, {
-            damping: 18,
-            reduceMotion: ReduceMotion.System,
-            stiffness: 220,
-          });
+          dragOffset.value = withSpring(0, SLIDE_SPRING);
         }),
-    [dragOffset, isTransitioning, itemCount, slotPositions, stride, updateCurrentIndex, width],
+    [animatedCurrentIndex, completeMove, dragOffset, isTransitioning, itemCount, stride, width],
   );
 
   const handleLayout = useCallback((event: LayoutChangeEvent) => {
@@ -222,8 +271,6 @@ export function Carousel<T>({
     return null;
   }
 
-  const duplicateItems = itemCount === 2 ? items : [];
-
   return (
     <View onLayout={handleLayout} style={styles.viewport}>
       <View
@@ -242,24 +289,9 @@ export function Carousel<T>({
         <View style={styles.track}>
           {items.map((item, index) => (
             <CarouselItem
+              currentIndex={animatedCurrentIndex}
               dragOffset={dragOffset}
               key={keyExtractor(item, index)}
-              layoutIndex={index}
-              slotPositions={slotPositions}
-              stride={stride}
-              width={width}
-            >
-              {renderItem(item, index)}
-            </CarouselItem>
-          ))}
-          {duplicateItems.map((item, index) => (
-            <CarouselItem
-              accessibilityHidden
-              dragOffset={dragOffset}
-              key={`${keyExtractor(item, index)}-carousel-duplicate`}
-              layoutIndex={itemCount + index}
-              loopOffset={itemCount}
-              slotPositions={slotPositions}
               stride={stride}
               width={width}
             >

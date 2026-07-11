@@ -1,7 +1,7 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 
-import { ChordLearning } from '@/components/chord-learning';
+import { ChordLearning, ChordSessionSummary } from '@/components/chord-learning';
 import { useTrainingSession } from '@/contexts/training-session-context';
 import type { ChordDisplay } from '@/music-theory';
 import { Button, Carousel } from '@/ui';
@@ -9,23 +9,74 @@ import { Button, Carousel } from '@/ui';
 import { PlaceholderPanel } from './placeholder-panel';
 import { TrainingScreenShell } from './training-screen-shell';
 
+type ChordLearningSlide =
+  | {
+      chordIndex: number;
+      display: ChordDisplay;
+      type: 'chord';
+    }
+  | {
+      displays: readonly ChordDisplay[];
+      type: 'summary';
+    };
+
 export function ChordLearningPage() {
   const router = useRouter();
   const { session } = useTrainingSession();
   const [flippedChordIds, setFlippedChordIds] = useState<ReadonlySet<string>>(() => new Set());
+  const slides = useMemo<readonly ChordLearningSlide[]>(() => {
+    if (!session) {
+      return [];
+    }
+
+    return [
+      ...session.chordDisplays.map((display, chordIndex) => ({
+        chordIndex,
+        display,
+        type: 'chord' as const,
+      })),
+      {
+        displays: session.chordDisplays,
+        type: 'summary' as const,
+      },
+    ];
+  }, [session]);
 
   const getChordKey = useCallback(
     (display: ChordDisplay, index: number) => `${display.idName}-${index}`,
     [],
   );
 
-  const renderChord = useCallback(
-    (display: ChordDisplay, index: number) => {
-      const chordKey = getChordKey(display, index);
+  const getSlideKey = useCallback(
+    (slide: ChordLearningSlide) => {
+      if (slide.type === 'summary') {
+        return 'chord-session-summary';
+      }
+
+      return getChordKey(slide.display, slide.chordIndex);
+    },
+    [getChordKey],
+  );
+
+  const getSlideAccessibilityLabel = useCallback((slide: ChordLearningSlide) => {
+    if (slide.type === 'summary') {
+      return 'All chords';
+    }
+
+    return slide.display.friendlyName;
+  }, []);
+
+  const renderSlide = useCallback(
+    (slide: ChordLearningSlide) => {
+      if (slide.type === 'summary') {
+        return <ChordSessionSummary displays={slide.displays} />;
+      }
+
+      const chordKey = getChordKey(slide.display, slide.chordIndex);
 
       return (
         <ChordLearning
-          display={display}
+          display={slide.display}
           isKeyboardCardFlipped={flippedChordIds.has(chordKey)}
           onKeyboardCardFlipChange={(isFlipped) => {
             setFlippedChordIds((current) => {
@@ -61,11 +112,11 @@ export function ChordLearningPage() {
       {session ? (
         <Carousel
           accessibilityLabel="Chords"
-          getItemAccessibilityLabel={(display) => display.friendlyName}
-          items={session.chordDisplays}
+          getItemAccessibilityLabel={getSlideAccessibilityLabel}
+          items={slides}
           key={session.chordDisplays.map((display) => display.idName).join('|')}
-          keyExtractor={getChordKey}
-          renderItem={renderChord}
+          keyExtractor={getSlideKey}
+          renderItem={renderSlide}
         />
       ) : (
         <PlaceholderPanel

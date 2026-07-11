@@ -1,51 +1,24 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  buildInitialCarouselSlots,
+  getBoundedCarouselIndex,
   getCarouselSwipeDirection,
-  getWrappedCarouselIndex,
-  rotateCarouselSlots,
   shouldCommitCarouselSwipe,
 } from './carousel-utils';
 
-describe('buildInitialCarouselSlots', () => {
-  it('places the first item at zero and the final item before it', () => {
-    expect(buildInitialCarouselSlots(4)).toEqual([0, 1, 2, -1]);
-  });
-
-  it('handles empty and single-item carousels', () => {
-    expect(buildInitialCarouselSlots(0)).toEqual([]);
-    expect(buildInitialCarouselSlots(1)).toEqual([0]);
-  });
-});
-
-describe('rotateCarouselSlots', () => {
-  it('recycles the previous slot after a forward swipe', () => {
-    expect(rotateCarouselSlots([0, 1, 2, -1], 1, 4)).toEqual([-1, 0, 1, 2]);
-  });
-
-  it('recycles the final slot after a backward swipe', () => {
-    expect(rotateCarouselSlots([0, 1, 2, -1], -1, 4)).toEqual([1, 2, -1, 0]);
-  });
-
-  it('keeps a single item stationary', () => {
-    expect(rotateCarouselSlots([0], 1, 1)).toEqual([0]);
-  });
-});
-
-describe('getWrappedCarouselIndex', () => {
+describe('getBoundedCarouselIndex', () => {
   it('moves in either direction', () => {
-    expect(getWrappedCarouselIndex(1, 1, 3)).toBe(2);
-    expect(getWrappedCarouselIndex(1, -1, 3)).toBe(0);
+    expect(getBoundedCarouselIndex(1, 1, 3)).toBe(2);
+    expect(getBoundedCarouselIndex(1, -1, 3)).toBe(0);
   });
 
-  it('wraps at both ends', () => {
-    expect(getWrappedCarouselIndex(2, 1, 3)).toBe(0);
-    expect(getWrappedCarouselIndex(0, -1, 3)).toBe(2);
+  it('stops at both ends', () => {
+    expect(getBoundedCarouselIndex(2, 1, 3)).toBe(2);
+    expect(getBoundedCarouselIndex(0, -1, 3)).toBe(0);
   });
 
   it('returns zero for an empty carousel', () => {
-    expect(getWrappedCarouselIndex(0, 1, 0)).toBe(0);
+    expect(getBoundedCarouselIndex(0, 1, 0)).toBe(0);
   });
 });
 
