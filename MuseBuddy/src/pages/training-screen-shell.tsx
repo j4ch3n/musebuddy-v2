@@ -4,9 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { museBuddyColors } from '@/constants/design-tokens';
 import { useTrainingSession } from '@/contexts/training-session-context';
-import { BpmControl, DailyProgress, type DailyProgressStep } from '@/ui';
+import { BpmControl, DailyProgressNavigator, type DailyProgressNavigatorStep } from '@/ui';
 
-type TrainingStepId = DailyProgressStep;
+type TrainingStepId = DailyProgressNavigatorStep;
 
 type BaseTrainingScreenShellProps = {
   children: ReactNode;
@@ -38,7 +38,7 @@ export function TrainingScreenShell(props: TrainingScreenShellProps) {
       <ScrollView contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic">
         {props.currentStep !== undefined ? (
           <View style={styles.trainingHeader}>
-            <DailyProgress currentStep={props.currentStep} />
+            <DailyProgressNavigator currentStep={props.currentStep} />
             <BpmControl onChange={setBpm} value={learningConfig.bpm} />
           </View>
         ) : (

@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-native';
 
-import { DailyProgress } from './daily-progress';
+import { DailyProgressNavigator } from './daily-progress-navigator';
 
 const meta = {
-  title: 'UI/DailyProgress',
-  component: DailyProgress,
+  title: 'UI/DailyProgressNavigator',
+  component: DailyProgressNavigator,
   args: {
     currentStep: 'goal',
   },
@@ -14,7 +14,7 @@ const meta = {
       options: ['goal', 'chord', 'rhythm', 'pattern', 'jam'],
     },
   },
-} satisfies Meta<typeof DailyProgress>;
+} satisfies Meta<typeof DailyProgressNavigator>;
 
 export default meta;
 

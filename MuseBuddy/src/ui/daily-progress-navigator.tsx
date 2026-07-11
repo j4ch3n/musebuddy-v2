@@ -1,21 +1,23 @@
 import FontAwesome5 from '@react-native-vector-icons/fontawesome5';
 import Lucide from '@react-native-vector-icons/lucide';
-import { StyleSheet } from 'react-native';
-import { View, XStack, YStack } from 'tamagui';
+import { type Href, useRouter } from 'expo-router';
+import { Pressable, StyleSheet } from 'react-native';
+import { View, XStack } from 'tamagui';
 
 import { museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 
-export type DailyProgressStep = 'goal' | 'chord' | 'rhythm' | 'pattern' | 'jam';
+export type DailyProgressNavigatorStep = 'goal' | 'chord' | 'rhythm' | 'pattern' | 'jam';
 
 type TrainingStepIconName = 'music' | 'drum' | 'magic';
 
-type DailyProgressProps = {
-  currentStep: DailyProgressStep;
+type DailyProgressNavigatorProps = {
+  currentStep: DailyProgressNavigatorStep;
 };
 
-type DailyProgressItem = {
+type DailyProgressNavigatorItem = {
   accent: 'blue' | 'green' | 'purple' | 'secondary';
-  id: DailyProgressStep;
+  href: Href;
+  id: DailyProgressNavigatorStep;
   label: string;
 } & (
   | {
@@ -28,9 +30,10 @@ type DailyProgressItem = {
     }
 );
 
-const dailyProgressSteps: DailyProgressItem[] = [
+const dailyProgressSteps: DailyProgressNavigatorItem[] = [
   {
     accent: 'secondary',
+    href: '/session-goal',
     iconFamily: 'lucide',
     iconName: 'piano',
     id: 'goal',
@@ -38,6 +41,7 @@ const dailyProgressSteps: DailyProgressItem[] = [
   },
   {
     accent: 'blue',
+    href: '/chord-learning',
     iconFamily: 'fontAwesome5',
     iconName: 'music',
     id: 'chord',
@@ -45,6 +49,7 @@ const dailyProgressSteps: DailyProgressItem[] = [
   },
   {
     accent: 'green',
+    href: '/rhythm-training',
     iconFamily: 'fontAwesome5',
     iconName: 'drum',
     id: 'rhythm',
@@ -52,6 +57,7 @@ const dailyProgressSteps: DailyProgressItem[] = [
   },
   {
     accent: 'purple',
+    href: '/pattern-training',
     iconFamily: 'fontAwesome5',
     iconName: 'shapes',
     id: 'pattern',
@@ -59,6 +65,7 @@ const dailyProgressSteps: DailyProgressItem[] = [
   },
   {
     accent: 'purple',
+    href: '/jam-session',
     iconFamily: 'fontAwesome5',
     iconName: 'magic',
     id: 'jam',
@@ -66,21 +73,27 @@ const dailyProgressSteps: DailyProgressItem[] = [
   },
 ];
 
-export function DailyProgress({ currentStep }: DailyProgressProps) {
+export function DailyProgressNavigator({ currentStep }: DailyProgressNavigatorProps) {
+  const router = useRouter();
   const currentStepIndex = dailyProgressSteps.findIndex((step) => step.id === currentStep);
 
   return (
-    <XStack accessibilityRole="summary" flex={1} gap={6}>
+    <XStack accessibilityRole="tablist" flex={1} gap={6}>
       {dailyProgressSteps.map((step, index) => {
         const isActive = step.id === currentStep;
         const isComplete = index < currentStepIndex;
         const accentStyle = isActive ? styles.stepAccentActive : accentStyles[step.accent];
 
         return (
-          <YStack
-            accessibilityLabel={`${step.label} step${isActive ? ', current' : ''}`}
-            flex={1}
+          <Pressable
+            accessibilityLabel={`${step.label} step`}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: isActive }}
+            disabled={isActive}
             key={step.id}
+            onPress={() => {
+              router.replace(step.href);
+            }}
             style={[
               styles.stepItem,
               isActive && styles.stepItemActive,
@@ -98,7 +111,7 @@ export function DailyProgress({ currentStep }: DailyProgressProps) {
               />
             )}
             <View style={[styles.stepAccent, accentStyle]} />
-          </YStack>
+          </Pressable>
         );
       })}
     </XStack>
@@ -125,6 +138,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: museBuddyColors.surface,
     borderRadius: museBuddyRadii.medium,
+    flex: 1,
     justifyContent: 'center',
     minHeight: 42,
     overflow: 'hidden',

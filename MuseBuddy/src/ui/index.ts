@@ -8,7 +8,10 @@ export {
   rotateCarouselSlots,
   shouldCommitCarouselSwipe,
 } from './carousel-utils';
-export { DailyProgress, type DailyProgressStep } from './daily-progress';
+export {
+  DailyProgressNavigator,
+  type DailyProgressNavigatorStep,
+} from './daily-progress-navigator';
 export { FlashCard } from './flash-card';
 export {
   getPianoKeyboardMarkers,
