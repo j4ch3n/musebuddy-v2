@@ -1,47 +1,26 @@
 import ExpoModulesCore
 import Foundation
 
+private typealias PlaybackConfig = SoundFontPlaybackConfigurationRecord
+private typealias PlaybackOptions = SoundFontPlaybackOptionsRecord
+
 public final class SoundFontPlayerModule: Module {
   private let player = SoundFontPlayerService()
 
   public func definition() -> ModuleDefinition {
     Name("SoundFontPlayer")
-    Events("onCycleRepeat", "onDemoFinish", "onLeadInFinish", "onStep", "onTick")
+    Events("onPlaybackFinish")
 
     OnCreate {
-      self.player.onCycleRepeat = { [weak self] payload in
+      self.player.onPlaybackFinish = { [weak self] payload in
         DispatchQueue.main.async {
-          self?.sendEvent("onCycleRepeat", payload)
-        }
-      }
-      self.player.onDemoFinish = { [weak self] payload in
-        DispatchQueue.main.async {
-          self?.sendEvent("onDemoFinish", payload)
-        }
-      }
-      self.player.onLeadInFinish = { [weak self] payload in
-        DispatchQueue.main.async {
-          self?.sendEvent("onLeadInFinish", payload)
-        }
-      }
-      self.player.onStep = { [weak self] payload in
-        DispatchQueue.main.async {
-          self?.sendEvent("onStep", payload)
-        }
-      }
-      self.player.onTick = { [weak self] payload in
-        DispatchQueue.main.async {
-          self?.sendEvent("onTick", payload)
+          self?.sendEvent("onPlaybackFinish", payload)
         }
       }
     }
 
     OnDestroy {
-      self.player.onCycleRepeat = nil
-      self.player.onDemoFinish = nil
-      self.player.onLeadInFinish = nil
-      self.player.onStep = nil
-      self.player.onTick = nil
+      self.player.onPlaybackFinish = nil
       self.player.stop()
     }
 
@@ -57,17 +36,37 @@ public final class SoundFontPlayerModule: Module {
       }
     }
 
-    AsyncFunction("playBand") { (configuration: SoundFontPlaybackConfigurationRecord) async throws in
+    AsyncFunction("playBand") { (configuration: PlaybackConfig, options: PlaybackOptions) async throws in
       do {
-        try await self.player.playBand(configuration: configuration)
+        let playbackId = try await self.player.playBand(configuration: configuration, options: options)
+        return ["playbackId": playbackId]
       } catch let error as SoundFontPlayerError {
         throw SoundFontPlayerException(error)
       }
     }
 
-    AsyncFunction("playGroove") { (configuration: SoundFontPlaybackConfigurationRecord) async throws in
+    AsyncFunction("playGroove") { (configuration: PlaybackConfig, options: PlaybackOptions) async throws in
       do {
-        try await self.player.playGroove(configuration: configuration)
+        let playbackId = try await self.player.playGroove(configuration: configuration, options: options)
+        return ["playbackId": playbackId]
+      } catch let error as SoundFontPlayerError {
+        throw SoundFontPlayerException(error)
+      }
+    }
+
+    AsyncFunction("restartBand") { (configuration: PlaybackConfig, options: PlaybackOptions) async throws in
+      do {
+        let playbackId = try await self.player.restartBand(configuration: configuration, options: options)
+        return ["playbackId": playbackId]
+      } catch let error as SoundFontPlayerError {
+        throw SoundFontPlayerException(error)
+      }
+    }
+
+    AsyncFunction("restartGroove") { (configuration: PlaybackConfig, options: PlaybackOptions) async throws in
+      do {
+        let playbackId = try await self.player.restartGroove(configuration: configuration, options: options)
+        return ["playbackId": playbackId]
       } catch let error as SoundFontPlayerError {
         throw SoundFontPlayerException(error)
       }

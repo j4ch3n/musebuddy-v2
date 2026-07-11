@@ -26,9 +26,12 @@ material. It accepts:
 
 - `playback`: `{ kind: 'band' | 'groove', configuration }`, where `configuration` is a
   SoundFont playback configuration or `null`.
-- `cycleCount`: optional repeat count, defaulting to `3`.
+- `cycleCount`: optional total demo count, defaulting to `3`.
+- `demoListenCycleCount`: optional explicit count for JS-owned demo/listen rounds.
 - `listeningEnabled`: whether the guidance flow includes a listening phase, defaulting to
   `true`.
+- `startPhase`: optional `pending` or `prepare` start state, defaulting to `pending`.
+  `prepare` automatically starts the existing lead-in/demo flow on mount.
 - `finishText`: the message displayed during the finish state.
 - `onFinish`: navigation or page advancement after the finish progress completes.
 - `onSkip`: navigation after the 3-second hold-to-skip completes.
@@ -43,12 +46,14 @@ material. It accepts:
 - `countdownValue`.
 - `currentStepIndex`, used by rhythm training during audible demo only.
 - `errorMessage`, `finishText`, `isDisabled`, and `listeningEnabled`.
-- `start()`, `requestFinish(message?)`, and `requestSkip()`.
+- `start()`, `reset()`, `requestFinish(message?)`, and `requestSkip()`.
 
 ## State Model
 
-The guidance state is UI-level state. Playback timing and cycle boundaries are external
-inputs supplied by SoundFont integration code.
+The guidance state is UI-level state. The provider owns the lead-in countdown display,
+rhythm step highlighting, JS-controlled demo/listen rounds, and the hardcoded 3-second
+listening delay. Native SoundFont playback only starts the requested finite sequence and
+emits `onPlaybackFinish` when that native sequence completes.
 
 - `pending`: waits for the human to press Start.
 - `prepare`: the button shows `4`, `3`, `2`, `1` and uses a subtle scale animation.
@@ -56,6 +61,9 @@ inputs supplied by SoundFont integration code.
 - `listening`: the listening interval is active; the button shows `Your turn`.
 - `finish`: the button shows the configured finish message and fills for 3 seconds before
   `onFinish`.
+
+Session goal starts in `pending`. Later daily-session stages can start in `prepare` so the
+lead-in begins as soon as the stage mounts.
 
 ## Page Integration
 
@@ -96,10 +104,18 @@ Current state colors:
 - disabled: muted cream with reduced opacity.
 - skip fill: vivid red.
 
-The main button is pressable only in `pending`. Other phases are informational because
-native playback owns timing. The finish state displays a 3-second fill animation before
-navigation. The skip control fills over 3 seconds while pressed; releasing early resets
-the fill.
+The main button starts playback in `pending`. In every non-pending phase, holding it for
+1.5 seconds stops active SoundFont playback, cancels pending timers/navigation, and returns
+the guidance state to `pending`. While held, the main button label changes to `Hold to stop`
+and a red progress fill shows hold progress. Releasing early cancels the stop action. The
+finish state displays a 3-second fill animation before navigation unless the user holds
+the main button to reset. The skip control fills over 3 seconds while pressed; releasing
+early resets the fill.
+
+When a Reanimated worklet completion callback changes React state with `runOnJS`, account
+for any native gesture event that may still fire after the state change. Hold-to-act
+controls should suppress the release `onPress` after a successful hold so the completed
+action is not immediately undone or restarted.
 
 Keep visible text short enough for small iPhone widths. Do not add explanatory copy inside
 the training screens; the control should communicate state directly through label, color,
@@ -113,6 +129,8 @@ mapped through the module wrapper, with native detail included only in developme
 Provider cleanup must:
 
 - clear pending finish timers;
+- clear pending listening timers;
+- clear pending visual/countdown/highlighting timers;
 - stop any active playback through the integration layer;
 - remove external event subscriptions.
 

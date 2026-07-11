@@ -42,6 +42,7 @@ export function RhythmTrainingPage() {
 
   return (
     <PerformanceGuidanceProvider
+      demoListenCycleCount={3}
       finishText="this rhythm is fun!"
       key={`rhythm-${learningConfig.bpm}-${pattern.join('')}`}
       onFinish={() => {
@@ -54,6 +55,7 @@ export function RhythmTrainingPage() {
         configuration: playbackConfiguration,
         kind: 'groove',
       }}
+      startPhase="prepare"
     >
       <RhythmTrainingContent pattern={pattern} />
     </PerformanceGuidanceProvider>

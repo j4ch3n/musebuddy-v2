@@ -16,9 +16,21 @@ export type SoundFontPlaybackTrack<TInstrument extends string = string> = {
 
 export type SoundFontPlaybackConfiguration<TInstrument extends string = string> = {
   bpm: number;
-  cycleCount?: number;
-  includesSilentPeriod?: boolean;
   tracks: SoundFontPlaybackTrack<TInstrument>[];
+};
+
+export type SoundFontPlaybackOptions = {
+  leadIn?: boolean;
+  cycles?: number;
+  repeat?: boolean;
+};
+
+export type SoundFontRestartPlaybackOptions = SoundFontPlaybackOptions & {
+  leadIn: boolean;
+};
+
+export type SoundFontPlaybackStartResult = {
+  playbackId: number;
 };
 
 export type BandSoundFontPlaybackTrack = SoundFontPlaybackTrack<BandSoundFontInstrument>;
@@ -31,56 +43,14 @@ export type GrooveSoundFontPlaybackTrack = SoundFontPlaybackTrack<GrooveSoundFon
 export type GrooveSoundFontPlaybackConfiguration =
   SoundFontPlaybackConfiguration<GrooveSoundFontInstrument>;
 
-export type SoundFontLeadInFinishEvent = {
+export type SoundFontPlaybackFinishEvent = {
   playbackId: number;
   bpm: number;
+  completedCycles: number;
 };
-
-export type SoundFontDemoFinishEvent = {
-  playbackId: number;
-  bpm: number;
-  cycleIndex: number;
-  completedCycleCount: number;
-  includesSilentPeriod: boolean;
-};
-
-export type SoundFontCycleRepeatEvent = {
-  playbackId: number;
-  bpm: number;
-  cycleIndex: number;
-  completedCycleCount: number;
-  includesSilentPeriod: boolean;
-  willRepeat: boolean;
-};
-
-export type SoundFontStepEvent = {
-  playbackId: number;
-  bpm: number;
-  stepIndex: number;
-  barIndex: number;
-  stepIndexInBar: number;
-};
-
-export type SoundFontTickEvent =
-  | {
-      playbackId: number;
-      bpm: number;
-      event: 'beat';
-      beatIndex: number;
-    }
-  | {
-      playbackId: number;
-      bpm: number;
-      event: 'bar';
-      barIndex: number;
-    };
 
 export type SoundFontPlayerModuleEvents = {
-  onCycleRepeat(event: SoundFontCycleRepeatEvent): void;
-  onDemoFinish(event: SoundFontDemoFinishEvent): void;
-  onLeadInFinish(event: SoundFontLeadInFinishEvent): void;
-  onStep(event: SoundFontStepEvent): void;
-  onTick(event: SoundFontTickEvent): void;
+  onPlaybackFinish(event: SoundFontPlaybackFinishEvent): void;
 };
 
 export type SoundFontPlayerErrorCode =

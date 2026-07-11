@@ -168,6 +168,7 @@ export function ChordLearningPage() {
 
   return (
     <PerformanceGuidanceProvider
+      demoListenCycleCount={3}
       finishText={finishText}
       key={`${getSlideKey(currentSlide)}-${learningConfig.bpm}`}
       onFinish={() => {
@@ -185,6 +186,7 @@ export function ChordLearningPage() {
         configuration: playbackConfiguration,
         kind: 'band',
       }}
+      startPhase="prepare"
     >
       {content}
     </PerformanceGuidanceProvider>

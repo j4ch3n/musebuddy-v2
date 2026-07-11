@@ -4,13 +4,12 @@ import { Platform } from 'react-native';
 import type {
   BandSoundFontPlaybackConfiguration,
   GrooveSoundFontPlaybackConfiguration,
-  SoundFontCycleRepeatEvent,
-  SoundFontDemoFinishEvent,
-  SoundFontLeadInFinishEvent,
+  SoundFontPlaybackFinishEvent,
+  SoundFontPlaybackOptions,
+  SoundFontRestartPlaybackOptions,
+  SoundFontPlaybackStartResult,
   SoundFontPlayerModuleEvents,
   SoundFontPlayerErrorCode,
-  SoundFontStepEvent,
-  SoundFontTickEvent,
 } from './sound-font-player.types';
 
 export type {
@@ -20,17 +19,16 @@ export type {
   GrooveSoundFontInstrument,
   GrooveSoundFontPlaybackConfiguration,
   GrooveSoundFontPlaybackTrack,
-  SoundFontCycleRepeatEvent,
-  SoundFontDemoFinishEvent,
-  SoundFontLeadInFinishEvent,
   SoundFontPlaybackCell,
   SoundFontPlaybackConfiguration,
+  SoundFontPlaybackFinishEvent,
+  SoundFontPlaybackOptions,
+  SoundFontPlaybackStartResult,
   SoundFontPlaybackStep,
   SoundFontPlaybackTrack,
   SoundFontPlayerErrorCode,
   SoundFontPlayerModuleEvents,
-  SoundFontStepEvent,
-  SoundFontTickEvent,
+  SoundFontRestartPlaybackOptions,
 } from './sound-font-player.types';
 
 type EventSubscription = {
@@ -39,8 +37,22 @@ type EventSubscription = {
 
 declare class NativeSoundFontPlayerModule extends NativeModule<SoundFontPlayerModuleEvents> {
   isPlaying(): boolean;
-  playBand(configuration: BandSoundFontPlaybackConfiguration): Promise<void>;
-  playGroove(configuration: GrooveSoundFontPlaybackConfiguration): Promise<void>;
+  playBand(
+    configuration: BandSoundFontPlaybackConfiguration,
+    options: SoundFontPlaybackOptions,
+  ): Promise<SoundFontPlaybackStartResult>;
+  playGroove(
+    configuration: GrooveSoundFontPlaybackConfiguration,
+    options: SoundFontPlaybackOptions,
+  ): Promise<SoundFontPlaybackStartResult>;
+  restartBand(
+    configuration: BandSoundFontPlaybackConfiguration,
+    options: SoundFontRestartPlaybackOptions,
+  ): Promise<SoundFontPlaybackStartResult>;
+  restartGroove(
+    configuration: GrooveSoundFontPlaybackConfiguration,
+    options: SoundFontRestartPlaybackOptions,
+  ): Promise<SoundFontPlaybackStartResult>;
   prepareSoundFonts(): Promise<void>;
   stop(): Promise<void>;
 }
@@ -115,12 +127,34 @@ export function prepareSoundFonts(): Promise<void> {
   return callNative(() => getNativeModule().prepareSoundFonts());
 }
 
-export function playBand(configuration: BandSoundFontPlaybackConfiguration): Promise<void> {
-  return callNative(() => getNativeModule().playBand(configuration));
+export function playBand(
+  configuration: BandSoundFontPlaybackConfiguration,
+  options: SoundFontPlaybackOptions = {},
+): Promise<SoundFontPlaybackStartResult> {
+  return callNative(() => getNativeModule().playBand(configuration, normalizeOptions(options)));
 }
 
-export function playGroove(configuration: GrooveSoundFontPlaybackConfiguration): Promise<void> {
-  return callNative(() => getNativeModule().playGroove(configuration));
+export function playGroove(
+  configuration: GrooveSoundFontPlaybackConfiguration,
+  options: SoundFontPlaybackOptions = {},
+): Promise<SoundFontPlaybackStartResult> {
+  return callNative(() => getNativeModule().playGroove(configuration, normalizeOptions(options)));
+}
+
+export function restartBand(
+  configuration: BandSoundFontPlaybackConfiguration,
+  options: SoundFontRestartPlaybackOptions,
+): Promise<SoundFontPlaybackStartResult> {
+  return callNative(() => getNativeModule().restartBand(configuration, normalizeOptions(options)));
+}
+
+export function restartGroove(
+  configuration: GrooveSoundFontPlaybackConfiguration,
+  options: SoundFontRestartPlaybackOptions,
+): Promise<SoundFontPlaybackStartResult> {
+  return callNative(() =>
+    getNativeModule().restartGroove(configuration, normalizeOptions(options)),
+  );
 }
 
 export function stop(): Promise<void> {
@@ -131,28 +165,16 @@ export function isPlaying(): boolean {
   return getNativeModule().isPlaying();
 }
 
-export function addLeadInFinishListener(
-  listener: (event: SoundFontLeadInFinishEvent) => void,
+export function addPlaybackFinishListener(
+  listener: (event: SoundFontPlaybackFinishEvent) => void,
 ): EventSubscription {
-  return getNativeModule().addListener('onLeadInFinish', listener);
+  return getNativeModule().addListener('onPlaybackFinish', listener);
 }
 
-export function addDemoFinishListener(
-  listener: (event: SoundFontDemoFinishEvent) => void,
-): EventSubscription {
-  return getNativeModule().addListener('onDemoFinish', listener);
-}
-
-export function addCycleRepeatListener(
-  listener: (event: SoundFontCycleRepeatEvent) => void,
-): EventSubscription {
-  return getNativeModule().addListener('onCycleRepeat', listener);
-}
-
-export function addStepListener(listener: (event: SoundFontStepEvent) => void): EventSubscription {
-  return getNativeModule().addListener('onStep', listener);
-}
-
-export function addTickListener(listener: (event: SoundFontTickEvent) => void): EventSubscription {
-  return getNativeModule().addListener('onTick', listener);
+function normalizeOptions(options: SoundFontPlaybackOptions): Required<SoundFontPlaybackOptions> {
+  return {
+    leadIn: options.leadIn ?? false,
+    cycles: options.cycles ?? 1,
+    repeat: options.repeat ?? false,
+  };
 }

@@ -3,10 +3,10 @@ import { describe, expect, it } from 'vitest';
 import type { SoundFontPlaybackConfiguration } from '@modules/sound-font-player';
 
 import {
-  getPhaseAfterCycleRepeat,
-  getPhaseAfterDemoFinish,
+  getSoundFontDemoDurationMs,
   getSoundFontPartCount,
   getSoundFontStepCount,
+  shouldHandlePlaybackEvent,
 } from './performance-guidance-state';
 
 const configuration: SoundFontPlaybackConfiguration = {
@@ -34,14 +34,17 @@ describe('performance guidance state helpers', () => {
     expect(getSoundFontStepCount(null)).toBe(0);
   });
 
-  it('moves from demo to listening only when native reports a silent period', () => {
-    expect(getPhaseAfterDemoFinish('demo', true)).toBe('listening');
-    expect(getPhaseAfterDemoFinish('demo', false)).toBe('demo');
-    expect(getPhaseAfterDemoFinish('prepare', true)).toBe('prepare');
+  it('derives the demo duration from the longest SoundFont track and BPM', () => {
+    expect(getSoundFontDemoDurationMs(configuration)).toBe(4800);
   });
 
-  it('uses native cycle repeat intent to choose the next phase', () => {
-    expect(getPhaseAfterCycleRepeat(true)).toBe('demo');
-    expect(getPhaseAfterCycleRepeat(false)).toBe('finish');
+  it('ignores playback events until a start result has established the active id', () => {
+    expect(shouldHandlePlaybackEvent(null, 42)).toBe(false);
+    expect(shouldHandlePlaybackEvent(41, 42)).toBe(false);
+    expect(shouldHandlePlaybackEvent(42, 42)).toBe(true);
+  });
+
+  it('ignores stale playback finish events with mismatched playback ids', () => {
+    expect(shouldHandlePlaybackEvent(12, 11)).toBe(false);
   });
 });

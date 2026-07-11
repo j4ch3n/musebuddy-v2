@@ -6,46 +6,44 @@ React component/page details in `performance-guidance.md`.
 
 ## Responsibility Split
 
-- SoundFont player owns playback timing: lead-in, audible demo length, optional silent
-  period, cycle repeats, and native stop after the final cycle.
+- SoundFont player owns low-level playback: optional lead-in audio, finite cycle playback,
+  infinite repeat playback, stop, and the finite `onPlaybackFinish` event.
 - Performance guidance owns UI state, labels, progress animations, finish messages,
-  rhythm highlighting state, and navigation callbacks.
-- JavaScript starts SoundFont playback once for a guidance run. It must not stop/restart
-  playback for normal demo, listening, or repeat transitions.
-- JavaScript may call `stop()` for cancellation and cleanup: skip, unmount, route change,
-  explicit finish requests, or playback failure.
+  lead-in countdown display, rhythm highlighting timers, listening delay, demo/listen
+  round progression, and navigation callbacks.
+- JavaScript starts one native sequence for session goal, or one one-cycle native demo per
+  chord/rhythm listening round. It stores the returned `playbackId` and ignores stale
+  finish events.
+- JavaScript may call `stop()` for cancellation and cleanup: main-button reset, skip,
+  unmount, route change, explicit finish requests, or playback failure.
 
 ## Start Contract
 
-`PerformanceGuidanceProvider` injects cycle options into the page-provided SoundFont
-configuration before calling `playBand()` or `playGroove()`:
+`PerformanceGuidanceProvider` passes playback options separately from the page-provided
+SoundFont configuration when calling `playBand()` or `playGroove()`:
 
-- `cycleCount`: the provider's repeat count, currently `3` for the training pages.
-- `includesSilentPeriod`: mirrors `listeningEnabled`.
+- `leadIn`: true for the first demo in a page flow, false for later demos.
+- `cycles`: `2` for session goal, `1` for each chord/rhythm demo.
 
 This keeps page builders focused on musical content. Pages should not pre-bake guidance
 cycle policy into music-theory playback builders.
 
 ## Event Contract
 
-The guidance provider subscribes to SoundFont events and ignores stale playback ids.
+The guidance provider subscribes only to `onPlaybackFinish` and ignores stale playback
+ids. JS timers drive the prepare countdown and `currentStepIndex` while native audio
+plays.
 
-- `onLeadInFinish`: move `prepare -> demo`.
-- `onTick`: update the prepare countdown from beat ticks.
-- `onStep`: update `currentStepIndex` for rhythm highlighting only while phase is `demo`.
-- `onDemoFinish`: clear `currentStepIndex`; move `demo -> listening` only when
-  `includesSilentPeriod` is true.
-- `onCycleRepeat`: update `completedCycles`; move to `demo` when `willRepeat` is true, or
-  to `finish` when `willRepeat` is false.
-
-The final `onCycleRepeat` event has `willRepeat: false`. The provider starts its 3-second
-finish UI timer after that event, not from a locally calculated playback duration.
+- Session goal: native finish moves directly to `finish`.
+- Chord/rhythm learning: native finish enters `listening`; after the 3-second listening
+  delay, JS increments `completedCycles` and either starts the next one-cycle demo or
+  enters `finish`.
 
 ## Page Defaults
 
-- Session goal: `listeningEnabled={false}`, `cycleCount={3}`, band playback.
-- Chord learning: `listeningEnabled={true}`, `cycleCount={3}`, band playback.
-- Rhythm training: `listeningEnabled={true}`, `cycleCount={3}`, groove playback.
+- Session goal: `listeningEnabled={false}`, `cycleCount={2}`, band playback.
+- Chord learning: `listeningEnabled={true}`, `demoListenCycleCount={3}`, band playback.
+- Rhythm training: `listeningEnabled={true}`, `demoListenCycleCount={3}`, groove playback.
 
 Skip routing is page-owned. Finishing can either advance an in-page unit, such as the
 next chord slide, or route to the next training page.
@@ -58,5 +56,4 @@ next chord slide, or route to the next training page.
   SoundFont reference.
 - If changing native scheduling only, update `sound-font-player.md`; update this file only
   when the JS/native handshake changes.
-- Do not reintroduce a JS-side silent clock or JS-side cycle length calculation for normal
-  playback progression.
+- Keep the JS listening delay hardcoded at 3 seconds unless product requirements change.

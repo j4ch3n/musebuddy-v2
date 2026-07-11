@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/immutability -- Reanimated shared values are intentionally mutated by event handlers and worklets. */
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   cancelAnimation,
@@ -16,6 +16,7 @@ import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/d
 import { usePerformanceGuidance } from './performance-guidance-context';
 
 const HOLD_DURATION_MS = 3000;
+const STOP_HOLD_DURATION_MS = 800;
 
 export function PerformanceGuidanceButton() {
   const {
@@ -28,20 +29,27 @@ export function PerformanceGuidanceButton() {
     listeningEnabled,
     phase,
     requestSkip,
+    reset,
     start,
   } = usePerformanceGuidance();
   const prepareScale = useSharedValue(1);
   const finishFill = useSharedValue(0);
+  const mainHoldFill = useSharedValue(0);
   const skipFill = useSharedValue(0);
-  const isMainPressable = phase === 'pending' && !isDisabled;
-  const label = getMainLabel({
-    completedCycles,
-    countdownValue,
-    cycleCount,
-    finishText,
-    listeningEnabled,
-    phase,
-  });
+  const [isMainHoldActive, setIsMainHoldActive] = useState(false);
+  const shouldSuppressNextMainPressRef = useRef(false);
+  const isMainDisabled = phase === 'pending' && isDisabled;
+  const label =
+    isMainHoldActive && phase !== 'pending'
+      ? 'Hold to stop'
+      : getMainLabel({
+          completedCycles,
+          countdownValue,
+          cycleCount,
+          finishText,
+          listeningEnabled,
+          phase,
+        });
 
   useEffect(() => {
     if (phase === 'prepare') {
@@ -72,6 +80,15 @@ export function PerformanceGuidanceButton() {
     }
   }, [finishFill, phase]);
 
+  useEffect(() => {
+    if (phase !== 'pending') {
+      return;
+    }
+
+    cancelAnimation(mainHoldFill);
+    mainHoldFill.value = 0;
+  }, [mainHoldFill, phase]);
+
   const mainAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: prepareScale.value }],
   }));
@@ -80,9 +97,50 @@ export function PerformanceGuidanceButton() {
     transform: [{ scaleX: finishFill.value }],
   }));
 
+  const mainHoldFillStyle = useAnimatedStyle(() => ({
+    transform: [{ scaleX: mainHoldFill.value }],
+  }));
+
   const skipFillStyle = useAnimatedStyle(() => ({
     transform: [{ scaleX: skipFill.value }],
   }));
+
+  function handleMainPressIn() {
+    if (phase === 'pending') {
+      return;
+    }
+
+    setIsMainHoldActive(true);
+    cancelAnimation(mainHoldFill);
+    mainHoldFill.value = withTiming(
+      1,
+      {
+        duration: STOP_HOLD_DURATION_MS,
+        easing: Easing.linear,
+      },
+      (finished) => {
+        if (finished) {
+          runOnJS(suppressNextMainPress)();
+          runOnJS(setIsMainHoldActive)(false);
+          runOnJS(reset)();
+        }
+      },
+    );
+  }
+
+  function suppressNextMainPress() {
+    shouldSuppressNextMainPressRef.current = true;
+  }
+
+  function handleMainPressOut() {
+    if (phase === 'pending') {
+      return;
+    }
+
+    setIsMainHoldActive(false);
+    cancelAnimation(mainHoldFill);
+    mainHoldFill.value = withTiming(0, { duration: 140 });
+  }
 
   function handleSkipPressIn() {
     if (phase === 'finish') {
@@ -113,13 +171,29 @@ export function PerformanceGuidanceButton() {
     skipFill.value = withTiming(0, { duration: 140 });
   }
 
+  function handleMainPress() {
+    if (shouldSuppressNextMainPressRef.current) {
+      shouldSuppressNextMainPressRef.current = false;
+      return;
+    }
+
+    start();
+  }
+
   return (
     <View style={styles.container}>
       <Pressable
+        accessibilityHint={
+          phase === 'pending'
+            ? 'Starts performance guidance.'
+            : 'Hold for one and a half seconds to stop playback and reset.'
+        }
         accessibilityRole="button"
-        accessibilityState={{ disabled: !isMainPressable }}
-        disabled={!isMainPressable}
-        onPress={start}
+        accessibilityState={{ disabled: isMainDisabled }}
+        disabled={isMainDisabled}
+        onPress={phase === 'pending' ? handleMainPress : undefined}
+        onPressIn={handleMainPressIn}
+        onPressOut={handleMainPressOut}
       >
         <Animated.View
           style={[
@@ -127,11 +201,12 @@ export function PerformanceGuidanceButton() {
             phase === 'demo' && styles.demoButton,
             phase === 'listening' && styles.listeningButton,
             phase === 'finish' && styles.finishButton,
-            isDisabled && styles.disabledButton,
+            isMainDisabled && styles.disabledButton,
             mainAnimatedStyle,
           ]}
         >
           {phase === 'finish' && <Animated.View style={[styles.fill, finishFillStyle]} />}
+          {phase !== 'pending' && <Animated.View style={[styles.stopFill, mainHoldFillStyle]} />}
           <Text style={styles.mainLabel}>{label}</Text>
         </Animated.View>
       </Pressable>
@@ -284,6 +359,12 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     lineHeight: 16,
     textAlign: 'center',
+  },
+  stopFill: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: museBuddyColors.accentRed,
+    opacity: 0.9,
+    transformOrigin: 'left',
   },
   statusText: {
     color: museBuddyColors.ink,

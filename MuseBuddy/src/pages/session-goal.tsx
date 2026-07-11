@@ -45,6 +45,7 @@ export function SessionGoalPage() {
 
   return (
     <PerformanceGuidanceProvider
+      cycleCount={2}
       finishText="I'm excited, let's go!"
       key={`session-goal-${learningConfig.bpm}`}
       listeningEnabled={false}

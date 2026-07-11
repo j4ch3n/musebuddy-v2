@@ -72,7 +72,11 @@ struct SoundFontPlaybackTrackRecord: Record {
 
 struct SoundFontPlaybackConfigurationRecord: Record {
   @Field var bpm: Double = 100
-  @Field var cycleCount: Int?
-  @Field var includesSilentPeriod: Bool?
   @Field var tracks: [SoundFontPlaybackTrackRecord] = []
+}
+
+struct SoundFontPlaybackOptionsRecord: Record {
+  @Field var leadIn: Bool = false
+  @Field var cycles: Int?
+  @Field var `repeat`: Bool = false
 }
