@@ -1,25 +1,35 @@
-import { requireNativeModule } from 'expo';
+import { NativeModule, requireNativeModule } from 'expo';
 import { Platform } from 'react-native';
 
 import type {
+  SoundFontLeadInFinishEvent,
   SoundFontPlaybackConfiguration,
+  SoundFontPlayerModuleEvents,
   SoundFontPlayerErrorCode,
+  SoundFontTickEvent,
 } from './sound-font-player.types';
 
 export type {
   SoundFontInstrument,
+  SoundFontLeadInFinishEvent,
   SoundFontPlaybackCell,
   SoundFontPlaybackConfiguration,
   SoundFontPlaybackStep,
   SoundFontPlaybackTrack,
   SoundFontPlayerErrorCode,
+  SoundFontPlayerModuleEvents,
+  SoundFontTickEvent,
 } from './sound-font-player.types';
 
-type NativeSoundFontPlayerModule = {
+type EventSubscription = {
+  remove(): void;
+};
+
+declare class NativeSoundFontPlayerModule extends NativeModule<SoundFontPlayerModuleEvents> {
   isPlaying(): boolean;
   play(configuration: SoundFontPlaybackConfiguration): Promise<void>;
   stop(): Promise<void>;
-};
+}
 
 type NativeError = Error & {
   code?: string;
@@ -97,4 +107,14 @@ export function stop(): Promise<void> {
 
 export function isPlaying(): boolean {
   return getNativeModule().isPlaying();
+}
+
+export function addLeadInFinishListener(
+  listener: (event: SoundFontLeadInFinishEvent) => void,
+): EventSubscription {
+  return getNativeModule().addListener('onLeadInFinish', listener);
+}
+
+export function addTickListener(listener: (event: SoundFontTickEvent) => void): EventSubscription {
+  return getNativeModule().addListener('onTick', listener);
 }

@@ -23,7 +23,7 @@ type TrainingSessionContextValue = {
 const TrainingSessionContext = createContext<TrainingSessionContextValue | null>(null);
 const logger = createLogger('TrainingSession');
 const DEFAULT_LEARNING_CONFIG: TrainingLearningConfig = {
-  bpm: 95,
+  bpm: 96,
 };
 
 type TrainingSessionProviderProps = {

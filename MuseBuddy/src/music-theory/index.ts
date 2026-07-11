@@ -17,3 +17,4 @@ export {
   type PreparedTrainingSession,
 } from './training-session-display';
 export { deriveRhythmFromKeyArrangement } from './rhythm-arrangement';
+export { BPM_OPTIONS, DEFAULT_BPM } from './tempo';

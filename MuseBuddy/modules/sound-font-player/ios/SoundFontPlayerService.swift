@@ -6,6 +6,7 @@ final class SoundFontPlayerService: @unchecked Sendable {
   private struct InstrumentDefinition {
     let bankLSB: UInt8
     let bankMSB: UInt8
+    let boundMidiChannel: UInt8
     let program: UInt8
     let resourceName: String
   }
@@ -17,6 +18,7 @@ final class SoundFontPlayerService: @unchecked Sendable {
   }
 
   private struct PlaybackTrack {
+    let boundMidiChannel: UInt8
     let instrument: String
     let loopLengthBeats: Double
     let notes: [ScheduledNote]
@@ -32,24 +34,51 @@ final class SoundFontPlayerService: @unchecked Sendable {
   private static let stepsPerPart = 16
   private static let maxPartCount = 8
   private static let stepDurationBeats = 0.25
+  private static let beatsPerBar = 4.0
+  private static let leadInBeatCount = 4
+  private static let leadInDurationBeats = 4.0
+  private static let leadInInstrument = "leadInInstrument"
+  private static let leadInMidiNote: UInt8 = 43
+  private static let leadInMidiChannel: UInt8 = 8
+  private static let pianoMidiChannel: UInt8 = 0
+  private static let bassMidiChannel: UInt8 = 1
+  private static let guitarMidiChannel: UInt8 = 2
+  private static let percussionMidiChannel: UInt8 = 9
   private static let instruments: [String: InstrumentDefinition] = [
+    leadInInstrument: InstrumentDefinition(
+      bankLSB: UInt8(kAUSampler_DefaultBankLSB),
+      bankMSB: UInt8(kAUSampler_DefaultMelodicBankMSB),
+      boundMidiChannel: leadInMidiChannel,
+      program: 0,
+      resourceName: "jazz-percussion"
+    ),
     "piano": InstrumentDefinition(
       bankLSB: UInt8(kAUSampler_DefaultBankLSB),
       bankMSB: UInt8(kAUSampler_DefaultMelodicBankMSB),
+      boundMidiChannel: pianoMidiChannel,
       program: 0,
       resourceName: "piano-yamaha-PSRF50"
     ),
     "bass": InstrumentDefinition(
       bankLSB: UInt8(kAUSampler_DefaultBankLSB),
       bankMSB: UInt8(kAUSampler_DefaultMelodicBankMSB),
+      boundMidiChannel: bassMidiChannel,
       program: 0,
       resourceName: "bass-jazz"
     ),
     "guitar": InstrumentDefinition(
       bankLSB: UInt8(kAUSampler_DefaultBankLSB),
       bankMSB: UInt8(kAUSampler_DefaultMelodicBankMSB),
+      boundMidiChannel: guitarMidiChannel,
       program: 0,
-      resourceName: "guitar-custom-classical"
+      resourceName: "classical-guitar"
+    ),
+    "percussion": InstrumentDefinition(
+      bankLSB: UInt8(kAUSampler_DefaultBankLSB),
+      bankMSB: UInt8(kAUSampler_DefaultPercussionBankMSB),
+      boundMidiChannel: percussionMidiChannel,
+      program: 0,
+      resourceName: "drum-kit"
     ),
   ]
   private static let holdMidi = -50
@@ -64,6 +93,12 @@ final class SoundFontPlayerService: @unchecked Sendable {
   private var loadedInstruments = Set<String>()
   private var samplersByInstrument: [String: AVAudioUnitSampler] = [:]
   private var sequencer: AVAudioSequencer?
+  private var playbackId = 0
+  private var timingWorkItems: [DispatchWorkItem] = []
+  private var timingTimers: [DispatchSourceTimer] = []
+
+  var onLeadInFinish: (([String: Any]) -> Void)?
+  var onTick: (([String: Any]) -> Void)?
 
   var isPlaying: Bool {
     workQueue.sync {
@@ -113,10 +148,15 @@ final class SoundFontPlayerService: @unchecked Sendable {
       throw SoundFontPlayerError.emptyConfiguration
     }
 
+    let requiredInstruments = Set(tracks.map(\.instrument) + [Self.leadInInstrument])
+    for instrument in requiredInstruments {
+      try attachSamplerIfNeeded(for: instrument)
+    }
+    try startAudioEngineIfNeeded()
     for track in tracks {
       try loadSamplerIfNeeded(for: track.instrument)
     }
-    try startAudioEngineIfNeeded()
+    try loadSamplerIfNeeded(for: Self.leadInInstrument)
 
     do {
       sequencer = try makeSequencer(for: tracks, bpm: configuration.bpm)
@@ -130,6 +170,8 @@ final class SoundFontPlayerService: @unchecked Sendable {
     }
 
     isPlaybackActive = true
+    playbackId += 1
+    scheduleTimingEvents(playbackId: playbackId, bpm: configuration.bpm)
   }
 
   private func configureAudioEngineIfNeeded() throws {
@@ -138,6 +180,21 @@ final class SoundFontPlayerService: @unchecked Sendable {
     }
 
     isEngineConfigured = true
+  }
+
+  private func attachSamplerIfNeeded(for instrument: String) throws {
+    guard Self.instruments[instrument] != nil else {
+      throw SoundFontPlayerError.invalidConfiguration("Unsupported instrument \(instrument).")
+    }
+
+    guard samplersByInstrument[instrument] == nil else {
+      return
+    }
+
+    let sampler = AVAudioUnitSampler()
+    audioEngine.attach(sampler)
+    audioEngine.connect(sampler, to: audioEngine.mainMixerNode, format: nil)
+    samplersByInstrument[instrument] = sampler
   }
 
   private func loadSamplerIfNeeded(for instrument: String) throws {
@@ -153,12 +210,8 @@ final class SoundFontPlayerService: @unchecked Sendable {
       throw SoundFontPlayerError.resourceMissing
     }
 
-    let sampler = samplersByInstrument[instrument] ?? AVAudioUnitSampler()
-
-    if samplersByInstrument[instrument] == nil {
-      audioEngine.attach(sampler)
-      audioEngine.connect(sampler, to: audioEngine.mainMixerNode, format: nil)
-      samplersByInstrument[instrument] = sampler
+    guard let sampler = samplersByInstrument[instrument] else {
+      throw SoundFontPlayerError.invalidConfiguration("Sampler for \(instrument) is not attached.")
     }
 
     do {
@@ -170,7 +223,10 @@ final class SoundFontPlayerService: @unchecked Sendable {
       )
       loadedInstruments.insert(instrument)
     } catch {
-      throw SoundFontPlayerError.loadFailed(error.localizedDescription)
+      let detail = "\(instrument) (\(definition.resourceName).sf2, program " +
+        "\(definition.program), bankMSB \(definition.bankMSB), bankLSB " +
+        "\(definition.bankLSB)): \(error.localizedDescription)"
+      throw SoundFontPlayerError.loadFailed(detail)
     }
   }
 
@@ -194,6 +250,7 @@ final class SoundFontPlayerService: @unchecked Sendable {
   private func makeSequencer(for tracks: [PlaybackTrack], bpm: Double) throws -> AVAudioSequencer {
     let nextSequencer = AVAudioSequencer(audioEngine: audioEngine)
     nextSequencer.tempoTrack.addEvent(AVExtendedTempoEvent(tempo: bpm), at: 0)
+    try appendLeadInTrack(to: nextSequencer)
 
     for playbackTrack in tracks {
       guard let sampler = samplersByInstrument[playbackTrack.instrument] else {
@@ -204,22 +261,46 @@ final class SoundFontPlayerService: @unchecked Sendable {
 
       let track = nextSequencer.createAndAppendTrack()
       track.destinationAudioUnit = sampler
-      track.loopRange = AVBeatRange(start: 0, length: playbackTrack.loopLengthBeats)
+      track.loopRange = AVBeatRange(
+        start: Self.leadInDurationBeats,
+        length: playbackTrack.loopLengthBeats
+      )
       track.isLoopingEnabled = true
       track.numberOfLoops = -1
 
       for note in playbackTrack.notes {
         let event = AVMIDINoteEvent(
-          channel: 0,
+          channel: UInt32(playbackTrack.boundMidiChannel),
           key: UInt32(note.midi),
           velocity: UInt32(note.velocity),
           duration: note.durationBeats
         )
-        track.addEvent(event, at: note.startBeat)
+        track.addEvent(event, at: Self.leadInDurationBeats + note.startBeat)
       }
     }
 
     return nextSequencer
+  }
+
+  private func appendLeadInTrack(to sequencer: AVAudioSequencer) throws {
+    guard let leadInDefinition = Self.instruments[Self.leadInInstrument],
+          let sampler = samplersByInstrument[Self.leadInInstrument]
+    else {
+      throw SoundFontPlayerError.invalidConfiguration("Lead-in sampler is not loaded.")
+    }
+
+    let track = sequencer.createAndAppendTrack()
+    track.destinationAudioUnit = sampler
+
+    for beatIndex in 0 ..< Self.leadInBeatCount {
+      let event = AVMIDINoteEvent(
+        channel: UInt32(leadInDefinition.boundMidiChannel),
+        key: UInt32(Self.leadInMidiNote),
+        velocity: 112,
+        duration: 0.2
+      )
+      track.addEvent(event, at: Double(beatIndex))
+    }
   }
 
   private static func validatedTracks(
@@ -230,7 +311,7 @@ final class SoundFontPlayerService: @unchecked Sendable {
     }
 
     return try trackRecords.map { record in
-      guard instruments[record.instrument] != nil else {
+      guard let instrumentDefinition = instruments[record.instrument] else {
         throw SoundFontPlayerError.invalidConfiguration(
           "Unsupported instrument \(record.instrument)."
         )
@@ -262,6 +343,7 @@ final class SoundFontPlayerService: @unchecked Sendable {
       }
 
       return PlaybackTrack(
+        boundMidiChannel: instrumentDefinition.boundMidiChannel,
         instrument: record.instrument,
         loopLengthBeats: Double(steps.count) * stepDurationBeats,
         notes: notes(from: steps)
@@ -270,6 +352,7 @@ final class SoundFontPlayerService: @unchecked Sendable {
   }
 
   private func finishPlayback() {
+    cancelTimingEvents()
     sequencer?.stop()
     sequencer = nil
     silenceAllChannels()
@@ -278,6 +361,92 @@ final class SoundFontPlayerService: @unchecked Sendable {
 
   private func stopPlayback() {
     finishPlayback()
+  }
+
+  private func scheduleTimingEvents(playbackId: Int, bpm: Double) {
+    cancelTimingEvents()
+
+    let secondsPerBeat = 60.0 / bpm
+    let leadInDurationSeconds = Double(Self.leadInBeatCount) * secondsPerBeat
+
+    scheduleTimingWorkItem(after: leadInDurationSeconds) { [weak self] in
+      guard let self, isPlaybackActive, self.playbackId == playbackId else {
+        return
+      }
+
+      let basePayload: [String: Any] = [
+        "playbackId": playbackId,
+        "bpm": bpm,
+      ]
+
+      onLeadInFinish?(basePayload)
+    }
+
+    scheduleRepeatingTimingTimer(
+      firstDelay: 0,
+      interval: secondsPerBeat
+    ) { [weak self] tickIndex in
+      guard let self, isPlaybackActive, self.playbackId == playbackId else {
+        return
+      }
+
+      onTick?([
+        "playbackId": playbackId,
+        "bpm": bpm,
+        "event": "beat",
+        "beatIndex": tickIndex,
+      ])
+    }
+
+    scheduleRepeatingTimingTimer(
+      firstDelay: 0,
+      interval: Self.beatsPerBar * secondsPerBeat
+    ) { [weak self] tickIndex in
+      guard let self, isPlaybackActive, self.playbackId == playbackId else {
+        return
+      }
+
+      onTick?([
+        "playbackId": playbackId,
+        "bpm": bpm,
+        "event": "bar",
+        "barIndex": tickIndex,
+      ])
+    }
+  }
+
+  private func scheduleTimingWorkItem(after delay: TimeInterval, execute: @escaping () -> Void) {
+    let workItem = DispatchWorkItem(block: execute)
+    timingWorkItems.append(workItem)
+    workQueue.asyncAfter(deadline: .now() + delay, execute: workItem)
+  }
+
+  private func scheduleRepeatingTimingTimer(
+    firstDelay: TimeInterval,
+    interval: TimeInterval,
+    eventHandler: @escaping (Int) -> Void
+  ) {
+    let timer = DispatchSource.makeTimerSource(queue: workQueue)
+    var tickIndex = 0
+
+    timer.schedule(
+      deadline: .now() + firstDelay,
+      repeating: interval,
+      leeway: .milliseconds(5)
+    )
+    timer.setEventHandler {
+      eventHandler(tickIndex)
+      tickIndex += 1
+    }
+    timingTimers.append(timer)
+    timer.resume()
+  }
+
+  private func cancelTimingEvents() {
+    timingWorkItems.forEach { $0.cancel() }
+    timingWorkItems.removeAll()
+    timingTimers.forEach { $0.cancel() }
+    timingTimers.removeAll()
   }
 
   private func silenceAllChannels() {

@@ -8,7 +8,7 @@ import type {
   SoundFontPlaybackStep,
 } from '../../modules/sound-font-player';
 
-const DEFAULT_SESSION_GOAL_BPM = 95;
+const DEFAULT_SESSION_GOAL_BPM = 96;
 const HOLD_MIDI = -50;
 const STRONG_RHYTHM_NOTE: SoundFontPlaybackCell = {
   midi: 67,
@@ -50,7 +50,7 @@ export function buildRhythmSoundFontPlaybackConfiguration(
     bpm,
     tracks: [
       {
-        instrument: 'piano',
+        instrument: 'percussion',
         parts: splitRhythmPatternBars(pattern).map((part) =>
           part.map((step): SoundFontPlaybackStep => {
             if (step === 's') {

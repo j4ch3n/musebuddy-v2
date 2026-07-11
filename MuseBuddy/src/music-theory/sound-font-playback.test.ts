@@ -40,7 +40,7 @@ function keyArrangement(slots: Record<number, SourceSlot>): TrainingSessionKeyAr
 }
 
 describe('buildRhythmSoundFontPlaybackConfiguration', () => {
-  it('maps rhythm strong and weak steps to piano G and C with different velocities', () => {
+  it('maps rhythm strong and weak steps to percussion hits with different velocities', () => {
     const configuration = buildRhythmSoundFontPlaybackConfiguration(
       ['s', 'h', null, 'w', null, null, null, null, null, null, null, null, null, null, null, null],
       120,
@@ -50,7 +50,7 @@ describe('buildRhythmSoundFontPlaybackConfiguration', () => {
       bpm: 120,
       tracks: [
         {
-          instrument: 'piano',
+          instrument: 'percussion',
           parts: [
             [
               [{ midi: 67, velocity: 112 }],

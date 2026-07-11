@@ -88,6 +88,8 @@ Consult the relevant file in `.agents/references/` before changing an area it co
 
 - `basic-pitch-coreml.md`: Basic Pitch model conversion, Core ML integration, audio
   preprocessing, inference, and note decoding.
+- `sound-font-player.md`: SoundFont playback module architecture, instruments, sequencer
+  behavior, events, and error handling.
 
 ## Design System
 

@@ -1,12 +1,29 @@
 import ExpoModulesCore
+import Foundation
 
 public final class SoundFontPlayerModule: Module {
   private let player = SoundFontPlayerService()
 
   public func definition() -> ModuleDefinition {
     Name("SoundFontPlayer")
+    Events("onLeadInFinish", "onTick")
+
+    OnCreate {
+      self.player.onLeadInFinish = { [weak self] payload in
+        DispatchQueue.main.async {
+          self?.sendEvent("onLeadInFinish", payload)
+        }
+      }
+      self.player.onTick = { [weak self] payload in
+        DispatchQueue.main.async {
+          self?.sendEvent("onTick", payload)
+        }
+      }
+    }
 
     OnDestroy {
+      self.player.onLeadInFinish = nil
+      self.player.onTick = nil
       self.player.stop()
     }
 

@@ -1,4 +1,4 @@
-export type SoundFontInstrument = 'piano' | 'bass' | 'guitar';
+export type SoundFontInstrument = 'piano' | 'bass' | 'guitar' | 'percussion';
 
 export type SoundFontPlaybackCell = {
   midi: number | null;
@@ -15,6 +15,30 @@ export type SoundFontPlaybackTrack = {
 export type SoundFontPlaybackConfiguration = {
   bpm: number;
   tracks: SoundFontPlaybackTrack[];
+};
+
+export type SoundFontLeadInFinishEvent = {
+  playbackId: number;
+  bpm: number;
+};
+
+export type SoundFontTickEvent =
+  | {
+      playbackId: number;
+      bpm: number;
+      event: 'beat';
+      beatIndex: number;
+    }
+  | {
+      playbackId: number;
+      bpm: number;
+      event: 'bar';
+      barIndex: number;
+    };
+
+export type SoundFontPlayerModuleEvents = {
+  onLeadInFinish(event: SoundFontLeadInFinishEvent): void;
+  onTick(event: SoundFontTickEvent): void;
 };
 
 export type SoundFontPlayerErrorCode =
