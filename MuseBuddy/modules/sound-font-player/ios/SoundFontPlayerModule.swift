@@ -37,9 +37,25 @@ public final class SoundFontPlayerModule: Module {
       self.player.isPlaying
     }
 
-    AsyncFunction("play") { (configuration: SoundFontPlaybackConfigurationRecord) async throws in
+    AsyncFunction("prepareSoundFonts") { () async throws in
       do {
-        try await self.player.play(configuration: configuration)
+        try await self.player.prepareSoundFonts()
+      } catch let error as SoundFontPlayerError {
+        throw SoundFontPlayerException(error)
+      }
+    }
+
+    AsyncFunction("playBand") { (configuration: SoundFontPlaybackConfigurationRecord) async throws in
+      do {
+        try await self.player.playBand(configuration: configuration)
+      } catch let error as SoundFontPlayerError {
+        throw SoundFontPlayerException(error)
+      }
+    }
+
+    AsyncFunction("playGroove") { (configuration: SoundFontPlaybackConfigurationRecord) async throws in
+      do {
+        try await self.player.playGroove(configuration: configuration)
       } catch let error as SoundFontPlayerError {
         throw SoundFontPlayerException(error)
       }

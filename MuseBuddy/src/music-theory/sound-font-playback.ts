@@ -3,9 +3,9 @@ import type { TrainingSessionKeyArrangement } from '@/contexts/training-session-
 import { splitRhythmPatternBars } from '@/components/rhythm-trainer/rhythm-pattern';
 import type { RhythmPattern } from '@/components/rhythm-trainer/types';
 import type {
-  InternalSoundFontPlaybackConfiguration,
+  BandSoundFontPlaybackConfiguration,
+  GrooveSoundFontPlaybackConfiguration,
   SoundFontPlaybackCell,
-  SoundFontPlaybackConfiguration,
   SoundFontPlaybackStep,
 } from '@modules/sound-font-player/src/sound-font-player.types';
 import type { ChordDisplay } from './chord-display';
@@ -37,7 +37,7 @@ const REST_CELL: SoundFontPlaybackCell = {
 export function buildSoundFontPlaybackConfiguration(
   keyArrangement: TrainingSessionKeyArrangement,
   bpm: number = DEFAULT_BPM,
-): SoundFontPlaybackConfiguration {
+): BandSoundFontPlaybackConfiguration {
   return {
     bpm,
     tracks: [
@@ -52,14 +52,14 @@ export function buildSoundFontPlaybackConfiguration(
 export function buildRhythmSoundFontPlaybackConfiguration(
   pattern: RhythmPattern,
   bpm: number,
-): InternalSoundFontPlaybackConfiguration {
+): GrooveSoundFontPlaybackConfiguration {
   const bars = splitRhythmPatternBars(pattern);
 
   return {
     bpm,
     tracks: [
       {
-        instrument: 'rhythmPercussion',
+        instrument: 'percussion',
         parts: bars.map((part) =>
           part.map((step): SoundFontPlaybackStep => {
             if (step === 's') {
@@ -85,7 +85,7 @@ export function buildRhythmSoundFontPlaybackConfiguration(
 export function buildChordPreviewSoundFontPlaybackConfiguration(
   display: ChordDisplay,
   bpm: number,
-): SoundFontPlaybackConfiguration {
+): BandSoundFontPlaybackConfiguration {
   return {
     bpm,
     tracks: [
@@ -111,7 +111,7 @@ export function buildChordPreviewSoundFontPlaybackConfiguration(
 export function buildChordSummarySoundFontPlaybackConfiguration(
   displays: readonly ChordDisplay[],
   bpm: number,
-): SoundFontPlaybackConfiguration {
+): BandSoundFontPlaybackConfiguration {
   return {
     bpm,
     tracks: [

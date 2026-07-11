@@ -2,9 +2,9 @@ import { NativeModule, requireNativeModule } from 'expo';
 import { Platform } from 'react-native';
 
 import type {
+  BandSoundFontPlaybackConfiguration,
+  GrooveSoundFontPlaybackConfiguration,
   SoundFontLeadInFinishEvent,
-  InternalSoundFontPlaybackConfiguration,
-  SoundFontPlaybackConfiguration,
   SoundFontPlayerModuleEvents,
   SoundFontPlayerErrorCode,
   SoundFontStepEvent,
@@ -12,10 +12,12 @@ import type {
 } from './sound-font-player.types';
 
 export type {
-  SoundFontInstrument,
-  InternalSoundFontPlaybackConfiguration,
-  InternalSoundFontPlaybackTrack,
-  InternalSoundFontInstrument,
+  BandSoundFontInstrument,
+  BandSoundFontPlaybackConfiguration,
+  BandSoundFontPlaybackTrack,
+  GrooveSoundFontInstrument,
+  GrooveSoundFontPlaybackConfiguration,
+  GrooveSoundFontPlaybackTrack,
   SoundFontLeadInFinishEvent,
   SoundFontPlaybackCell,
   SoundFontPlaybackConfiguration,
@@ -33,7 +35,9 @@ type EventSubscription = {
 
 declare class NativeSoundFontPlayerModule extends NativeModule<SoundFontPlayerModuleEvents> {
   isPlaying(): boolean;
-  play(configuration: InternalSoundFontPlaybackConfiguration): Promise<void>;
+  playBand(configuration: BandSoundFontPlaybackConfiguration): Promise<void>;
+  playGroove(configuration: GrooveSoundFontPlaybackConfiguration): Promise<void>;
+  prepareSoundFonts(): Promise<void>;
   stop(): Promise<void>;
 }
 
@@ -103,12 +107,16 @@ async function callNative<T>(operation: () => Promise<T>): Promise<T> {
   }
 }
 
-export function play(configuration: SoundFontPlaybackConfiguration): Promise<void> {
-  return callNative(() => getNativeModule().play(configuration));
+export function prepareSoundFonts(): Promise<void> {
+  return callNative(() => getNativeModule().prepareSoundFonts());
 }
 
-export function playInternal(configuration: InternalSoundFontPlaybackConfiguration): Promise<void> {
-  return callNative(() => getNativeModule().play(configuration));
+export function playBand(configuration: BandSoundFontPlaybackConfiguration): Promise<void> {
+  return callNative(() => getNativeModule().playBand(configuration));
+}
+
+export function playGroove(configuration: GrooveSoundFontPlaybackConfiguration): Promise<void> {
+  return callNative(() => getNativeModule().playGroove(configuration));
 }
 
 export function stop(): Promise<void> {

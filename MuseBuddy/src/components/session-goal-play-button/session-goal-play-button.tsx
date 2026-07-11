@@ -10,7 +10,7 @@ import { Button } from '@/ui';
 import {
   addLeadInFinishListener,
   addTickListener,
-  play,
+  playBand,
   stop,
   SoundFontPlayerError,
 } from '@modules/sound-font-player';
@@ -87,7 +87,7 @@ export function SessionGoalPlayButton({ keyArrangement }: SessionGoalPlayButtonP
     }
 
     resetSignalState();
-    void play(configuration).catch((error: unknown) => {
+    void playBand(configuration).catch((error: unknown) => {
       setIsPlaying(false);
       resetSignalState();
       setErrorMessage(messageFor(error));
@@ -110,7 +110,7 @@ export function SessionGoalPlayButton({ keyArrangement }: SessionGoalPlayButtonP
 
     try {
       resetSignalState();
-      await play(configuration);
+      await playBand(configuration);
       setIsPlaying(true);
     } catch (error) {
       setIsPlaying(false);

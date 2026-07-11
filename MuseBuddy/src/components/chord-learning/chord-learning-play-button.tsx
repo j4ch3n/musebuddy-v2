@@ -3,11 +3,11 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { museBuddyColors } from '@/constants/design-tokens';
 import { Button } from '@/ui';
-import type { SoundFontPlaybackConfiguration } from '@modules/sound-font-player';
-import { play, stop, SoundFontPlayerError } from '@modules/sound-font-player';
+import type { BandSoundFontPlaybackConfiguration } from '@modules/sound-font-player';
+import { playBand, stop, SoundFontPlayerError } from '@modules/sound-font-player';
 
 type ChordLearningPlayButtonProps = {
-  configuration: SoundFontPlaybackConfiguration | null;
+  configuration: BandSoundFontPlaybackConfiguration | null;
   playLabel: string;
 };
 
@@ -40,7 +40,7 @@ export function ChordLearningPlayButton({
     }
 
     try {
-      await play(configuration);
+      await playBand(configuration);
       setIsPlaying(true);
     } catch (error) {
       setIsPlaying(false);

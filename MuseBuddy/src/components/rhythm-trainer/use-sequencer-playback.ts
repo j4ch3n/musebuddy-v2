@@ -7,7 +7,7 @@ import {
   addStepListener,
   stop as stopSoundFontPlayback,
   SoundFontPlayerError,
-  playInternal,
+  playGroove,
 } from '@modules/sound-font-player/src/sound-font-player';
 import type { RhythmPattern } from './types';
 
@@ -44,7 +44,7 @@ export function useSequencerPlayback({ bpm, pattern }: UseSequencerPlaybackOptio
       patternRef.current,
       bpmRef.current,
     );
-    await playInternal(configuration);
+    await playGroove(configuration);
     didFinishLeadInRef.current = false;
     setCurrentStepIndex(null);
     setIsPlaying(true);
@@ -56,7 +56,7 @@ export function useSequencerPlayback({ bpm, pattern }: UseSequencerPlaybackOptio
     }
 
     try {
-      await playInternal(
+      await playGroove(
         buildRhythmSoundFontPlaybackConfiguration(patternRef.current, bpmRef.current),
       );
       didFinishLeadInRef.current = false;

@@ -11,6 +11,16 @@ final class SoundFontPlayerService: @unchecked Sendable {
     let resourceName: String
   }
 
+  private enum InstrumentSet {
+    case band
+    case groove
+  }
+
+  private struct ResolvedInstrumentDefinition {
+    let definition: InstrumentDefinition
+    let samplerKey: String
+  }
+
   private struct ActiveNote {
     let midi: UInt8
     let startStepIndex: Int
@@ -23,6 +33,7 @@ final class SoundFontPlayerService: @unchecked Sendable {
     let loopLengthBeats: Double
     let loopStepCount: Int
     let notes: [ScheduledNote]
+    let samplerKey: String
   }
 
   private struct ScheduledNote {
@@ -38,22 +49,22 @@ final class SoundFontPlayerService: @unchecked Sendable {
   private static let beatsPerBar = 4.0
   private static let leadInBeatCount = 4
   private static let leadInDurationBeats = 4.0
-  private static let leadInInstrument = "leadInInstrument"
+  private static let leadInInstrumentKey = "leadInInstrument"
   private static let leadInMidiNote: UInt8 = 43
   private static let leadInMidiChannel: UInt8 = 8
   private static let pianoMidiChannel: UInt8 = 0
   private static let bassMidiChannel: UInt8 = 1
   private static let guitarMidiChannel: UInt8 = 2
-  private static let rhythmPercussionMidiChannel: UInt8 = 3
+  private static let groovePercussionMidiChannel: UInt8 = 3
   private static let percussionMidiChannel: UInt8 = 9
-  private static let instruments: [String: InstrumentDefinition] = [
-    leadInInstrument: InstrumentDefinition(
-      bankLSB: UInt8(kAUSampler_DefaultBankLSB),
-      bankMSB: UInt8(kAUSampler_DefaultMelodicBankMSB),
-      boundMidiChannel: leadInMidiChannel,
-      program: 0,
-      resourceName: "jazz-percussion"
-    ),
+  private static let leadInInstrument = InstrumentDefinition(
+    bankLSB: UInt8(kAUSampler_DefaultBankLSB),
+    bankMSB: UInt8(kAUSampler_DefaultMelodicBankMSB),
+    boundMidiChannel: leadInMidiChannel,
+    program: 0,
+    resourceName: "jazz-percussion"
+  )
+  private static let bandInstruments: [String: InstrumentDefinition] = [
     "piano": InstrumentDefinition(
       bankLSB: UInt8(kAUSampler_DefaultBankLSB),
       bankMSB: UInt8(kAUSampler_DefaultMelodicBankMSB),
@@ -75,19 +86,21 @@ final class SoundFontPlayerService: @unchecked Sendable {
       program: 0,
       resourceName: "classical-guitar"
     ),
-    "rhythmPercussion": InstrumentDefinition(
-      bankLSB: UInt8(kAUSampler_DefaultBankLSB),
-      bankMSB: UInt8(kAUSampler_DefaultMelodicBankMSB),
-      boundMidiChannel: rhythmPercussionMidiChannel,
-      program: 0,
-      resourceName: "jazz-percussion"
-    ),
     "percussion": InstrumentDefinition(
       bankLSB: UInt8(kAUSampler_DefaultBankLSB),
       bankMSB: UInt8(kAUSampler_DefaultPercussionBankMSB),
       boundMidiChannel: percussionMidiChannel,
       program: 0,
       resourceName: "drum-kit"
+    ),
+  ]
+  private static let grooveInstruments: [String: InstrumentDefinition] = [
+    "percussion": InstrumentDefinition(
+      bankLSB: UInt8(kAUSampler_DefaultBankLSB),
+      bankMSB: UInt8(kAUSampler_DefaultMelodicBankMSB),
+      boundMidiChannel: groovePercussionMidiChannel,
+      program: 0,
+      resourceName: "jazz-percussion"
     ),
   ]
   private static let holdMidi = -50
@@ -116,11 +129,37 @@ final class SoundFontPlayerService: @unchecked Sendable {
     }
   }
 
-  func play(configuration: SoundFontPlaybackConfigurationRecord) async throws {
+  func playBand(configuration: SoundFontPlaybackConfigurationRecord) async throws {
     try await withCheckedThrowingContinuation { continuation in
       workQueue.async {
         do {
-          try self.startPlayback(configuration: configuration)
+          try self.startPlayback(configuration: configuration, instrumentSet: .band)
+          continuation.resume()
+        } catch {
+          continuation.resume(throwing: error)
+        }
+      }
+    }
+  }
+
+  func playGroove(configuration: SoundFontPlaybackConfigurationRecord) async throws {
+    try await withCheckedThrowingContinuation { continuation in
+      workQueue.async {
+        do {
+          try self.startPlayback(configuration: configuration, instrumentSet: .groove)
+          continuation.resume()
+        } catch {
+          continuation.resume(throwing: error)
+        }
+      }
+    }
+  }
+
+  func prepareSoundFonts() async throws {
+    try await withCheckedThrowingContinuation { continuation in
+      workQueue.async {
+        do {
+          try self.prepareSoundFontsOnQueue()
           continuation.resume()
         } catch {
           continuation.resume(throwing: error)
@@ -144,7 +183,10 @@ final class SoundFontPlayerService: @unchecked Sendable {
     }
   }
 
-  private func startPlayback(configuration: SoundFontPlaybackConfigurationRecord) throws {
+  private func startPlayback(
+    configuration: SoundFontPlaybackConfigurationRecord,
+    instrumentSet: InstrumentSet
+  ) throws {
     if isPlaybackActive {
       stopPlayback()
     }
@@ -153,20 +195,12 @@ final class SoundFontPlayerService: @unchecked Sendable {
       throw SoundFontPlayerError.invalidConfiguration("BPM must be positive.")
     }
 
-    let tracks = try Self.validatedTracks(configuration.tracks)
-    guard tracks.contains(where: { !$0.notes.isEmpty }) else {
-      throw SoundFontPlayerError.emptyConfiguration
+    let tracks = try Self.validatedTracks(configuration.tracks, instrumentSet: instrumentSet)
+    guard !tracks.isEmpty else {
+      return
     }
 
-    let requiredInstruments = Set(tracks.map(\.instrument) + [Self.leadInInstrument])
-    for instrument in requiredInstruments {
-      try attachSamplerIfNeeded(for: instrument)
-    }
-    try startAudioEngineIfNeeded()
-    for track in tracks {
-      try loadSamplerIfNeeded(for: track.instrument)
-    }
-    try loadSamplerIfNeeded(for: Self.leadInInstrument)
+    try prepareSamplerKeys(Set(tracks.map(\.samplerKey) + [Self.leadInInstrumentKey]))
 
     do {
       sequencer = try makeSequencer(for: tracks, bpm: configuration.bpm)
@@ -197,36 +231,56 @@ final class SoundFontPlayerService: @unchecked Sendable {
     isEngineConfigured = true
   }
 
-  private func attachSamplerIfNeeded(for instrument: String) throws {
-    guard Self.instruments[instrument] != nil else {
-      throw SoundFontPlayerError.invalidConfiguration("Unsupported instrument \(instrument).")
-    }
+  private func prepareSoundFontsOnQueue() throws {
+    try prepareSamplerKeys(Set(Self.allSamplerDefinitions().map(\.samplerKey)))
+  }
 
-    guard samplersByInstrument[instrument] == nil else {
+  private func prepareSamplerKeys(_ samplerKeys: Set<String>) throws {
+    for samplerKey in samplerKeys {
+      let resolvedDefinition = try Self.resolvedDefinition(forSamplerKey: samplerKey)
+      try attachSamplerIfNeeded(
+        for: samplerKey,
+        definition: resolvedDefinition.definition
+      )
+    }
+    try startAudioEngineIfNeeded()
+    for samplerKey in samplerKeys {
+      let resolvedDefinition = try Self.resolvedDefinition(forSamplerKey: samplerKey)
+      try loadSamplerIfNeeded(
+        for: samplerKey,
+        definition: resolvedDefinition.definition
+      )
+    }
+  }
+
+  private func attachSamplerIfNeeded(
+    for samplerKey: String,
+    definition _: InstrumentDefinition
+  ) throws {
+    guard samplersByInstrument[samplerKey] == nil else {
       return
     }
 
     let sampler = AVAudioUnitSampler()
     audioEngine.attach(sampler)
     audioEngine.connect(sampler, to: audioEngine.mainMixerNode, format: nil)
-    samplersByInstrument[instrument] = sampler
+    samplersByInstrument[samplerKey] = sampler
   }
 
-  private func loadSamplerIfNeeded(for instrument: String) throws {
-    guard loadedInstruments.contains(instrument) == false else {
+  private func loadSamplerIfNeeded(
+    for samplerKey: String,
+    definition: InstrumentDefinition
+  ) throws {
+    guard loadedInstruments.contains(samplerKey) == false else {
       return
-    }
-
-    guard let definition = Self.instruments[instrument] else {
-      throw SoundFontPlayerError.invalidConfiguration("Unsupported instrument \(instrument).")
     }
 
     guard let soundFontURL = findSoundFontURL(resourceName: definition.resourceName) else {
       throw SoundFontPlayerError.resourceMissing
     }
 
-    guard let sampler = samplersByInstrument[instrument] else {
-      throw SoundFontPlayerError.invalidConfiguration("Sampler for \(instrument) is not attached.")
+    guard let sampler = samplersByInstrument[samplerKey] else {
+      throw SoundFontPlayerError.invalidConfiguration("Sampler for \(samplerKey) is not attached.")
     }
 
     do {
@@ -236,9 +290,9 @@ final class SoundFontPlayerService: @unchecked Sendable {
         bankMSB: definition.bankMSB,
         bankLSB: definition.bankLSB
       )
-      loadedInstruments.insert(instrument)
+      loadedInstruments.insert(samplerKey)
     } catch {
-      let detail = "\(instrument) (\(definition.resourceName).sf2, program " +
+      let detail = "\(samplerKey) (\(definition.resourceName).sf2, program " +
         "\(definition.program), bankMSB \(definition.bankMSB), bankLSB " +
         "\(definition.bankLSB)): \(error.localizedDescription)"
       throw SoundFontPlayerError.loadFailed(detail)
@@ -268,7 +322,7 @@ final class SoundFontPlayerService: @unchecked Sendable {
     try appendLeadInTrack(to: nextSequencer)
 
     for playbackTrack in tracks {
-      guard let sampler = samplersByInstrument[playbackTrack.instrument] else {
+      guard let sampler = samplersByInstrument[playbackTrack.samplerKey] else {
         throw SoundFontPlayerError.invalidConfiguration(
           "Sampler for \(playbackTrack.instrument) is not loaded."
         )
@@ -298,9 +352,7 @@ final class SoundFontPlayerService: @unchecked Sendable {
   }
 
   private func appendLeadInTrack(to sequencer: AVAudioSequencer) throws {
-    guard let leadInDefinition = Self.instruments[Self.leadInInstrument],
-          let sampler = samplersByInstrument[Self.leadInInstrument]
-    else {
+    guard let sampler = samplersByInstrument[Self.leadInInstrumentKey] else {
       throw SoundFontPlayerError.invalidConfiguration("Lead-in sampler is not loaded.")
     }
 
@@ -309,7 +361,7 @@ final class SoundFontPlayerService: @unchecked Sendable {
 
     for beatIndex in 0 ..< Self.leadInBeatCount {
       let event = AVMIDINoteEvent(
-        channel: UInt32(leadInDefinition.boundMidiChannel),
+        channel: UInt32(Self.leadInInstrument.boundMidiChannel),
         key: UInt32(Self.leadInMidiNote),
         velocity: 112,
         duration: 0.2
@@ -318,23 +370,94 @@ final class SoundFontPlayerService: @unchecked Sendable {
     }
   }
 
-  private static func validatedTracks(
-    _ trackRecords: [SoundFontPlaybackTrackRecord]
-  ) throws -> [PlaybackTrack] {
-    guard !trackRecords.isEmpty else {
-      throw SoundFontPlayerError.emptyConfiguration
+  private static func resolvedDefinition(
+    for instrument: String,
+    instrumentSet: InstrumentSet
+  ) throws -> ResolvedInstrumentDefinition {
+    let definitions = switch instrumentSet {
+    case .band:
+      bandInstruments
+    case .groove:
+      grooveInstruments
     }
 
-    return try trackRecords.map { record in
-      guard let instrumentDefinition = instruments[record.instrument] else {
-        throw SoundFontPlayerError.invalidConfiguration(
-          "Unsupported instrument \(record.instrument)."
-        )
+    guard let definition = definitions[instrument] else {
+      throw SoundFontPlayerError.invalidConfiguration(
+        "Unsupported instrument \(instrument)."
+      )
+    }
+
+    return ResolvedInstrumentDefinition(
+      definition: definition,
+      samplerKey: samplerKey(for: instrument, instrumentSet: instrumentSet)
+    )
+  }
+
+  private static func resolvedDefinition(
+    forSamplerKey samplerKey: String
+  ) throws -> ResolvedInstrumentDefinition {
+    if samplerKey == leadInInstrumentKey {
+      return ResolvedInstrumentDefinition(
+        definition: leadInInstrument,
+        samplerKey: samplerKey
+      )
+    }
+
+    for resolvedDefinition in allSamplerDefinitions()
+      where resolvedDefinition.samplerKey == samplerKey {
+      return resolvedDefinition
+    }
+
+    throw SoundFontPlayerError.invalidConfiguration("Unsupported sampler \(samplerKey).")
+  }
+
+  private static func allSamplerDefinitions() -> [ResolvedInstrumentDefinition] {
+    let bandDefinitions = bandInstruments.map { entry in
+      ResolvedInstrumentDefinition(
+        definition: entry.value,
+        samplerKey: samplerKey(for: entry.key, instrumentSet: .band)
+      )
+    }
+    let grooveDefinitions = grooveInstruments.map { entry in
+      ResolvedInstrumentDefinition(
+        definition: entry.value,
+        samplerKey: samplerKey(for: entry.key, instrumentSet: .groove)
+      )
+    }
+    let leadInDefinition = ResolvedInstrumentDefinition(
+      definition: leadInInstrument,
+      samplerKey: leadInInstrumentKey
+    )
+
+    return bandDefinitions + grooveDefinitions + [leadInDefinition]
+  }
+
+  private static func samplerKey(for instrument: String, instrumentSet: InstrumentSet) -> String {
+    switch instrumentSet {
+    case .band:
+      "band:\(instrument)"
+    case .groove:
+      "groove:\(instrument)"
+    }
+  }
+
+  private static func validatedTracks(
+    _ trackRecords: [SoundFontPlaybackTrackRecord],
+    instrumentSet: InstrumentSet
+  ) throws -> [PlaybackTrack] {
+    try trackRecords.compactMap { record in
+      if record.parts.isEmpty {
+        return nil
       }
 
-      guard (1 ... maxPartCount).contains(record.parts.count) else {
+      let resolvedDefinition = try resolvedDefinition(
+        for: record.instrument,
+        instrumentSet: instrumentSet
+      )
+
+      guard record.parts.count <= maxPartCount else {
         throw SoundFontPlayerError.invalidConfiguration(
-          "Instrument \(record.instrument) must contain 1 to \(maxPartCount) parts."
+          "Instrument \(record.instrument) must contain no more than \(maxPartCount) parts."
         )
       }
 
@@ -357,12 +480,18 @@ final class SoundFontPlayerService: @unchecked Sendable {
         return part
       }
 
+      let scheduledNotes = notes(from: steps)
+      if scheduledNotes.isEmpty {
+        return nil
+      }
+
       return PlaybackTrack(
-        boundMidiChannel: instrumentDefinition.boundMidiChannel,
+        boundMidiChannel: resolvedDefinition.definition.boundMidiChannel,
         instrument: record.instrument,
         loopLengthBeats: Double(steps.count) * stepDurationBeats,
         loopStepCount: steps.count,
-        notes: notes(from: steps)
+        notes: scheduledNotes,
+        samplerKey: resolvedDefinition.samplerKey
       )
     }
   }

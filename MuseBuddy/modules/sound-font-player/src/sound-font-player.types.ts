@@ -1,6 +1,6 @@
-export type SoundFontInstrument = 'piano' | 'bass' | 'guitar' | 'percussion';
+export type BandSoundFontInstrument = 'piano' | 'bass' | 'guitar' | 'percussion';
 
-export type InternalSoundFontInstrument = SoundFontInstrument | 'rhythmPercussion';
+export type GrooveSoundFontInstrument = 'percussion';
 
 export type SoundFontPlaybackCell = {
   midi: number | null;
@@ -9,25 +9,25 @@ export type SoundFontPlaybackCell = {
 
 export type SoundFontPlaybackStep = SoundFontPlaybackCell[];
 
-export type SoundFontPlaybackTrack = {
-  instrument: SoundFontInstrument;
+export type SoundFontPlaybackTrack<TInstrument extends string = string> = {
+  instrument: TInstrument;
   parts: SoundFontPlaybackStep[][];
 };
 
-export type SoundFontPlaybackConfiguration = {
+export type SoundFontPlaybackConfiguration<TInstrument extends string = string> = {
   bpm: number;
-  tracks: SoundFontPlaybackTrack[];
+  tracks: SoundFontPlaybackTrack<TInstrument>[];
 };
 
-export type InternalSoundFontPlaybackTrack = {
-  instrument: InternalSoundFontInstrument;
-  parts: SoundFontPlaybackStep[][];
-};
+export type BandSoundFontPlaybackTrack = SoundFontPlaybackTrack<BandSoundFontInstrument>;
 
-export type InternalSoundFontPlaybackConfiguration = {
-  bpm: number;
-  tracks: InternalSoundFontPlaybackTrack[];
-};
+export type BandSoundFontPlaybackConfiguration =
+  SoundFontPlaybackConfiguration<BandSoundFontInstrument>;
+
+export type GrooveSoundFontPlaybackTrack = SoundFontPlaybackTrack<GrooveSoundFontInstrument>;
+
+export type GrooveSoundFontPlaybackConfiguration =
+  SoundFontPlaybackConfiguration<GrooveSoundFontInstrument>;
 
 export type SoundFontLeadInFinishEvent = {
   playbackId: number;

@@ -8,8 +8,13 @@ Use it for lightweight practice playback and rhythm/chord preview sounds.
 
 The stable JS entrypoint is `MuseBuddy/modules/sound-font-player/src/sound-font-player.ts`.
 
-- `play(configuration)`: validates and starts native playback. If playback is already
-  active, the native service stops the active sequence before starting the new one.
+- `prepareSoundFonts()`: attaches and loads all bundled band and groove SoundFonts without
+  starting sequencer playback or emitting timing events.
+- `playBand(configuration)`: validates against the band instrument set and starts native
+  playback. If playback is already active, the native service stops the active sequence
+  before starting the new one.
+- `playGroove(configuration)`: validates against the groove instrument set and starts
+  native playback with the same configuration schema.
 - `stop()`: stops the sequencer, cancels timing events, and sends
   all-notes-off/all-sound-off.
 - `isPlaying()`: reads native playback state.
@@ -22,10 +27,10 @@ The module is iOS-only. `getNativeModule()` throws `ERR_UNSUPPORTED_PLATFORM` ou
 
 ## Playback Configuration
 
-`SoundFontPlaybackConfiguration` contains:
+`SoundFontPlaybackConfiguration<TInstrument>` contains:
 
 - `bpm`: finite positive tempo.
-- `tracks`: one or more `SoundFontPlaybackTrack` values.
+- `tracks`: zero or more `SoundFontPlaybackTrack<TInstrument>` values.
 
 Each track contains an `instrument` and `parts`. Each part must contain exactly 16 steps,
 and each step contains one or more lanes. Cells use:
@@ -81,25 +86,31 @@ const configuration = {
 For polyphony, put multiple cells in a step. Each array index is a lane, so the same lane
 index should carry the start/hold/rest progression for one voice across steps.
 
-Native validation rejects empty configs, unsupported instruments, malformed part lengths,
-invalid MIDI values, and invalid rest/hold velocity data.
+Native validation ignores empty track lists, tracks with empty `parts`, and all-rest
+tracks. Unsupported instruments, malformed non-empty part lengths, invalid MIDI values,
+and invalid rest/hold velocity data are still rejected.
 
 ## Instruments
 
-Instrument definitions live in `SoundFontPlayerService.swift`. Each definition maps a
-public instrument name to a bundled `.sf2` resource, sampler bank, program, and bound MIDI
-channel. Public instrument names are mirrored by the `SoundFontInstrument` TypeScript
-union.
+Instrument definitions live in `SoundFontPlayerService.swift`. The native service has two
+instrument sets:
 
-The lead-in instrument is internal and is always loaded with the requested playback tracks.
-It uses its own sampler and MIDI channel. Do not expose it as a public
-`SoundFontInstrument` unless the product intentionally supports user-selectable lead-in
-sounds.
+- `band`: public practice instruments such as `piano`, `bass`, `guitar`, and `percussion`.
+  Band `percussion` uses `drum-kit.sf2`.
+- `groove`: rhythm/accompaniment instruments. Groove `percussion` uses
+  `jazz-percussion.sf2`.
+
+Band and groove playback use the same payload shape. The entrypoint determines which
+instrument set resolves a given instrument name, so `percussion` can exist in both sets
+with different SoundFont resources.
+
+The lead-in sound uses `jazz-percussion.sf2`, has its own sampler and MIDI channel, and is
+always prepared with the rest of the SoundFont resources.
 
 When adding or changing instruments:
 
-- update the Swift `instruments` table;
-- update `SoundFontInstrument` in TypeScript if the instrument is public;
+- update the Swift band or groove instrument table;
+- update `BandSoundFontInstrument` or `GrooveSoundFontInstrument` in TypeScript;
 - bundle the `.sf2` under the module resources;
 - keep each instrument on a distinct MIDI channel unless sharing is deliberate;
 - rebuild the iOS development client.
