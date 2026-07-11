@@ -21,6 +21,7 @@ final class SoundFontPlayerService: @unchecked Sendable {
     let boundMidiChannel: UInt8
     let instrument: String
     let loopLengthBeats: Double
+    let loopStepCount: Int
     let notes: [ScheduledNote]
   }
 
@@ -43,6 +44,7 @@ final class SoundFontPlayerService: @unchecked Sendable {
   private static let pianoMidiChannel: UInt8 = 0
   private static let bassMidiChannel: UInt8 = 1
   private static let guitarMidiChannel: UInt8 = 2
+  private static let rhythmPercussionMidiChannel: UInt8 = 3
   private static let percussionMidiChannel: UInt8 = 9
   private static let instruments: [String: InstrumentDefinition] = [
     leadInInstrument: InstrumentDefinition(
@@ -57,7 +59,7 @@ final class SoundFontPlayerService: @unchecked Sendable {
       bankMSB: UInt8(kAUSampler_DefaultMelodicBankMSB),
       boundMidiChannel: pianoMidiChannel,
       program: 0,
-      resourceName: "piano-yamaha-PSRF50"
+      resourceName: "piano-white-grand"
     ),
     "bass": InstrumentDefinition(
       bankLSB: UInt8(kAUSampler_DefaultBankLSB),
@@ -72,6 +74,13 @@ final class SoundFontPlayerService: @unchecked Sendable {
       boundMidiChannel: guitarMidiChannel,
       program: 0,
       resourceName: "classical-guitar"
+    ),
+    "rhythmPercussion": InstrumentDefinition(
+      bankLSB: UInt8(kAUSampler_DefaultBankLSB),
+      bankMSB: UInt8(kAUSampler_DefaultMelodicBankMSB),
+      boundMidiChannel: rhythmPercussionMidiChannel,
+      program: 0,
+      resourceName: "jazz-percussion"
     ),
     "percussion": InstrumentDefinition(
       bankLSB: UInt8(kAUSampler_DefaultBankLSB),
@@ -98,6 +107,7 @@ final class SoundFontPlayerService: @unchecked Sendable {
   private var timingTimers: [DispatchSourceTimer] = []
 
   var onLeadInFinish: (([String: Any]) -> Void)?
+  var onStep: (([String: Any]) -> Void)?
   var onTick: (([String: Any]) -> Void)?
 
   var isPlaying: Bool {
@@ -171,7 +181,12 @@ final class SoundFontPlayerService: @unchecked Sendable {
 
     isPlaybackActive = true
     playbackId += 1
-    scheduleTimingEvents(playbackId: playbackId, bpm: configuration.bpm)
+    let loopStepCount = tracks.map(\.loopStepCount).max() ?? Self.stepsPerPart
+    scheduleTimingEvents(
+      playbackId: playbackId,
+      bpm: configuration.bpm,
+      loopStepCount: loopStepCount
+    )
   }
 
   private func configureAudioEngineIfNeeded() throws {
@@ -346,6 +361,7 @@ final class SoundFontPlayerService: @unchecked Sendable {
         boundMidiChannel: instrumentDefinition.boundMidiChannel,
         instrument: record.instrument,
         loopLengthBeats: Double(steps.count) * stepDurationBeats,
+        loopStepCount: steps.count,
         notes: notes(from: steps)
       )
     }
@@ -363,11 +379,12 @@ final class SoundFontPlayerService: @unchecked Sendable {
     finishPlayback()
   }
 
-  private func scheduleTimingEvents(playbackId: Int, bpm: Double) {
+  private func scheduleTimingEvents(playbackId: Int, bpm: Double, loopStepCount: Int) {
     cancelTimingEvents()
 
     let secondsPerBeat = 60.0 / bpm
     let leadInDurationSeconds = Double(Self.leadInBeatCount) * secondsPerBeat
+    let stepDurationSeconds = Self.stepDurationBeats * secondsPerBeat
 
     scheduleTimingWorkItem(after: leadInDurationSeconds) { [weak self] in
       guard let self, isPlaybackActive, self.playbackId == playbackId else {
@@ -380,6 +397,25 @@ final class SoundFontPlayerService: @unchecked Sendable {
       ]
 
       onLeadInFinish?(basePayload)
+    }
+
+    scheduleRepeatingTimingTimer(
+      firstDelay: leadInDurationSeconds,
+      interval: stepDurationSeconds
+    ) { [weak self] tickIndex in
+      guard let self, isPlaybackActive, self.playbackId == playbackId else {
+        return
+      }
+
+      let stepIndex = tickIndex % loopStepCount
+
+      onStep?([
+        "playbackId": playbackId,
+        "bpm": bpm,
+        "stepIndex": stepIndex,
+        "barIndex": stepIndex / Self.stepsPerPart,
+        "stepIndexInBar": stepIndex % Self.stepsPerPart,
+      ])
     }
 
     scheduleRepeatingTimingTimer(

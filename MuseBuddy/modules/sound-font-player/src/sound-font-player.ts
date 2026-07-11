@@ -3,14 +3,19 @@ import { Platform } from 'react-native';
 
 import type {
   SoundFontLeadInFinishEvent,
+  InternalSoundFontPlaybackConfiguration,
   SoundFontPlaybackConfiguration,
   SoundFontPlayerModuleEvents,
   SoundFontPlayerErrorCode,
+  SoundFontStepEvent,
   SoundFontTickEvent,
 } from './sound-font-player.types';
 
 export type {
   SoundFontInstrument,
+  InternalSoundFontPlaybackConfiguration,
+  InternalSoundFontPlaybackTrack,
+  InternalSoundFontInstrument,
   SoundFontLeadInFinishEvent,
   SoundFontPlaybackCell,
   SoundFontPlaybackConfiguration,
@@ -18,6 +23,7 @@ export type {
   SoundFontPlaybackTrack,
   SoundFontPlayerErrorCode,
   SoundFontPlayerModuleEvents,
+  SoundFontStepEvent,
   SoundFontTickEvent,
 } from './sound-font-player.types';
 
@@ -27,7 +33,7 @@ type EventSubscription = {
 
 declare class NativeSoundFontPlayerModule extends NativeModule<SoundFontPlayerModuleEvents> {
   isPlaying(): boolean;
-  play(configuration: SoundFontPlaybackConfiguration): Promise<void>;
+  play(configuration: InternalSoundFontPlaybackConfiguration): Promise<void>;
   stop(): Promise<void>;
 }
 
@@ -101,6 +107,10 @@ export function play(configuration: SoundFontPlaybackConfiguration): Promise<voi
   return callNative(() => getNativeModule().play(configuration));
 }
 
+export function playInternal(configuration: InternalSoundFontPlaybackConfiguration): Promise<void> {
+  return callNative(() => getNativeModule().play(configuration));
+}
+
 export function stop(): Promise<void> {
   return callNative(() => getNativeModule().stop());
 }
@@ -113,6 +123,10 @@ export function addLeadInFinishListener(
   listener: (event: SoundFontLeadInFinishEvent) => void,
 ): EventSubscription {
   return getNativeModule().addListener('onLeadInFinish', listener);
+}
+
+export function addStepListener(listener: (event: SoundFontStepEvent) => void): EventSubscription {
+  return getNativeModule().addListener('onStep', listener);
 }
 
 export function addTickListener(listener: (event: SoundFontTickEvent) => void): EventSubscription {

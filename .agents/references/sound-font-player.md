@@ -10,9 +10,12 @@ The stable JS entrypoint is `MuseBuddy/modules/sound-font-player/src/sound-font-
 
 - `play(configuration)`: validates and starts native playback. If playback is already
   active, the native service stops the active sequence before starting the new one.
-- `stop()`: stops the sequencer, cancels timing events, and sends all-notes-off/all-sound-off.
+- `stop()`: stops the sequencer, cancels timing events, and sends
+  all-notes-off/all-sound-off.
 - `isPlaying()`: reads native playback state.
 - `addLeadInFinishListener(listener)`: subscribes to the one-shot lead-in completion event.
+- `addStepListener(listener)`: subscribes to loop-relative sixteenth-note step events after
+  the lead-in.
 - `addTickListener(listener)`: subscribes to beat/bar timing events.
 
 The module is iOS-only. `getNativeModule()` throws `ERR_UNSUPPORTED_PLATFORM` outside iOS.
@@ -49,7 +52,7 @@ const configuration = {
   bpm: 100,
   tracks: [
     {
-      instrument: 'piano',
+      instrument: "piano",
       parts: [
         [
           [{ midi: 60, velocity: 96 }], // C4 starts at beat 0.00
@@ -118,6 +121,7 @@ Avoid Core Audio or AVFoundation work on the main thread. The service uses its o
 Native events declared by `SoundFontPlayerModule.swift`:
 
 - `onLeadInFinish`
+- `onStep`
 - `onTick`
 
 `onLeadInFinish` is standalone and fires once at the end of the four-beat lead-in for the
@@ -130,13 +134,29 @@ type SoundFontLeadInFinishEvent = {
 };
 ```
 
+`onStep` starts after the four-beat lead-in, at the same time user playback starts. It
+fires every sixteenth-note step in the active loop:
+
+```ts
+type SoundFontStepEvent = {
+  playbackId: number;
+  bpm: number;
+  stepIndex: number;
+  barIndex: number;
+  stepIndexInBar: number;
+};
+```
+
+`stepIndex` is loop-relative and wraps at the active loop length. `barIndex` and
+`stepIndexInBar` are derived from the module's 16-step bar model.
+
 `onTick` always starts at playback start, including during the lead-in. It emits a
 discriminated union:
 
 ```ts
 type SoundFontTickEvent =
-  | { playbackId: number; bpm: number; event: 'beat'; beatIndex: number }
-  | { playbackId: number; bpm: number; event: 'bar'; barIndex: number };
+  | { playbackId: number; bpm: number; event: "beat"; beatIndex: number }
+  | { playbackId: number; bpm: number; event: "bar"; barIndex: number };
 ```
 
 Beat ticks fire every beat starting with `beatIndex: 0`. Bar ticks fire every four beats

@@ -30,11 +30,12 @@ private enum DiagnosticError: LocalizedError {
 }
 
 private let arguments = CommandLine.arguments.dropFirst()
+private let argumentList = Array(arguments.drop { $0 == "--" })
 private let melodicSoundFontURL = URL(
-  fileURLWithPath: arguments.first ?? "assets/audio/piano-yamaha-PSRF50.sf2"
+  fileURLWithPath: argumentList.first ?? "assets/audio/piano-white-grand.sf2"
 )
 private let percussionSoundFontURL = URL(
-  fileURLWithPath: arguments.dropFirst().first ?? "assets/audio/jazz-percussion.sf2"
+  fileURLWithPath: argumentList.dropFirst().first ?? "assets/audio/jazz-percussion.sf2"
 )
 
 do {
@@ -178,6 +179,13 @@ private func silence(_ sampler: AVAudioUnitSampler) {
     sampler.sendController(120, withValue: 0, onChannel: channel)
     sampler.sendController(123, withValue: 0, onChannel: channel)
   }
+}
+
+private func midiNoteName(_ midi: UInt8) -> String {
+  let names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+  let note = names[Int(midi) % names.count]
+  let octave = (Int(midi) / names.count) - 1
+  return "\(note)\(octave)"
 }
 
 private func parseSoundFontPresets(at url: URL) throws -> [SoundFontPreset] {

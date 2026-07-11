@@ -65,7 +65,7 @@ function chordDisplay(idName: string, midis: readonly number[]): ChordDisplay {
 }
 
 describe('buildRhythmSoundFontPlaybackConfiguration', () => {
-  it('maps rhythm strong and weak steps to percussion hits with different velocities', () => {
+  it('maps rhythm strong and weak steps to private jazz brush percussion hits', () => {
     const configuration = buildRhythmSoundFontPlaybackConfiguration(
       ['s', 'h', null, 'w', null, null, null, null, null, null, null, null, null, null, null, null],
       120,
@@ -75,13 +75,13 @@ describe('buildRhythmSoundFontPlaybackConfiguration', () => {
       bpm: 120,
       tracks: [
         {
-          instrument: 'percussion',
+          instrument: 'rhythmPercussion',
           parts: [
             [
-              [{ midi: 67, velocity: 112 }],
+              [{ midi: 45, velocity: 112 }],
               [{ midi: -50, velocity: null }],
               [{ midi: null, velocity: null }],
-              [{ midi: 60, velocity: 74 }],
+              [{ midi: 50, velocity: 74 }],
               [{ midi: null, velocity: null }],
               [{ midi: null, velocity: null }],
               [{ midi: null, velocity: null }],

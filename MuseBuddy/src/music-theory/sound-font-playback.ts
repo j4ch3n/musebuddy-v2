@@ -3,20 +3,23 @@ import type { TrainingSessionKeyArrangement } from '@/contexts/training-session-
 import { splitRhythmPatternBars } from '@/components/rhythm-trainer/rhythm-pattern';
 import type { RhythmPattern } from '@/components/rhythm-trainer/types';
 import type {
+  InternalSoundFontPlaybackConfiguration,
   SoundFontPlaybackCell,
   SoundFontPlaybackConfiguration,
   SoundFontPlaybackStep,
-} from '@modules/sound-font-player';
+} from '@modules/sound-font-player/src/sound-font-player.types';
 import type { ChordDisplay } from './chord-display';
 import { DEFAULT_BPM } from './tempo';
 
 const HOLD_MIDI = -50;
+const SOFT_BRUSH_SNARE_5_MIDI = 45;
+const HARD_BRUSH_SNARE_3_MIDI = 50;
 const STRONG_RHYTHM_NOTE: SoundFontPlaybackCell = {
-  midi: 67,
+  midi: SOFT_BRUSH_SNARE_5_MIDI,
   velocity: 112,
 };
 const WEAK_RHYTHM_NOTE: SoundFontPlaybackCell = {
-  midi: 60,
+  midi: HARD_BRUSH_SNARE_3_MIDI,
   velocity: 74,
 };
 const CHORD_NOTE_VELOCITY = 96;
@@ -49,13 +52,15 @@ export function buildSoundFontPlaybackConfiguration(
 export function buildRhythmSoundFontPlaybackConfiguration(
   pattern: RhythmPattern,
   bpm: number,
-): SoundFontPlaybackConfiguration {
+): InternalSoundFontPlaybackConfiguration {
+  const bars = splitRhythmPatternBars(pattern);
+
   return {
     bpm,
     tracks: [
       {
-        instrument: 'percussion',
-        parts: splitRhythmPatternBars(pattern).map((part) =>
+        instrument: 'rhythmPercussion',
+        parts: bars.map((part) =>
           part.map((step): SoundFontPlaybackStep => {
             if (step === 's') {
               return [STRONG_RHYTHM_NOTE];

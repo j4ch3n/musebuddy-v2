@@ -3,10 +3,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { buildRhythmSoundFontPlaybackConfiguration } from '@/music-theory/sound-font-playback';
 
 import {
+  addLeadInFinishListener,
+  addStepListener,
   stop as stopSoundFontPlayback,
-  play,
   SoundFontPlayerError,
-} from '@modules/sound-font-player';
+  playInternal,
+} from '@modules/sound-font-player/src/sound-font-player';
 import type { RhythmPattern } from './types';
 
 type UseSequencerPlaybackOptions = {
@@ -14,18 +16,17 @@ type UseSequencerPlaybackOptions = {
   pattern: RhythmPattern;
 };
 
-const VISUAL_INTERVAL_MS = 30;
-
 export function useSequencerPlayback({ bpm, pattern }: UseSequencerPlaybackOptions) {
-  const startTimeRef = useRef(0);
   const patternRef = useRef(pattern);
   const bpmRef = useRef(bpm);
+  const didFinishLeadInRef = useRef(false);
   const previousBpmRef = useRef(bpm);
   const [currentStepIndex, setCurrentStepIndex] = useState<number | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
   const stopPlayback = useCallback(() => {
     void stopSoundFontPlayback();
+    didFinishLeadInRef.current = false;
     setIsPlaying(false);
     setCurrentStepIndex(null);
   }, []);
@@ -43,9 +44,9 @@ export function useSequencerPlayback({ bpm, pattern }: UseSequencerPlaybackOptio
       patternRef.current,
       bpmRef.current,
     );
-    await play(configuration);
-    startTimeRef.current = Date.now();
-    setCurrentStepIndex(0);
+    await playInternal(configuration);
+    didFinishLeadInRef.current = false;
+    setCurrentStepIndex(null);
     setIsPlaying(true);
   }, []);
 
@@ -55,10 +56,13 @@ export function useSequencerPlayback({ bpm, pattern }: UseSequencerPlaybackOptio
     }
 
     try {
-      await play(buildRhythmSoundFontPlaybackConfiguration(patternRef.current, bpmRef.current));
-      startTimeRef.current = Date.now();
-      setCurrentStepIndex(0);
+      await playInternal(
+        buildRhythmSoundFontPlaybackConfiguration(patternRef.current, bpmRef.current),
+      );
+      didFinishLeadInRef.current = false;
+      setCurrentStepIndex(null);
     } catch (error) {
+      didFinishLeadInRef.current = false;
       setIsPlaying(false);
       setCurrentStepIndex(null);
       throw error;
@@ -76,6 +80,7 @@ export function useSequencerPlayback({ bpm, pattern }: UseSequencerPlaybackOptio
         const detail = error instanceof SoundFontPlayerError ? error.nativeMessage : undefined;
         console.warn('Rhythm playback failed.', detail ?? error);
       }
+      didFinishLeadInRef.current = false;
       setIsPlaying(false);
       setCurrentStepIndex(null);
     });
@@ -96,6 +101,7 @@ export function useSequencerPlayback({ bpm, pattern }: UseSequencerPlaybackOptio
         const detail = error instanceof SoundFontPlayerError ? error.nativeMessage : undefined;
         console.warn('Rhythm playback restart failed.', detail ?? error);
       }
+      didFinishLeadInRef.current = false;
       setIsPlaying(false);
       setCurrentStepIndex(null);
     });
@@ -106,8 +112,10 @@ export function useSequencerPlayback({ bpm, pattern }: UseSequencerPlaybackOptio
       return;
     }
 
-    const intervalId = setInterval(() => {
-      const startTime = startTimeRef.current;
+    const leadInSubscription = addLeadInFinishListener(() => {
+      didFinishLeadInRef.current = true;
+    });
+    const stepSubscription = addStepListener((event) => {
       const patternLength = patternRef.current.length;
 
       if (patternLength === 0) {
@@ -115,19 +123,21 @@ export function useSequencerPlayback({ bpm, pattern }: UseSequencerPlaybackOptio
         return;
       }
 
-      const stepDurationSeconds = 15 / bpmRef.current;
-      const elapsedSeconds = (Date.now() - startTime) / 1_000;
-      const stepIndex = Math.floor(elapsedSeconds / stepDurationSeconds) % patternLength;
-      setCurrentStepIndex(stepIndex);
-    }, VISUAL_INTERVAL_MS);
+      if (!didFinishLeadInRef.current) {
+        didFinishLeadInRef.current = true;
+      }
+      setCurrentStepIndex(event.stepIndex % patternLength);
+    });
 
     return () => {
-      clearInterval(intervalId);
+      leadInSubscription.remove();
+      stepSubscription.remove();
     };
   }, [isPlaying, stopPlayback]);
 
   useEffect(
     () => () => {
+      didFinishLeadInRef.current = false;
       void stopSoundFontPlayback();
     },
     [],

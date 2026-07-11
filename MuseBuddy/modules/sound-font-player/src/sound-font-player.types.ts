@@ -1,5 +1,7 @@
 export type SoundFontInstrument = 'piano' | 'bass' | 'guitar' | 'percussion';
 
+export type InternalSoundFontInstrument = SoundFontInstrument | 'rhythmPercussion';
+
 export type SoundFontPlaybackCell = {
   midi: number | null;
   velocity: number | null;
@@ -17,9 +19,27 @@ export type SoundFontPlaybackConfiguration = {
   tracks: SoundFontPlaybackTrack[];
 };
 
+export type InternalSoundFontPlaybackTrack = {
+  instrument: InternalSoundFontInstrument;
+  parts: SoundFontPlaybackStep[][];
+};
+
+export type InternalSoundFontPlaybackConfiguration = {
+  bpm: number;
+  tracks: InternalSoundFontPlaybackTrack[];
+};
+
 export type SoundFontLeadInFinishEvent = {
   playbackId: number;
   bpm: number;
+};
+
+export type SoundFontStepEvent = {
+  playbackId: number;
+  bpm: number;
+  stepIndex: number;
+  barIndex: number;
+  stepIndexInBar: number;
 };
 
 export type SoundFontTickEvent =
@@ -38,6 +58,7 @@ export type SoundFontTickEvent =
 
 export type SoundFontPlayerModuleEvents = {
   onLeadInFinish(event: SoundFontLeadInFinishEvent): void;
+  onStep(event: SoundFontStepEvent): void;
   onTick(event: SoundFontTickEvent): void;
 };
 
