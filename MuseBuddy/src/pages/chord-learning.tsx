@@ -2,19 +2,18 @@ import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
+import { ChordLearning, ChordSessionSummary } from '@/components/chord-learning';
 import {
-  ChordLearning,
-  ChordLearningPlayButton,
-  ChordSessionSummary,
-} from '@/components/chord-learning';
+  PerformanceGuidanceButton,
+  PerformanceGuidanceProvider,
+} from '@/components/performance-guidance';
 import { useTrainingSession } from '@/contexts/training-session-context';
 import {
   buildChordPreviewSoundFontPlaybackConfiguration,
   buildChordSummarySoundFontPlaybackConfiguration,
   type ChordDisplay,
 } from '@/music-theory';
-import { Button, Carousel } from '@/ui';
-import { stop as stopSoundFontPlayback } from '@modules/sound-font-player';
+import { Carousel } from '@/ui';
 
 import { PlaceholderPanel } from './placeholder-panel';
 import { TrainingScreenShell } from './training-screen-shell';
@@ -33,7 +32,6 @@ type ChordLearningSlide =
 export function ChordLearningPage() {
   const router = useRouter();
   const { learningConfig, session } = useTrainingSession();
-  const [playbackResetCount, setPlaybackResetCount] = useState(0);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [flippedChordIds, setFlippedChordIds] = useState<ReadonlySet<string>>(() => new Set());
   const slides = useMemo<readonly ChordLearningSlide[]>(() => {
@@ -127,30 +125,20 @@ export function ChordLearningPage() {
       learningConfig.bpm,
     );
   }, [currentSlide, learningConfig.bpm]);
-  const playbackKey = currentSlide
-    ? `${getSlideKey(currentSlide)}-${learningConfig.bpm}-${playbackResetCount}`
-    : 'no-chord-slide';
-  const playLabel = currentSlide?.type === 'summary' ? 'Play all' : 'Play chord';
+  const finishText =
+    currentSlide?.type === 'chord'
+      ? `${currentSlide.display.friendlyName} is easy!`
+      : 'These chords are easy!';
 
-  return (
+  const content = (
     <TrainingScreenShell
       currentStep="chord"
       footer={
-        <View style={styles.footer}>
-          <ChordLearningPlayButton
-            configuration={playbackConfiguration}
-            key={playbackKey}
-            playLabel={playLabel}
-          />
-          <Button
-            label="Continue"
-            onPress={() => {
-              setPlaybackResetCount((count) => count + 1);
-              void stopSoundFontPlayback();
-              router.push('/rhythm-training');
-            }}
-          />
-        </View>
+        session ? (
+          <View style={styles.footer}>
+            <PerformanceGuidanceButton />
+          </View>
+        ) : null
       }
     >
       {session ? (
@@ -162,6 +150,7 @@ export function ChordLearningPage() {
           keyExtractor={getSlideKey}
           onCurrentIndexChange={setCurrentSlideIndex}
           renderItem={renderSlide}
+          selectedIndex={currentSlideIndex}
         />
       ) : (
         <PlaceholderPanel
@@ -171,6 +160,34 @@ export function ChordLearningPage() {
         />
       )}
     </TrainingScreenShell>
+  );
+
+  if (!session || !currentSlide) {
+    return content;
+  }
+
+  return (
+    <PerformanceGuidanceProvider
+      finishText={finishText}
+      key={`${getSlideKey(currentSlide)}-${learningConfig.bpm}`}
+      onFinish={() => {
+        if (currentSlide.type === 'summary') {
+          router.push('/rhythm-training');
+          return;
+        }
+
+        setCurrentSlideIndex((index) => Math.min(index + 1, slides.length - 1));
+      }}
+      onSkip={() => {
+        router.push('/rhythm-training');
+      }}
+      playback={{
+        configuration: playbackConfiguration,
+        kind: 'band',
+      }}
+    >
+      {content}
+    </PerformanceGuidanceProvider>
   );
 }
 

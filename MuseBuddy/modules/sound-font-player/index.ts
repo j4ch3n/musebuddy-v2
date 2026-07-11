@@ -1,5 +1,7 @@
 export {
   addLeadInFinishListener,
+  addCycleRepeatListener,
+  addDemoFinishListener,
   addStepListener,
   addTickListener,
   isPlaying,
@@ -16,6 +18,8 @@ export type {
   GrooveSoundFontInstrument,
   GrooveSoundFontPlaybackConfiguration,
   GrooveSoundFontPlaybackTrack,
+  SoundFontCycleRepeatEvent,
+  SoundFontDemoFinishEvent,
   SoundFontLeadInFinishEvent,
   SoundFontPlaybackCell,
   SoundFontPlaybackConfiguration,

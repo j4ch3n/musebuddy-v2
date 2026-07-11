@@ -16,6 +16,8 @@ export type SoundFontPlaybackTrack<TInstrument extends string = string> = {
 
 export type SoundFontPlaybackConfiguration<TInstrument extends string = string> = {
   bpm: number;
+  cycleCount?: number;
+  includesSilentPeriod?: boolean;
   tracks: SoundFontPlaybackTrack<TInstrument>[];
 };
 
@@ -32,6 +34,23 @@ export type GrooveSoundFontPlaybackConfiguration =
 export type SoundFontLeadInFinishEvent = {
   playbackId: number;
   bpm: number;
+};
+
+export type SoundFontDemoFinishEvent = {
+  playbackId: number;
+  bpm: number;
+  cycleIndex: number;
+  completedCycleCount: number;
+  includesSilentPeriod: boolean;
+};
+
+export type SoundFontCycleRepeatEvent = {
+  playbackId: number;
+  bpm: number;
+  cycleIndex: number;
+  completedCycleCount: number;
+  includesSilentPeriod: boolean;
+  willRepeat: boolean;
 };
 
 export type SoundFontStepEvent = {
@@ -57,6 +76,8 @@ export type SoundFontTickEvent =
     };
 
 export type SoundFontPlayerModuleEvents = {
+  onCycleRepeat(event: SoundFontCycleRepeatEvent): void;
+  onDemoFinish(event: SoundFontDemoFinishEvent): void;
   onLeadInFinish(event: SoundFontLeadInFinishEvent): void;
   onStep(event: SoundFontStepEvent): void;
   onTick(event: SoundFontTickEvent): void;

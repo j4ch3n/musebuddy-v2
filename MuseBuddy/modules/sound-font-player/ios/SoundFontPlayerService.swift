@@ -2,6 +2,9 @@ import AudioToolbox
 import AVFoundation
 import Foundation
 
+// swiftlint:disable file_length
+
+// swiftlint:disable:next type_body_length
 final class SoundFontPlayerService: @unchecked Sendable {
   private struct InstrumentDefinition {
     let bankLSB: UInt8
@@ -119,6 +122,8 @@ final class SoundFontPlayerService: @unchecked Sendable {
   private var timingWorkItems: [DispatchWorkItem] = []
   private var timingTimers: [DispatchSourceTimer] = []
 
+  var onCycleRepeat: (([String: Any]) -> Void)?
+  var onDemoFinish: (([String: Any]) -> Void)?
   var onLeadInFinish: (([String: Any]) -> Void)?
   var onStep: (([String: Any]) -> Void)?
   var onTick: (([String: Any]) -> Void)?
@@ -203,7 +208,12 @@ final class SoundFontPlayerService: @unchecked Sendable {
     try prepareSamplerKeys(Set(tracks.map(\.samplerKey) + [Self.leadInInstrumentKey]))
 
     do {
-      sequencer = try makeSequencer(for: tracks, bpm: configuration.bpm)
+      sequencer = try makeSequencer(
+        for: tracks,
+        bpm: configuration.bpm,
+        cycleCount: normalizedCycleCount(configuration.cycleCount),
+        includesSilentPeriod: configuration.includesSilentPeriod ?? false
+      )
       sequencer?.prepareToPlay()
       sequencer?.currentPositionInBeats = 0
       try sequencer?.start()
@@ -215,12 +225,18 @@ final class SoundFontPlayerService: @unchecked Sendable {
 
     isPlaybackActive = true
     playbackId += 1
-    let loopStepCount = tracks.map(\.loopStepCount).max() ?? Self.stepsPerPart
+    let demoStepCount = tracks.map(\.loopStepCount).max() ?? Self.stepsPerPart
     scheduleTimingEvents(
       playbackId: playbackId,
       bpm: configuration.bpm,
-      loopStepCount: loopStepCount
+      cycleCount: normalizedCycleCount(configuration.cycleCount),
+      demoStepCount: demoStepCount,
+      includesSilentPeriod: configuration.includesSilentPeriod ?? false
     )
+  }
+
+  private func normalizedCycleCount(_ cycleCount: Int?) -> Int {
+    max(1, cycleCount ?? 1)
   }
 
   private func configureAudioEngineIfNeeded() throws {
@@ -316,10 +332,17 @@ final class SoundFontPlayerService: @unchecked Sendable {
     }
   }
 
-  private func makeSequencer(for tracks: [PlaybackTrack], bpm: Double) throws -> AVAudioSequencer {
+  private func makeSequencer(
+    for tracks: [PlaybackTrack],
+    bpm: Double,
+    cycleCount: Int,
+    includesSilentPeriod: Bool
+  ) throws -> AVAudioSequencer {
     let nextSequencer = AVAudioSequencer(audioEngine: audioEngine)
     nextSequencer.tempoTrack.addEvent(AVExtendedTempoEvent(tempo: bpm), at: 0)
     try appendLeadInTrack(to: nextSequencer)
+    let demoLengthBeats = tracks.map(\.loopLengthBeats).max() ?? Self.beatsPerBar
+    let cycleLengthBeats = includesSilentPeriod ? demoLengthBeats * 2 : demoLengthBeats
 
     for playbackTrack in tracks {
       guard let sampler = samplersByInstrument[playbackTrack.samplerKey] else {
@@ -330,21 +353,19 @@ final class SoundFontPlayerService: @unchecked Sendable {
 
       let track = nextSequencer.createAndAppendTrack()
       track.destinationAudioUnit = sampler
-      track.loopRange = AVBeatRange(
-        start: Self.leadInDurationBeats,
-        length: playbackTrack.loopLengthBeats
-      )
-      track.isLoopingEnabled = true
-      track.numberOfLoops = -1
 
-      for note in playbackTrack.notes {
-        let event = AVMIDINoteEvent(
-          channel: UInt32(playbackTrack.boundMidiChannel),
-          key: UInt32(note.midi),
-          velocity: UInt32(note.velocity),
-          duration: note.durationBeats
-        )
-        track.addEvent(event, at: Self.leadInDurationBeats + note.startBeat)
+      for cycleIndex in 0 ..< cycleCount {
+        let cycleStartBeat = Self.leadInDurationBeats + Double(cycleIndex) * cycleLengthBeats
+
+        for note in playbackTrack.notes {
+          let event = AVMIDINoteEvent(
+            channel: UInt32(playbackTrack.boundMidiChannel),
+            key: UInt32(note.midi),
+            velocity: UInt32(note.velocity),
+            duration: note.durationBeats
+          )
+          track.addEvent(event, at: cycleStartBeat + note.startBeat)
+        }
       }
     }
 
@@ -508,43 +529,71 @@ final class SoundFontPlayerService: @unchecked Sendable {
     finishPlayback()
   }
 
-  private func scheduleTimingEvents(playbackId: Int, bpm: Double, loopStepCount: Int) {
+  private func scheduleTimingEvents(
+    playbackId: Int,
+    bpm: Double,
+    cycleCount: Int,
+    demoStepCount: Int,
+    includesSilentPeriod: Bool
+  ) {
     cancelTimingEvents()
 
     let secondsPerBeat = 60.0 / bpm
     let leadInDurationSeconds = Double(Self.leadInBeatCount) * secondsPerBeat
     let stepDurationSeconds = Self.stepDurationBeats * secondsPerBeat
+    let demoDurationSeconds = Double(demoStepCount) * stepDurationSeconds
+    let cycleDurationSeconds = includesSilentPeriod ? demoDurationSeconds * 2 : demoDurationSeconds
+    let basePayload: [String: Any] = [
+      "playbackId": playbackId,
+      "bpm": bpm,
+    ]
 
     scheduleTimingWorkItem(after: leadInDurationSeconds) { [weak self] in
       guard let self, isPlaybackActive, self.playbackId == playbackId else {
         return
       }
 
-      let basePayload: [String: Any] = [
-        "playbackId": playbackId,
-        "bpm": bpm,
-      ]
-
       onLeadInFinish?(basePayload)
     }
 
-    scheduleRepeatingTimingTimer(
-      firstDelay: leadInDurationSeconds,
-      interval: stepDurationSeconds
-    ) { [weak self] tickIndex in
-      guard let self, isPlaybackActive, self.playbackId == playbackId else {
-        return
+    for cycleIndex in 0 ..< cycleCount {
+      let cycleStartDelay = leadInDurationSeconds + Double(cycleIndex) * cycleDurationSeconds
+      let completedCycleCount = cycleIndex + 1
+      let cyclePayload = basePayload.merging([
+        "cycleIndex": cycleIndex,
+        "completedCycleCount": completedCycleCount,
+        "includesSilentPeriod": includesSilentPeriod,
+      ]) { _, new in new }
+
+      scheduleDemoStepEvents(
+        playbackId: playbackId,
+        bpm: bpm,
+        cycleStartDelay: cycleStartDelay,
+        demoStepCount: demoStepCount,
+        stepDurationSeconds: stepDurationSeconds
+      )
+
+      scheduleTimingWorkItem(after: cycleStartDelay + demoDurationSeconds) { [weak self] in
+        guard let self, isPlaybackActive, self.playbackId == playbackId else {
+          return
+        }
+
+        onDemoFinish?(cyclePayload)
       }
 
-      let stepIndex = tickIndex % loopStepCount
+      scheduleTimingWorkItem(after: cycleStartDelay + cycleDurationSeconds) { [weak self] in
+        guard let self, isPlaybackActive, self.playbackId == playbackId else {
+          return
+        }
 
-      onStep?([
-        "playbackId": playbackId,
-        "bpm": bpm,
-        "stepIndex": stepIndex,
-        "barIndex": stepIndex / Self.stepsPerPart,
-        "stepIndexInBar": stepIndex % Self.stepsPerPart,
-      ])
+        onCycleRepeat?(
+          cyclePayload.merging(["willRepeat": completedCycleCount < cycleCount]) { _, new in new }
+        )
+
+        if completedCycleCount >= cycleCount {
+          finishPlayback()
+        }
+      }
     }
 
     scheduleRepeatingTimingTimer(
@@ -577,6 +626,30 @@ final class SoundFontPlayerService: @unchecked Sendable {
         "event": "bar",
         "barIndex": tickIndex,
       ])
+    }
+  }
+
+  private func scheduleDemoStepEvents(
+    playbackId: Int,
+    bpm: Double,
+    cycleStartDelay: TimeInterval,
+    demoStepCount: Int,
+    stepDurationSeconds: TimeInterval
+  ) {
+    for stepIndex in 0 ..< demoStepCount {
+      scheduleTimingWorkItem(after: cycleStartDelay + Double(stepIndex) * stepDurationSeconds) { [weak self] in
+        guard let self, isPlaybackActive, self.playbackId == playbackId else {
+          return
+        }
+
+        onStep?([
+          "playbackId": playbackId,
+          "bpm": bpm,
+          "stepIndex": stepIndex,
+          "barIndex": stepIndex / Self.stepsPerPart,
+          "stepIndexInBar": stepIndex % Self.stepsPerPart,
+        ])
+      }
     }
   }
 

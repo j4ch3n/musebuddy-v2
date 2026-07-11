@@ -33,6 +33,7 @@ export type CarouselProps<T> = {
   keyExtractor: (item: T, index: number) => string;
   onCurrentIndexChange?: (index: number) => void;
   renderItem: (item: T, index: number) => ReactNode;
+  selectedIndex?: number;
 };
 
 type CarouselItemProps = {
@@ -110,6 +111,7 @@ export function Carousel<T>({
   keyExtractor,
   onCurrentIndexChange,
   renderItem,
+  selectedIndex,
 }: CarouselProps<T>) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [width, setWidth] = useState(0);
@@ -118,7 +120,9 @@ export function Carousel<T>({
   const isTransitioning = useSharedValue(false);
   const hasAnnouncedItem = useRef(false);
   const itemCount = items.length;
-  const safeCurrentIndex = itemCount > 0 ? Math.min(currentIndex, itemCount - 1) : 0;
+  const requestedCurrentIndex = selectedIndex ?? currentIndex;
+  const safeCurrentIndex =
+    itemCount > 0 ? Math.max(0, Math.min(requestedCurrentIndex, itemCount - 1)) : 0;
   const currentItem = items[safeCurrentIndex];
   const stride = width + ITEM_GAP;
   const itemLabel = currentItem

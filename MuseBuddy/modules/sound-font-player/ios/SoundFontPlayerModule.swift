@@ -6,9 +6,19 @@ public final class SoundFontPlayerModule: Module {
 
   public func definition() -> ModuleDefinition {
     Name("SoundFontPlayer")
-    Events("onLeadInFinish", "onStep", "onTick")
+    Events("onCycleRepeat", "onDemoFinish", "onLeadInFinish", "onStep", "onTick")
 
     OnCreate {
+      self.player.onCycleRepeat = { [weak self] payload in
+        DispatchQueue.main.async {
+          self?.sendEvent("onCycleRepeat", payload)
+        }
+      }
+      self.player.onDemoFinish = { [weak self] payload in
+        DispatchQueue.main.async {
+          self?.sendEvent("onDemoFinish", payload)
+        }
+      }
       self.player.onLeadInFinish = { [weak self] payload in
         DispatchQueue.main.async {
           self?.sendEvent("onLeadInFinish", payload)
@@ -27,6 +37,8 @@ public final class SoundFontPlayerModule: Module {
     }
 
     OnDestroy {
+      self.player.onCycleRepeat = nil
+      self.player.onDemoFinish = nil
       self.player.onLeadInFinish = nil
       self.player.onStep = nil
       self.player.onTick = nil

@@ -1,53 +1,78 @@
+import { useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 
 import {
-  RhythmPlayerControls,
-  RhythmViewer,
-  useSequencerPlayback,
-} from '@/components/rhythm-trainer';
+  PerformanceGuidanceButton,
+  PerformanceGuidanceProvider,
+  usePerformanceGuidance,
+} from '@/components/performance-guidance';
+import { RhythmViewer, type RhythmPattern } from '@/components/rhythm-trainer';
 import { useTrainingSession } from '@/contexts/training-session-context';
-import { Button } from '@/ui';
+import { buildRhythmSoundFontPlaybackConfiguration } from '@/music-theory/sound-font-playback';
 
 import { PlaceholderPanel } from './placeholder-panel';
 import { TrainingScreenShell } from './training-screen-shell';
 
+const EMPTY_RHYTHM_PATTERN: RhythmPattern = [];
+
 export function RhythmTrainingPage() {
   const router = useRouter();
   const { learningConfig, session } = useTrainingSession();
-  const pattern = session?.rhythm.pattern ?? [];
-  const { currentStepIndex, isPlaying, stopPlayback, togglePlayback } = useSequencerPlayback({
-    bpm: learningConfig.bpm,
-    pattern,
-  });
+  const pattern = session?.rhythm.pattern ?? EMPTY_RHYTHM_PATTERN;
+  const playbackConfiguration = useMemo(
+    () =>
+      pattern.length > 0
+        ? buildRhythmSoundFontPlaybackConfiguration(pattern, learningConfig.bpm)
+        : null,
+    [learningConfig.bpm, pattern],
+  );
+
+  if (pattern.length === 0) {
+    return (
+      <TrainingScreenShell currentStep="rhythm" footer={null}>
+        <PlaceholderPanel
+          accent="blue"
+          body="Training material is not loaded yet."
+          title="Prepare session"
+        />
+      </TrainingScreenShell>
+    );
+  }
+
+  return (
+    <PerformanceGuidanceProvider
+      finishText="this rhythm is fun!"
+      key={`rhythm-${learningConfig.bpm}-${pattern.join('')}`}
+      onFinish={() => {
+        router.push('/pattern-training');
+      }}
+      onSkip={() => {
+        router.push('/pattern-training');
+      }}
+      playback={{
+        configuration: playbackConfiguration,
+        kind: 'groove',
+      }}
+    >
+      <RhythmTrainingContent pattern={pattern} />
+    </PerformanceGuidanceProvider>
+  );
+}
+
+function RhythmTrainingContent({ pattern }: { pattern: RhythmPattern }) {
+  const { currentStepIndex } = usePerformanceGuidance();
 
   return (
     <TrainingScreenShell
       currentStep="rhythm"
       footer={
         <View style={{ gap: 14 }}>
-          {pattern.length > 0 && (
-            <RhythmPlayerControls isPlaying={isPlaying} onTogglePlayback={togglePlayback} />
-          )}
-          <Button
-            label="Continue"
-            onPress={() => {
-              stopPlayback();
-              router.push('/pattern-training');
-            }}
-          />
+          <PerformanceGuidanceButton />
         </View>
       }
     >
-      {pattern.length > 0 ? (
-        <RhythmViewer currentStepIndex={currentStepIndex} pattern={pattern} />
-      ) : (
-        <PlaceholderPanel
-          accent="blue"
-          body="Training material is not loaded yet."
-          title="Prepare session"
-        />
-      )}
+      <RhythmViewer currentStepIndex={currentStepIndex} pattern={pattern} />
     </TrainingScreenShell>
   );
 }

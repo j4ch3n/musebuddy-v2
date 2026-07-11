@@ -1,8 +1,13 @@
 import { useRouter } from 'expo-router';
+import { useMemo } from 'react';
 
 import { ChoreographyViewer } from '@/components/choreography-viewer';
-import { SessionGoalPlayButton } from '@/components/session-goal-play-button';
+import {
+  PerformanceGuidanceButton,
+  PerformanceGuidanceProvider,
+} from '@/components/performance-guidance';
 import { useTrainingSession } from '@/contexts/training-session-context';
+import { buildSoundFontPlaybackConfiguration } from '@/music-theory/sound-font-playback';
 import { Button } from '@/ui';
 
 import { PlaceholderPanel } from './placeholder-panel';
@@ -10,25 +15,19 @@ import { TrainingScreenShell } from './training-screen-shell';
 
 export function SessionGoalPage() {
   const router = useRouter();
-  const { prepareTrainingSession, session } = useTrainingSession();
+  const { learningConfig, prepareTrainingSession, session } = useTrainingSession();
+  const playbackConfiguration = useMemo(
+    () =>
+      session
+        ? buildSoundFontPlaybackConfiguration(session.keyArrangement, learningConfig.bpm)
+        : null,
+    [learningConfig.bpm, session],
+  );
 
-  return (
-    <TrainingScreenShell
-      currentStep="goal"
-      footer={
-        <Button
-          label="Continue"
-          onPress={() => {
-            router.push('/chord-learning');
-          }}
-        />
-      }
-    >
+  const content = (
+    <TrainingScreenShell currentStep="goal" footer={session ? <PerformanceGuidanceButton /> : null}>
       {session ? (
-        <>
-          <ChoreographyViewer keyArrangement={session.keyArrangement} />
-          <SessionGoalPlayButton keyArrangement={session.keyArrangement} />
-        </>
+        <ChoreographyViewer keyArrangement={session.keyArrangement} />
       ) : (
         <PlaceholderPanel
           accent="purple"
@@ -38,5 +37,29 @@ export function SessionGoalPage() {
       )}
       {!session && <Button label="Load training" onPress={() => void prepareTrainingSession()} />}
     </TrainingScreenShell>
+  );
+
+  if (!session) {
+    return content;
+  }
+
+  return (
+    <PerformanceGuidanceProvider
+      finishText="I'm excited, let's go!"
+      key={`session-goal-${learningConfig.bpm}`}
+      listeningEnabled={false}
+      onFinish={() => {
+        router.push('/chord-learning');
+      }}
+      onSkip={() => {
+        router.push('/chord-learning');
+      }}
+      playback={{
+        configuration: playbackConfiguration,
+        kind: 'band',
+      }}
+    >
+      {content}
+    </PerformanceGuidanceProvider>
   );
 }

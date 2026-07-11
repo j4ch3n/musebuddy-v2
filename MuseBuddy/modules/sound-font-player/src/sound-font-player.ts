@@ -4,6 +4,8 @@ import { Platform } from 'react-native';
 import type {
   BandSoundFontPlaybackConfiguration,
   GrooveSoundFontPlaybackConfiguration,
+  SoundFontCycleRepeatEvent,
+  SoundFontDemoFinishEvent,
   SoundFontLeadInFinishEvent,
   SoundFontPlayerModuleEvents,
   SoundFontPlayerErrorCode,
@@ -18,6 +20,8 @@ export type {
   GrooveSoundFontInstrument,
   GrooveSoundFontPlaybackConfiguration,
   GrooveSoundFontPlaybackTrack,
+  SoundFontCycleRepeatEvent,
+  SoundFontDemoFinishEvent,
   SoundFontLeadInFinishEvent,
   SoundFontPlaybackCell,
   SoundFontPlaybackConfiguration,
@@ -131,6 +135,18 @@ export function addLeadInFinishListener(
   listener: (event: SoundFontLeadInFinishEvent) => void,
 ): EventSubscription {
   return getNativeModule().addListener('onLeadInFinish', listener);
+}
+
+export function addDemoFinishListener(
+  listener: (event: SoundFontDemoFinishEvent) => void,
+): EventSubscription {
+  return getNativeModule().addListener('onDemoFinish', listener);
+}
+
+export function addCycleRepeatListener(
+  listener: (event: SoundFontCycleRepeatEvent) => void,
+): EventSubscription {
+  return getNativeModule().addListener('onCycleRepeat', listener);
 }
 
 export function addStepListener(listener: (event: SoundFontStepEvent) => void): EventSubscription {
