@@ -10,7 +10,7 @@ import {
   type PianoAttackDetectorArtifactKind,
   type PianoAmbientLevelChangeEvent,
   type PianoAttackEvent,
-} from '../../../modules/piano-attack-detector';
+} from '@modules/piano-attack-detector';
 import { createLogger } from '@/utils/logger';
 
 type PianoAttackDetectorPhase = 'idle' | 'starting' | 'listening' | 'stopping' | 'error';

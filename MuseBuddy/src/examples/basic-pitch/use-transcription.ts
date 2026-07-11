@@ -10,7 +10,7 @@ import {
   stopRecognition,
   type DetectionNote,
   type DetectionResult,
-} from '../../../modules/basic-pitch';
+} from '@modules/basic-pitch';
 import { createLogger } from '@/utils/logger';
 
 import { formatDetectionNote } from './event-log';

@@ -6,7 +6,7 @@ import type {
   SoundFontPlaybackCell,
   SoundFontPlaybackConfiguration,
   SoundFontPlaybackStep,
-} from '../../modules/sound-font-player';
+} from '@modules/sound-font-player';
 
 const DEFAULT_SESSION_GOAL_BPM = 96;
 const HOLD_MIDI = -50;

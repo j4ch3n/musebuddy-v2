@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 
-import { initialize, BasicPitchError } from '../../modules/basic-pitch';
+import { initialize, BasicPitchError } from '@modules/basic-pitch';
 import { prepareTrainingSessionDisplay, type PreparedTrainingSession } from '@/music-theory';
 import { createLogger } from '@/utils/logger';
 import { fetchDailyTrainingSession } from './training-session-api';

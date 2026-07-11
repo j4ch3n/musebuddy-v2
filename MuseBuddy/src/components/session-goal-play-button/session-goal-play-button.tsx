@@ -13,7 +13,7 @@ import {
   play,
   stop,
   SoundFontPlayerError,
-} from '../../../modules/sound-font-player';
+} from '@modules/sound-font-player';
 
 type SessionGoalPlayButtonProps = {
   keyArrangement: TrainingSessionKeyArrangement | null;

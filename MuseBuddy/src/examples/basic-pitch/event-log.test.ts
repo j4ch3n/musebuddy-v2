@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { formatDetectionNote, groupDetectionNotesByMidi } from './event-log';
 
-import type { DetectionNote } from '../../../modules/basic-pitch';
+import type { DetectionNote } from '@modules/basic-pitch';
 
 function note(overrides: Partial<DetectionNote> = {}): DetectionNote {
   const startTimeMs = overrides.startTimeMs ?? 1_000;

@@ -1,4 +1,4 @@
-import type { DetectionNote } from '../../../modules/basic-pitch';
+import type { DetectionNote } from '@modules/basic-pitch';
 
 export type MidiNoteGroup = {
   id: string;

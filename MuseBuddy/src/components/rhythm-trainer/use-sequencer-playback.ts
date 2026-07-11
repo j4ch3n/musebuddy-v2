@@ -6,7 +6,7 @@ import {
   stop as stopSoundFontPlayback,
   play,
   SoundFontPlayerError,
-} from '../../../modules/sound-font-player';
+} from '@modules/sound-font-player';
 import type { RhythmPattern } from './types';
 
 type UseSequencerPlaybackOptions = {
