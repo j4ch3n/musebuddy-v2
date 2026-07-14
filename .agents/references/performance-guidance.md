@@ -52,8 +52,9 @@ material. It accepts:
 
 The guidance state is UI-level state. The provider owns the lead-in countdown display,
 rhythm step highlighting, JS-controlled demo/listen rounds, and the hardcoded 3-second
-listening delay. Native SoundFont playback only starts the requested finite sequence and
-emits `onPlaybackFinish` when that native sequence completes.
+listening delay. Native SoundFont playback starts the requested sequence, emits
+`onPlaybackBar` timing anchors for rhythm highlighting, and emits `onPlaybackFinish` when
+that native sequence completes.
 
 - `pending`: waits for the human to press Start.
 - `prepare`: the button shows `4`, `3`, `2`, `1` and uses a subtle scale animation.
@@ -77,7 +78,8 @@ configuration, copy, and navigation.
 - Render `PerformanceGuidanceButton` in the `TrainingScreenShell` footer.
 - Keep finish and skip behavior page-owned through `onFinish` and `onSkip`.
 - Read `currentStepIndex` from `usePerformanceGuidance()` only for components that need
-  playback-synchronized highlighting.
+  playback-synchronized highlighting. During demo playback it is derived from native
+  SoundFont bar anchors and an `expo-audio` silent clock, not from a JS step interval.
 
 When the playable source changes, remount the provider with a stable `key` based on the
 exercise identity and BPM. This resets guidance state and stops old native playback on
@@ -130,7 +132,7 @@ Provider cleanup must:
 
 - clear pending finish timers;
 - clear pending listening timers;
-- clear pending visual/countdown/highlighting timers;
+- clear pending visual/countdown timers and audio-clock highlighting anchors;
 - stop any active playback through the integration layer;
 - remove external event subscriptions.
 

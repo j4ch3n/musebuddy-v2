@@ -4,7 +4,7 @@ import Foundation
 
 // swiftlint:disable file_length
 
-final class SoundFontPlayerService: @unchecked Sendable {
+final class SoundFontPlayerService: @unchecked Sendable { // swiftlint:disable:this type_body_length
   private struct InstrumentDefinition {
     let bankLSB: UInt8
     let bankMSB: UInt8
@@ -52,9 +52,13 @@ final class SoundFontPlayerService: @unchecked Sendable {
   }
 
   private struct ActivePlayback {
+    let barCountPerCycle: Int
     let bpm: Double
     let completedCycles: Int
+    let demoLengthBeats: Double
+    let demoStartBeat: Double
     let playbackId: Int
+    let startedAtAbsoluteTimeMs: Double
   }
 
   private static let stepsPerPart = 16
@@ -133,6 +137,7 @@ final class SoundFontPlayerService: @unchecked Sendable {
   private var playbackId = 0
   private var timingWorkItems: [DispatchWorkItem] = []
 
+  var onPlaybackBar: (([String: Any]) -> Void)?
   var onPlaybackFinish: (([String: Any]) -> Void)?
 
   var isPlaying: Bool {
@@ -273,10 +278,22 @@ final class SoundFontPlayerService: @unchecked Sendable {
     let secondsPerBeat = 60.0 / configuration.bpm
     let leadInDurationSeconds = options.leadIn ? Double(Self.leadInBeatCount) * secondsPerBeat : 0
     let completedCycles = options.repeat ? 0 : cycleCount
+    let demoStartBeat = options.leadIn ? Self.leadInDurationBeats : 0
+    let barCountPerCycle = Int(ceil(demoLengthBeats / Self.beatsPerBar))
     activePlayback = ActivePlayback(
+      barCountPerCycle: barCountPerCycle,
       bpm: configuration.bpm,
       completedCycles: completedCycles,
-      playbackId: nextPlaybackId
+      demoLengthBeats: demoLengthBeats,
+      demoStartBeat: demoStartBeat,
+      playbackId: nextPlaybackId,
+      startedAtAbsoluteTimeMs: Self.currentAbsoluteTimeMs()
+    )
+    schedulePlaybackBars(
+      playbackId: nextPlaybackId,
+      cycleCount: cycleCount,
+      repeats: options.repeat,
+      secondsPerBeat: secondsPerBeat
     )
     if !options.repeat {
       schedulePlaybackFinish(
@@ -628,11 +645,144 @@ final class SoundFontPlayerService: @unchecked Sendable {
   }
 
   private func schedulePlaybackFinish(playbackId: Int, after delay: TimeInterval) {
-    cancelTimingEvents()
-
     scheduleTimingWorkItem(after: delay) { [weak self] in
       self?.finishCurrentPlayback(playbackId: playbackId)
     }
+  }
+
+  private func schedulePlaybackBars(
+    playbackId: Int,
+    cycleCount: Int,
+    repeats: Bool,
+    secondsPerBeat: Double
+  ) {
+    guard let playback = activePlayback, playback.barCountPerCycle > 0 else {
+      return
+    }
+
+    if repeats {
+      scheduleRepeatingPlaybackBar(
+        playbackId: playbackId,
+        cycleIndex: 0,
+        barInCycle: 0,
+        delayBeats: playback.demoStartBeat,
+        secondsPerBeat: secondsPerBeat
+      )
+      return
+    }
+
+    for cycleIndex in 0 ..< cycleCount {
+      for barInCycle in 0 ..< playback.barCountPerCycle {
+        let playbackPositionBeats = barStartBeat(
+          playback: playback,
+          cycleIndex: cycleIndex,
+          barInCycle: barInCycle
+        )
+        guard playbackPositionBeats < playback.demoStartBeat +
+          Double(cycleIndex + 1) * playback.demoLengthBeats
+        else {
+          continue
+        }
+
+        scheduleTimingWorkItem(after: playbackPositionBeats * secondsPerBeat) { [weak self] in
+          self?.emitPlaybackBar(
+            playbackId: playbackId,
+            cycleIndex: cycleIndex,
+            barInCycle: barInCycle,
+            playbackPositionBeats: playbackPositionBeats,
+            secondsPerBeat: secondsPerBeat
+          )
+        }
+      }
+    }
+  }
+
+  private func scheduleRepeatingPlaybackBar(
+    playbackId: Int,
+    cycleIndex: Int,
+    barInCycle: Int,
+    delayBeats: Double,
+    secondsPerBeat: Double
+  ) {
+    guard let playback = activePlayback, playback.playbackId == playbackId else {
+      return
+    }
+
+    let playbackPositionBeats = barStartBeat(
+      playback: playback,
+      cycleIndex: cycleIndex,
+      barInCycle: barInCycle
+    )
+
+    scheduleTimingWorkItem(after: delayBeats * secondsPerBeat) { [weak self] in
+      guard let self else {
+        return
+      }
+
+      emitPlaybackBar(
+        playbackId: playbackId,
+        cycleIndex: cycleIndex,
+        barInCycle: barInCycle,
+        playbackPositionBeats: playbackPositionBeats,
+        secondsPerBeat: secondsPerBeat
+      )
+
+      guard isPlaybackActive, activePlayback?.playbackId == playbackId else {
+        return
+      }
+
+      let nextBarInCycle = (barInCycle + 1) % playback.barCountPerCycle
+      let nextCycleIndex = nextBarInCycle == 0 ? cycleIndex + 1 : cycleIndex
+      let nextDelayBeats = nextBarInCycle == 0
+        ? playback.demoLengthBeats - Double(playback.barCountPerCycle - 1) * Self.beatsPerBar
+        : Self.beatsPerBar
+      scheduleRepeatingPlaybackBar(
+        playbackId: playbackId,
+        cycleIndex: nextCycleIndex,
+        barInCycle: nextBarInCycle,
+        delayBeats: nextDelayBeats,
+        secondsPerBeat: secondsPerBeat
+      )
+    }
+  }
+
+  private func barStartBeat(
+    playback: ActivePlayback,
+    cycleIndex: Int,
+    barInCycle: Int
+  ) -> Double {
+    playback.demoStartBeat +
+      Double(cycleIndex) * playback.demoLengthBeats +
+      Double(barInCycle) * Self.beatsPerBar
+  }
+
+  private func emitPlaybackBar(
+    playbackId: Int,
+    cycleIndex: Int,
+    barInCycle: Int,
+    playbackPositionBeats: Double,
+    secondsPerBeat: Double
+  ) {
+    guard isPlaybackActive, let playback = activePlayback, playback.playbackId == playbackId else {
+      return
+    }
+
+    let playbackPositionMs = playbackPositionBeats * secondsPerBeat * 1_000
+    let payload: [String: Any] = [
+      "playbackId": playback.playbackId,
+      "bpm": playback.bpm,
+      "barIndex": cycleIndex * playback.barCountPerCycle + barInCycle,
+      "cycleIndex": cycleIndex,
+      "barInCycle": barInCycle,
+      "playbackPositionMs": playbackPositionMs,
+      "absoluteTimeMs": playback.startedAtAbsoluteTimeMs + playbackPositionMs,
+    ]
+
+    emitPlaybackEvent(
+      playbackId: playback.playbackId,
+      payload: payload,
+      handler: onPlaybackBar
+    )
   }
 
   private func finishCurrentPlayback(playbackId: Int) {
@@ -675,6 +825,10 @@ final class SoundFontPlayerService: @unchecked Sendable {
   private func cancelTimingEvents() {
     timingWorkItems.forEach { $0.cancel() }
     timingWorkItems.removeAll()
+  }
+
+  private static func currentAbsoluteTimeMs() -> Double {
+    Date().timeIntervalSince1970 * 1_000
   }
 
   private func silenceAllChannels() {

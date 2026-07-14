@@ -10,6 +10,7 @@ import {
 } from 'react';
 
 import {
+  addPlaybackBarListener,
   addPlaybackFinishListener,
   playBand,
   playGroove,
@@ -18,7 +19,13 @@ import {
   type BandSoundFontPlaybackConfiguration,
   type GrooveSoundFontPlaybackConfiguration,
 } from '@modules/sound-font-player';
+import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 
+import {
+  createPlaybackClockAnchor,
+  getClockedCurrentStepIndex,
+  type PlaybackClockAnchor,
+} from './performance-guidance-clock';
 import {
   getSoundFontDemoDurationMs,
   getSoundFontPartCount,
@@ -69,6 +76,9 @@ type PerformanceGuidanceProviderProps = {
 const LEAD_IN_BEATS = 4;
 const LISTENING_DURATION_MS = 3000;
 const STEP_DURATION_BEATS = 0.25;
+const BAR_DURATION_BEATS = 4;
+const CLOCK_UPDATE_INTERVAL_MS = 50;
+const silentClockSource = require('@assets/audio/silent-clock.wav') as number;
 
 const PerformanceGuidanceContext = createContext<PerformanceGuidanceContextValue | null>(null);
 
@@ -89,14 +99,21 @@ export function PerformanceGuidanceProvider({
   const [currentStepIndex, setCurrentStepIndex] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [finishMessageOverride, setFinishMessageOverride] = useState<string | null>(null);
+  const clockPlayer = useAudioPlayer(silentClockSource, {
+    keepAudioSessionActive: true,
+    updateInterval: CLOCK_UPDATE_INTERVAL_MS,
+  });
+  const clockStatus = useAudioPlayerStatus(clockPlayer);
   const phaseRef = useRef<PerformanceGuidancePhase>(startPhase);
   const didAutoStartRef = useRef(false);
   const playbackIdRef = useRef<number | null>(null);
+  const clockAnchorRef = useRef<PlaybackClockAnchor | null>(null);
+  const isHighlightActiveRef = useRef(false);
+  const audioClockMsRef = useRef(0);
   const flowIdRef = useRef(0);
   const finishTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const listeningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const visualTimerRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const stepIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const partCount = getSoundFontPartCount(playback.configuration);
   const expectedStepCount = getSoundFontStepCount(playback.configuration);
   const totalCycleCount = demoListenCycleCount ?? cycleCount;
@@ -121,12 +138,23 @@ export function PerformanceGuidanceProvider({
       clearTimeout(timer);
     });
     visualTimerRefs.current = [];
-
-    if (stepIntervalRef.current) {
-      clearInterval(stepIntervalRef.current);
-      stepIntervalRef.current = null;
-    }
   }, []);
+
+  const stopClock = useCallback(() => {
+    clockAnchorRef.current = null;
+    isHighlightActiveRef.current = false;
+    safelyPauseClock(clockPlayer);
+    void safelySeekClockToStart(clockPlayer);
+  }, [clockPlayer]);
+
+  const startClock = useCallback(async () => {
+    clockAnchorRef.current = null;
+    isHighlightActiveRef.current = false;
+    safelyPauseClock(clockPlayer);
+    await safelySeekClockToStart(clockPlayer);
+    audioClockMsRef.current = 0;
+    safelyPlayClock(clockPlayer);
+  }, [clockPlayer]);
 
   const setPhaseValue = useCallback((nextPhase: PerformanceGuidancePhase) => {
     phaseRef.current = nextPhase;
@@ -135,8 +163,9 @@ export function PerformanceGuidanceProvider({
 
   const resetPlaybackMarkers = useCallback(() => {
     playbackIdRef.current = null;
+    stopClock();
     setCurrentStepIndex(null);
-  }, []);
+  }, [stopClock]);
 
   const enterFinish = useCallback(
     (message?: string) => {
@@ -207,26 +236,39 @@ export function PerformanceGuidanceProvider({
     visualTimerRefs.current.push(timer);
   }, []);
 
-  const startStepTimer = useCallback(
-    (flowId: number) => {
-      if (expectedStepCount === 0 || !playback.configuration) {
+  const startHighlighting = useCallback(
+    (flowId: number, beatDurationMs: number) => {
+      if (flowIdRef.current !== flowId || phaseRef.current !== 'demo') {
         return;
       }
 
-      let stepIndex = 0;
-      const stepDurationMs = STEP_DURATION_BEATS * (60_000 / playback.configuration.bpm);
-      setCurrentStepIndex(0);
-      stepIntervalRef.current = setInterval(() => {
-        if (flowIdRef.current !== flowId || phaseRef.current !== 'demo') {
-          return;
-        }
+      const anchor: PlaybackClockAnchor = {
+        audioClockMsAtReceipt: audioClockMsRef.current,
+        userPlaybackPositionMsAtReceipt: 0,
+      };
+      clockAnchorRef.current = anchor;
+      isHighlightActiveRef.current = true;
 
-        stepIndex += 1;
-        setCurrentStepIndex(stepIndex % expectedStepCount);
-      }, stepDurationMs);
+      const stepIndex = getClockedCurrentStepIndex({
+        anchor,
+        audioClockMs: audioClockMsRef.current,
+        expectedStepCount,
+        stepDurationMs: STEP_DURATION_BEATS * beatDurationMs,
+      });
+      setCurrentStepIndex(stepIndex);
     },
-    [expectedStepCount, playback.configuration],
+    [expectedStepCount],
   );
+
+  const stopHighlighting = useCallback((flowId: number) => {
+    if (flowIdRef.current !== flowId) {
+      return;
+    }
+
+    clockAnchorRef.current = null;
+    isHighlightActiveRef.current = false;
+    setCurrentStepIndex(null);
+  }, []);
 
   const startDemoPlayback = useCallback(
     async ({ flowId, leadIn }: { flowId: number; leadIn: boolean }) => {
@@ -241,6 +283,7 @@ export function PerformanceGuidanceProvider({
 
       try {
         const cycles = listeningEnabled ? 1 : totalCycleCount;
+        await startClock();
         const result =
           playback.kind === 'band'
             ? await playBand(playback.configuration as BandSoundFontPlaybackConfiguration, {
@@ -261,6 +304,7 @@ export function PerformanceGuidanceProvider({
         const beatDurationMs = 60_000 / playback.configuration.bpm;
         const demoDurationMs = getSoundFontDemoDurationMs(playback.configuration);
         const demoStartDelayMs = leadIn ? LEAD_IN_BEATS * beatDurationMs : 0;
+        const activeDemoDurationMs = cycles * demoDurationMs;
 
         if (leadIn) {
           for (let beatIndex = 1; beatIndex < LEAD_IN_BEATS; beatIndex += 1) {
@@ -273,12 +317,16 @@ export function PerformanceGuidanceProvider({
           scheduleVisualTimer(() => {
             if (flowIdRef.current === flowId && phaseRef.current === 'prepare') {
               setPhaseValue('demo');
-              startStepTimer(flowId);
+              startHighlighting(flowId, beatDurationMs);
             }
           }, demoStartDelayMs);
         } else {
-          startStepTimer(flowId);
+          startHighlighting(flowId, beatDurationMs);
         }
+
+        scheduleVisualTimer(() => {
+          stopHighlighting(flowId);
+        }, demoStartDelayMs + activeDemoDurationMs);
 
         if (!listeningEnabled) {
           for (let cycleIndex = 1; cycleIndex < totalCycleCount; cycleIndex += 1) {
@@ -311,7 +359,9 @@ export function PerformanceGuidanceProvider({
       resetPlaybackMarkers,
       scheduleVisualTimer,
       setPhaseValue,
-      startStepTimer,
+      startClock,
+      startHighlighting,
+      stopHighlighting,
       totalCycleCount,
     ],
   );
@@ -339,6 +389,66 @@ export function PerformanceGuidanceProvider({
   ]);
 
   useEffect(() => {
+    audioClockMsRef.current = clockStatus.currentTime * 1000;
+  }, [clockStatus.currentTime]);
+
+  useEffect(() => {
+    const playbackBarSubscription = addPlaybackBarListener((event) => {
+      if (!shouldHandlePlaybackEvent(playbackIdRef.current, event.playbackId)) {
+        return;
+      }
+
+      if (phaseRef.current !== 'demo' || !isHighlightActiveRef.current) {
+        return;
+      }
+
+      const beatDurationMs = 60_000 / event.bpm;
+      const barDurationMs = BAR_DURATION_BEATS * beatDurationMs;
+      const anchor = createPlaybackClockAnchor({
+        audioClockMs: audioClockMsRef.current,
+        barDurationMs,
+        event,
+        receivedAtMs: Date.now(),
+      });
+      clockAnchorRef.current = anchor;
+
+      const stepIndex = getClockedCurrentStepIndex({
+        anchor,
+        audioClockMs: audioClockMsRef.current,
+        expectedStepCount,
+        stepDurationMs: STEP_DURATION_BEATS * beatDurationMs,
+      });
+      setCurrentStepIndex(stepIndex);
+    });
+
+    return () => {
+      playbackBarSubscription.remove();
+    };
+  }, [expectedStepCount]);
+
+  useEffect(() => {
+    if (
+      phase !== 'demo' ||
+      !playback.configuration ||
+      !clockAnchorRef.current ||
+      !isHighlightActiveRef.current
+    ) {
+      return;
+    }
+
+    const beatDurationMs = 60_000 / playback.configuration.bpm;
+    const stepIndex = getClockedCurrentStepIndex({
+      anchor: clockAnchorRef.current,
+      audioClockMs: clockStatus.currentTime * 1000,
+      expectedStepCount,
+      stepDurationMs: STEP_DURATION_BEATS * beatDurationMs,
+    });
+    setCurrentStepIndex((currentStepIndex) =>
+      currentStepIndex === stepIndex ? currentStepIndex : stepIndex,
+    );
+  }, [clockStatus.currentTime, expectedStepCount, phase, playback.configuration]);
+
+  useEffect(() => {
     const playbackFinishSubscription = addPlaybackFinishListener((event) => {
       if (!shouldHandlePlaybackEvent(playbackIdRef.current, event.playbackId)) {
         return;
@@ -347,6 +457,7 @@ export function PerformanceGuidanceProvider({
       const flowId = flowIdRef.current;
       setCurrentStepIndex(null);
       clearVisualTimers();
+      stopClock();
 
       if (!listeningEnabled) {
         setCompletedCycles(event.completedCycles);
@@ -385,6 +496,7 @@ export function PerformanceGuidanceProvider({
     listeningEnabled,
     setPhaseValue,
     startDemoPlayback,
+    stopClock,
     totalCycleCount,
   ]);
 
@@ -425,9 +537,10 @@ export function PerformanceGuidanceProvider({
       clearFinishTimer();
       clearListeningTimer();
       clearVisualTimers();
+      stopClock();
       void stop();
     },
-    [clearFinishTimer, clearListeningTimer, clearVisualTimers],
+    [clearFinishTimer, clearListeningTimer, clearVisualTimers, stopClock],
   );
 
   const value = useMemo<PerformanceGuidanceContextValue>(
@@ -495,4 +608,34 @@ function messageFor(error: unknown) {
   }
 
   return 'Playback failed.';
+}
+
+type ExpoAudioClockPlayer = {
+  pause(): void;
+  play(): void;
+  seekTo(seconds: number): Promise<void>;
+};
+
+function safelyPauseClock(clockPlayer: ExpoAudioClockPlayer) {
+  try {
+    clockPlayer.pause();
+  } catch {
+    // Expo Audio may release its native shared object before React cleanup runs.
+  }
+}
+
+function safelyPlayClock(clockPlayer: ExpoAudioClockPlayer) {
+  try {
+    clockPlayer.play();
+  } catch {
+    // SoundFont playback still runs; native bar events can continue to recalibrate on restart.
+  }
+}
+
+async function safelySeekClockToStart(clockPlayer: ExpoAudioClockPlayer) {
+  try {
+    await clockPlayer.seekTo(0);
+  } catch {
+    // Ignore released-player cleanup failures from Expo Audio.
+  }
 }

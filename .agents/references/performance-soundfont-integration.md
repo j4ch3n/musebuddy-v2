@@ -7,10 +7,11 @@ React component/page details in `performance-guidance.md`.
 ## Responsibility Split
 
 - SoundFont player owns low-level playback: optional lead-in audio, finite cycle playback,
-  infinite repeat playback, stop, and the finite `onPlaybackFinish` event.
+  infinite repeat playback, stop, native `onPlaybackBar` timing anchors, and the finite
+  `onPlaybackFinish` event.
 - Performance guidance owns UI state, labels, progress animations, finish messages,
-  lead-in countdown display, rhythm highlighting timers, listening delay, demo/listen
-  round progression, and navigation callbacks.
+  lead-in countdown display, rhythm highlighting from audio-clocked native bar anchors,
+  listening delay, demo/listen round progression, and navigation callbacks.
 - JavaScript starts one native sequence for session goal, or one one-cycle native demo per
   chord/rhythm listening round. It stores the returned `playbackId` and ignores stale
   finish events.
@@ -30,9 +31,16 @@ cycle policy into music-theory playback builders.
 
 ## Event Contract
 
-The guidance provider subscribes only to `onPlaybackFinish` and ignores stale playback
-ids. JS timers drive the prepare countdown and `currentStepIndex` while native audio
-plays.
+The guidance provider subscribes to `onPlaybackBar` and `onPlaybackFinish` and ignores
+stale playback ids. JS timers still drive the prepare countdown, but rhythm
+`currentStepIndex` is derived from native bar events and the Expo Audio clock while native
+SoundFont audio plays.
+
+- `onPlaybackBar` supplies the native bar boundary, sequence `playbackPositionMs`, and
+  native `absoluteTimeMs`. JS uses the absolute timestamp to compensate for bridge/event
+  latency.
+- An `expo-audio` silent clock player supplies the JS-side elapsed audio time between
+  native bar anchors.
 
 - Session goal: native finish moves directly to `finish`.
 - Chord/rhythm learning: native finish enters `listening`; after the 3-second listening

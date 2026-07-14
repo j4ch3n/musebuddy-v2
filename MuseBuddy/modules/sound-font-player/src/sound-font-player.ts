@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 import type {
   BandSoundFontPlaybackConfiguration,
   GrooveSoundFontPlaybackConfiguration,
+  SoundFontPlaybackBarEvent,
   SoundFontPlaybackFinishEvent,
   SoundFontPlaybackOptions,
   SoundFontRestartPlaybackOptions,
@@ -20,6 +21,7 @@ export type {
   GrooveSoundFontPlaybackConfiguration,
   GrooveSoundFontPlaybackTrack,
   SoundFontPlaybackCell,
+  SoundFontPlaybackBarEvent,
   SoundFontPlaybackConfiguration,
   SoundFontPlaybackFinishEvent,
   SoundFontPlaybackOptions,
@@ -163,6 +165,12 @@ export function stop(): Promise<void> {
 
 export function isPlaying(): boolean {
   return getNativeModule().isPlaying();
+}
+
+export function addPlaybackBarListener(
+  listener: (event: SoundFontPlaybackBarEvent) => void,
+): EventSubscription {
+  return getNativeModule().addListener('onPlaybackBar', listener);
 }
 
 export function addPlaybackFinishListener(

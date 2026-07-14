@@ -49,7 +49,18 @@ export type SoundFontPlaybackFinishEvent = {
   completedCycles: number;
 };
 
+export type SoundFontPlaybackBarEvent = {
+  playbackId: number;
+  bpm: number;
+  barIndex: number;
+  cycleIndex: number;
+  barInCycle: number;
+  playbackPositionMs: number;
+  absoluteTimeMs: number;
+};
+
 export type SoundFontPlayerModuleEvents = {
+  onPlaybackBar(event: SoundFontPlaybackBarEvent): void;
   onPlaybackFinish(event: SoundFontPlaybackFinishEvent): void;
 };
 

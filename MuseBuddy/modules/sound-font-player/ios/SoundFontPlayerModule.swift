@@ -9,9 +9,14 @@ public final class SoundFontPlayerModule: Module {
 
   public func definition() -> ModuleDefinition {
     Name("SoundFontPlayer")
-    Events("onPlaybackFinish")
+    Events("onPlaybackBar", "onPlaybackFinish")
 
     OnCreate {
+      self.player.onPlaybackBar = { [weak self] payload in
+        DispatchQueue.main.async {
+          self?.sendEvent("onPlaybackBar", payload)
+        }
+      }
       self.player.onPlaybackFinish = { [weak self] payload in
         DispatchQueue.main.async {
           self?.sendEvent("onPlaybackFinish", payload)
@@ -20,6 +25,7 @@ public final class SoundFontPlayerModule: Module {
     }
 
     OnDestroy {
+      self.player.onPlaybackBar = nil
       self.player.onPlaybackFinish = nil
       self.player.stop()
     }

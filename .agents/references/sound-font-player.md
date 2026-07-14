@@ -21,6 +21,7 @@ The stable JS entrypoint is `MuseBuddy/modules/sound-font-player/src/sound-font-
 - `stop()`: stops the sequencer, cancels finish timing, and sends all-notes-off and
   all-sound-off.
 - `isPlaying()`: reads native playback state.
+- `addPlaybackBarListener(listener)`: subscribes to native bar boundary events.
 - `addPlaybackFinishListener(listener)`: subscribes to finite playback completion.
 
 The module is iOS-only. `getNativeModule()` throws `ERR_UNSUPPORTED_PLATFORM` outside iOS.
@@ -103,7 +104,27 @@ Avoid Core Audio or AVFoundation work on the main thread. The service uses its o
 
 Native events declared by `SoundFontPlayerModule.swift`:
 
+- `onPlaybackBar`
 - `onPlaybackFinish`
+
+`onPlaybackBar` fires at each user-playback bar boundary while playback is active. Bar
+indexes exclude the optional lead-in:
+
+```ts
+type SoundFontPlaybackBarEvent = {
+  playbackId: number;
+  bpm: number;
+  barIndex: number;
+  cycleIndex: number;
+  barInCycle: number;
+  playbackPositionMs: number;
+  absoluteTimeMs: number;
+};
+```
+
+`playbackPositionMs` is elapsed sequence time from native playback start, including
+lead-in. `absoluteTimeMs` is the native wall-clock millisecond timestamp for the scheduled
+bar boundary and lets JS compensate for bridge/event latency.
 
 `onPlaybackFinish` fires once when finite playback completes:
 

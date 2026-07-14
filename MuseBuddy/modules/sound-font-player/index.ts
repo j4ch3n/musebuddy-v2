@@ -1,4 +1,5 @@
 export {
+  addPlaybackBarListener,
   addPlaybackFinishListener,
   isPlaying,
   playBand,
@@ -17,6 +18,7 @@ export type {
   GrooveSoundFontPlaybackConfiguration,
   GrooveSoundFontPlaybackTrack,
   SoundFontPlaybackCell,
+  SoundFontPlaybackBarEvent,
   SoundFontPlaybackConfiguration,
   SoundFontPlaybackFinishEvent,
   SoundFontPlaybackOptions,
