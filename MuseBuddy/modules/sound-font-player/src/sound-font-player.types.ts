@@ -1,7 +1,3 @@
-export type BandSoundFontInstrument = 'piano' | 'bass' | 'guitar' | 'percussion';
-
-export type GrooveSoundFontInstrument = 'percussion';
-
 export type SoundFontPlaybackCell = {
   midi: number | null;
   velocity: number | null;
@@ -9,63 +5,30 @@ export type SoundFontPlaybackCell = {
 
 export type SoundFontPlaybackStep = SoundFontPlaybackCell[];
 
-export type SoundFontPlaybackTrack<TInstrument extends string = string> = {
-  instrument: TInstrument;
-  parts: SoundFontPlaybackStep[][];
-};
-
-export type SoundFontPlaybackConfiguration<TInstrument extends string = string> = {
+export type SoundFontPlaybackConfiguration = {
   bpm: number;
-  tracks: SoundFontPlaybackTrack<TInstrument>[];
+  parts: SoundFontPlaybackStep[][];
 };
 
 export type SoundFontPlaybackOptions = {
   leadIn?: boolean;
-  cycles?: number;
-  repeat?: boolean;
-};
-
-export type SoundFontRestartPlaybackOptions = SoundFontPlaybackOptions & {
-  leadIn: boolean;
+  repetitions?: number;
 };
 
 export type SoundFontPlaybackStartResult = {
   playbackId: number;
+  startedAtMs: number;
 };
-
-export type BandSoundFontPlaybackTrack = SoundFontPlaybackTrack<BandSoundFontInstrument>;
-
-export type BandSoundFontPlaybackConfiguration =
-  SoundFontPlaybackConfiguration<BandSoundFontInstrument>;
-
-export type GrooveSoundFontPlaybackTrack = SoundFontPlaybackTrack<GrooveSoundFontInstrument>;
-
-export type GrooveSoundFontPlaybackConfiguration =
-  SoundFontPlaybackConfiguration<GrooveSoundFontInstrument>;
 
 export type SoundFontPlaybackFinishEvent = {
   playbackId: number;
-  bpm: number;
-  completedCycles: number;
-};
-
-export type SoundFontPlaybackBarEvent = {
-  playbackId: number;
-  bpm: number;
-  barIndex: number;
-  cycleIndex: number;
-  barInCycle: number;
-  playbackPositionMs: number;
-  absoluteTimeMs: number;
 };
 
 export type SoundFontPlayerModuleEvents = {
-  onPlaybackBar(event: SoundFontPlaybackBarEvent): void;
   onPlaybackFinish(event: SoundFontPlaybackFinishEvent): void;
 };
 
 export type SoundFontPlayerErrorCode =
-  | 'ERR_SOUNDFONT_ALREADY_PLAYING'
   | 'ERR_SOUNDFONT_EMPTY_CONFIGURATION'
   | 'ERR_SOUNDFONT_ENGINE_START_FAILED'
   | 'ERR_SOUNDFONT_INVALID_CONFIGURATION'

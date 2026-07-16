@@ -30,6 +30,8 @@ final class BasicPitchService: @unchecked Sendable {
   private var detectionInFlight = false
   private var detectionTimer: DispatchSourceTimer?
   private var detectionId = 0
+  private var recognitionId = 0
+  private var activeRecognitionId: Int?
   private var recordedSamples: [Float] = []
   private var rollingWindowSampleCount = modelSampleCount
   private var analysisIntervalSampleCount = 1
@@ -79,27 +81,28 @@ final class BasicPitchService: @unchecked Sendable {
     }
   }
 
-  func startRecognition(options: [String: Double]) async throws {
+  func startRecognition(options: [String: Double]) async throws -> Int {
     try await initialize()
 
     guard await requestMicrophonePermission() else {
       throw BasicPitchError.microphonePermissionDenied
     }
 
-    try await perform {
+    return try await perform {
       try self.startRecognitionOnQueue(options: options)
     }
   }
 
-  func stopRecognition() async throws -> DetectionResultRecord {
+  func stopRecognition(recognitionId: Int) async throws -> DetectionResultRecord {
     try await perform {
-      guard self.recognizing else {
+      guard self.recognizing, self.activeRecognitionId == recognitionId else {
         throw BasicPitchError.notRecognizing
       }
 
       self.stopRecordingOnQueue()
       guard self.recordedSamples.count >= Self.modelSampleCount else {
         self.recordedSamples.removeAll(keepingCapacity: true)
+        self.activeRecognitionId = nil
         throw BasicPitchError.audioTooShort
       }
 
@@ -112,6 +115,7 @@ final class BasicPitchService: @unchecked Sendable {
       try self.writeRecordingFile(samples: self.recordedSamples)
       self.recordedSamples.removeAll(keepingCapacity: true)
       self.committedNotes.removeAll(keepingCapacity: true)
+      self.activeRecognitionId = nil
       self.emit(result)
       return result
     }
@@ -144,17 +148,34 @@ final class BasicPitchService: @unchecked Sendable {
     }
   }
 
-  func cancelRecognition() {
+  func cancelAnyRecognition() {
     workQueue.async {
       guard self.recognizing else {
         return
       }
       self.stopRecordingOnQueue()
       self.recordedSamples.removeAll(keepingCapacity: true)
+      self.committedNotes.removeAll(keepingCapacity: true)
+      self.activeRecognitionId = nil
     }
   }
 
-  private func startRecognitionOnQueue(options: [String: Double]) throws {
+  func cancelRecognition(recognitionId: Int) async {
+    await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+      workQueue.async {
+        defer { continuation.resume() }
+        guard self.recognizing, self.activeRecognitionId == recognitionId else {
+          return
+        }
+        self.stopRecordingOnQueue()
+        self.recordedSamples.removeAll(keepingCapacity: true)
+        self.committedNotes.removeAll(keepingCapacity: true)
+        self.activeRecognitionId = nil
+      }
+    }
+  }
+
+  private func startRecognitionOnQueue(options: [String: Double]) throws -> Int {
     guard !recognizing else {
       throw BasicPitchError.alreadyRecognizing
     }
@@ -202,6 +223,8 @@ final class BasicPitchService: @unchecked Sendable {
     lastCommittedTimeMs = 0
     committedNotes.removeAll(keepingCapacity: true)
     recognizing = true
+    recognitionId += 1
+    activeRecognitionId = recognitionId
 
     inputNode.removeTap(onBus: 0)
     inputNode.installTap(onBus: 0, bufferSize: 1_024, format: inputFormat) { [weak self] buffer, _ in
@@ -215,11 +238,13 @@ final class BasicPitchService: @unchecked Sendable {
       audioEngine.prepare()
       try audioEngine.start()
       startDetectionTimer(intervalMs: detectionIntervalMs)
+      return recognitionId
     } catch {
       inputNode.removeTap(onBus: 0)
       recordingConverter = nil
       modelAudioFormat = nil
       recognizing = false
+      activeRecognitionId = nil
       try? session.setActive(false, options: .notifyOthersOnDeactivation)
       throw BasicPitchError.audioStartFailed(error.localizedDescription)
     }
@@ -335,6 +360,7 @@ final class BasicPitchService: @unchecked Sendable {
 
     detectionId += 1
     let result = DetectionResultRecord()
+    result.recognitionId = activeRecognitionId ?? 0
     result.detectionId = detectionId
     result.type = type
     result.recordedDurationMs = recordedDurationMs
@@ -720,6 +746,7 @@ final class BasicPitchService: @unchecked Sendable {
 
   private func emit(_ result: DetectionResultRecord) {
     let payload: [String: Any] = [
+      "recognitionId": result.recognitionId,
       "detectionId": result.detectionId,
       "type": result.type,
       "recordedDurationMs": result.recordedDurationMs,

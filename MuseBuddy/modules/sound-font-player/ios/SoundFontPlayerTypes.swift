@@ -1,7 +1,6 @@
 import ExpoModulesCore
 
 enum SoundFontPlayerError: Error {
-  case alreadyPlaying
   case emptyConfiguration
   case engineStartFailed(String)
   case invalidConfiguration(String)
@@ -10,8 +9,6 @@ enum SoundFontPlayerError: Error {
 
   var code: String {
     switch self {
-    case .alreadyPlaying:
-      "ERR_SOUNDFONT_ALREADY_PLAYING"
     case .emptyConfiguration:
       "ERR_SOUNDFONT_EMPTY_CONFIGURATION"
     case .engineStartFailed:
@@ -27,10 +24,8 @@ enum SoundFontPlayerError: Error {
 
   var message: String {
     switch self {
-    case .alreadyPlaying:
-      "The SoundFont player is already playing."
     case .emptyConfiguration:
-      "The SoundFont playback configuration does not contain any playable tracks."
+      "The SoundFont playback configuration does not contain any playable parts."
     case let .engineStartFailed(detail):
       "The SoundFont player could not start audio playback: \(detail)"
     case let .invalidConfiguration(detail):
@@ -65,18 +60,12 @@ struct SoundFontPlaybackCellRecord: Record {
   @Field var velocity: Int?
 }
 
-struct SoundFontPlaybackTrackRecord: Record {
-  @Field var instrument: String = "piano"
-  @Field var parts: [[[SoundFontPlaybackCellRecord]]] = []
-}
-
 struct SoundFontPlaybackConfigurationRecord: Record {
   @Field var bpm: Double = 100
-  @Field var tracks: [SoundFontPlaybackTrackRecord] = []
+  @Field var parts: [[[SoundFontPlaybackCellRecord]]] = []
 }
 
 struct SoundFontPlaybackOptionsRecord: Record {
   @Field var leadIn: Bool = false
-  @Field var cycles: Int?
-  @Field var `repeat`: Bool = false
+  @Field var repetitions: Int = 1
 }

@@ -1,139 +1,93 @@
 # Performance Guidance Components
 
 `MuseBuddy/src/components/performance-guidance/` owns the shared training-page guidance
-control. It replaces page-specific play/continue controls with a single stateful
-performance button, a hold-to-skip control, and context values that pages can use for
-visual synchronization such as rhythm highlighting.
-
-Consult this file before changing the performance guidance provider, button visuals,
-or training page integration. Consult `performance-soundfont-integration.md` when
-changing how this component coordinates with SoundFont playback.
+state, the training-audio coordinator, the performance button, and playback/recognition
+event filtering. Consult this file before changing the provider, button behavior, or page
+integration. Consult `performance-soundfont-integration.md` for the JS/native handshake.
 
 ## Public Surface
 
-Use the package entrypoint:
+Import the provider, button, and hook from `@/components/performance-guidance`.
 
-```ts
-import {
-  PerformanceGuidanceButton,
-  PerformanceGuidanceProvider,
-  usePerformanceGuidance,
-} from '@/components/performance-guidance';
-```
-
-`PerformanceGuidanceProvider` wraps a training screen when that screen has playable
-material. It accepts:
-
-- `playback`: `{ kind: 'band' | 'groove', configuration }`, where `configuration` is a
-  SoundFont playback configuration or `null`.
-- `cycleCount`: optional total demo count, defaulting to `3`.
-- `demoListenCycleCount`: optional explicit count for JS-owned demo/listen rounds.
-- `listeningEnabled`: whether the guidance flow includes a listening phase, defaulting to
-  `true`.
-- `startPhase`: optional `pending` or `prepare` start state, defaulting to `pending`.
-  `prepare` automatically starts the existing lead-in/demo flow on mount.
-- `finishText`: the message displayed during the finish state.
-- `onFinish`: navigation or page advancement after the finish progress completes.
-- `onSkip`: navigation after the 3-second hold-to-skip completes.
-
-`PerformanceGuidanceButton` must be rendered inside the provider, normally in the
-`TrainingScreenShell` footer.
+The provider accepts a `playback` value with `kind: 'piano' | 'groove'` and a public
+SoundFont configuration. Session goal uses `listeningEnabled={false}` and `cycleCount={2}`.
+Chord and rhythm exercises use three input-driven rounds, start in `prepare`, and use one
+native repetition per demo. Provider keys identify the exercise only; BPM must not be part
+of a provider key.
 
 `usePerformanceGuidance()` exposes:
 
-- `phase`: `pending`, `prepare`, `demo`, `listening`, or `finish`.
-- `completedCycles` and `cycleCount`.
-- `countdownValue`.
-- `currentStepIndex`, used by rhythm training during audible demo only.
-- `errorMessage`, `finishText`, `isDisabled`, and `listeningEnabled`.
-- `start()`, `reset()`, `requestFinish(message?)`, and `requestSkip()`.
+- `phase`: `pending`, `prepare`, `demo`, `listening`, or `finish`;
+- `completedCycles`, `cycleCount`, `countdownValue`, and `currentStepIndex`;
+- `latestDetection`, filtered to the active Basic Pitch recognition ID;
+- `errorMessage`, `finishText`, `isDisabled`, and `listeningEnabled`;
+- `start()`, idempotent `completeListening()`, `reset()`, `requestFinish()`, and
+  `requestSkip()`.
 
-## State Model
+## State And Timing
 
-The guidance state is UI-level state. The provider owns the lead-in countdown display,
-rhythm step highlighting, JS-controlled demo/listen rounds, and the hardcoded 3-second
-listening delay. Native SoundFont playback starts the requested sequence, emits
-`onPlaybackBar` timing anchors for rhythm highlighting, and emits `onPlaybackFinish` when
-that native sequence completes.
+The provider owns this rendering state through a reducer:
 
-- `pending`: waits for the human to press Start.
-- `prepare`: the button shows `4`, `3`, `2`, `1` and uses a subtle scale animation.
-- `demo`: configured sounds are playing; the button shows `Demo N/total`.
-- `listening`: the listening interval is active; the button shows `Your turn`.
-- `finish`: the button shows the configured finish message and fills for 3 seconds before
-  `onFinish`.
+```ts
+type GuidanceState = {
+  phase: 'pending' | 'prepare' | 'demo' | 'listening' | 'finish';
+  completedCycles: number;
+  countdownValue: number;
+  currentStepIndex: number | null;
+  latestDetection: DetectionResult | null;
+  errorMessage: string;
+};
+```
 
-Session goal starts in `pending`. Later daily-session stages can start in `prepare` so the
-lead-in begins as soon as the stage mounts.
+Lifecycle IDs, completion locks, timers, and the flow generation stay outside rendering
+state. `prepare` initially displays `4` and holds there while native creates the fresh
+audio graph and loads the requested SoundFont. Once playback resolves with
+`startedAtMs`, the provider refreshes the four-beat countdown, demo repetition label, and
+rhythm step index every 30 ms from the JS wall clock, that native timestamp, and BPM. There
+is no silent `expo-audio` clock and no playback-bar event.
+
+Session goal starts only after Start, plays two piano repetitions in one native request,
+does not start recognition, then enters `finish`. Chord and rhythm pages automatically
+start a one-repetition demo with a lead-in, start Basic Pitch after native playback has
+fully finished, and enter `listening` only after recognition resolves. Later rounds use
+fresh playback graphs without a lead-in.
+
+The provider subscribes once to playback-finish and Basic Pitch detection events. Events
+must match the active playback or recognition ID. `completeListening()` cancels the exact
+recognition ID, increments progress once, and either starts the next demo or enters
+`finish` after round three.
 
 ## Page Integration
 
-Each training page should keep route files thin and supply only page-specific playback
-configuration, copy, and navigation.
+- Session goal supplies piano content and no recognition behavior.
+- Individual chord UI reads `latestDetection`, shows recent notes, and completes only on
+  the configured chord.
+- Chord summary accumulates one check per displayed chord within the current listening
+  round. Checks reset for the next round.
+- Rhythm training reads `currentStepIndex` during demo and completes listening on the
+  first current-session detection containing a note. Empty detections do nothing.
+- Finish and skip navigation remain page-owned.
 
-- Build the SoundFont configuration outside route files, usually through music-theory
-  helpers.
-- Wrap the active screen content and footer in `PerformanceGuidanceProvider` only when
-  playable material exists.
-- Render `PerformanceGuidanceButton` in the `TrainingScreenShell` footer.
-- Keep finish and skip behavior page-owned through `onFinish` and `onSkip`.
-- Read `currentStepIndex` from `usePerformanceGuidance()` only for components that need
-  playback-synchronized highlighting. During demo playback it is derived from native
-  SoundFont bar anchors and an `expo-audio` silent clock, not from a JS step interval.
+Changing BPM while pending only changes the next configuration. Changing BPM during
+prepare, demo, or listening invalidates the flow, releases the exact active audio ID,
+clears progress/input/errors, and automatically starts round one with a fresh lead-in.
+Rapid changes are safe because stale generations and stale IDs are ignored.
 
-When the playable source changes, remount the provider with a stable `key` based on the
-exercise identity and BPM. This resets guidance state and stops old native playback on
-provider cleanup.
+## Audio Ownership And Cleanup
 
-## Visual Design
+The shared training-audio coordinator serializes playback and microphone ownership. Every
+command carries a monotonically assigned provider owner ID. Cleanup can release only audio
+owned by that provider, and ID-specific cleanup cannot stop a newer playback or recognition
+session.
 
-The button follows the MuseBuddy game-like, tactile design language:
+Reset, skip, unmount, BPM restart, and navigation release the provider's current owner.
+Playback or microphone failures return to `pending`, preserve no completed progress, and
+show the mapped error. Permission denial never advances a round.
 
-- chunky ink border;
-- vivid filled state colors;
-- bottom-only ink shadow;
-- bold rounded/system typography;
-- tabular numerals for countdown and cycle labels;
-- large primary touch target for the main state button;
-- smaller always-visible hold-to-skip control.
+## Visual Behavior
 
-Current state colors:
-
-- `pending` / `prepare`: primary purple fill.
-- `demo`: vivid blue fill.
-- `listening`: vivid purple fill.
-- `finish`: cream surface with green progress fill.
-- disabled: muted cream with reduced opacity.
-- skip fill: vivid red.
-
-The main button starts playback in `pending`. In every non-pending phase, holding it for
-1.5 seconds stops active SoundFont playback, cancels pending timers/navigation, and returns
-the guidance state to `pending`. While held, the main button label changes to `Hold to stop`
-and a red progress fill shows hold progress. Releasing early cancels the stop action. The
-finish state displays a 3-second fill animation before navigation unless the user holds
-the main button to reset. The skip control fills over 3 seconds while pressed; releasing
-early resets the fill.
-
-When a Reanimated worklet completion callback changes React state with `runOnJS`, account
-for any native gesture event that may still fire after the state change. Hold-to-act
-controls should suppress the release `onPress` after a successful hold so the completed
-action is not immediately undone or restarted.
-
-Keep visible text short enough for small iPhone widths. Do not add explanatory copy inside
-the training screens; the control should communicate state directly through label, color,
-and progress.
-
-## Error And Cleanup Behavior
-
-Playback errors are displayed under the controls. `SoundFontPlayerError` messages are
-mapped through the module wrapper, with native detail included only in development.
-
-Provider cleanup must:
-
-- clear pending finish timers;
-- clear pending listening timers;
-- clear pending visual/countdown timers and audio-clock highlighting anchors;
-- stop any active playback through the integration layer;
-- remove external event subscriptions.
-
-The component should ignore stale playback events.
+Keep the existing tactile MuseBuddy button treatment: thick ink border, bottom-only ink
+shadow, bold short labels, tabular countdown/cycle numerals, vivid state fills, cream/green
+finish progress, and red hold progress. The main button starts in `pending`; holding it in
+an active phase resets. Finish fills for three seconds before navigation. Skip remains a
+three-second hold. Do not add explanatory screen copy.

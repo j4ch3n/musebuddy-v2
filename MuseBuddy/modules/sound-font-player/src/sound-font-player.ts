@@ -2,35 +2,23 @@ import { NativeModule, requireNativeModule } from 'expo';
 import { Platform } from 'react-native';
 
 import type {
-  BandSoundFontPlaybackConfiguration,
-  GrooveSoundFontPlaybackConfiguration,
-  SoundFontPlaybackBarEvent,
+  SoundFontPlaybackConfiguration,
   SoundFontPlaybackFinishEvent,
   SoundFontPlaybackOptions,
-  SoundFontRestartPlaybackOptions,
   SoundFontPlaybackStartResult,
-  SoundFontPlayerModuleEvents,
   SoundFontPlayerErrorCode,
+  SoundFontPlayerModuleEvents,
 } from './sound-font-player.types';
 
 export type {
-  BandSoundFontInstrument,
-  BandSoundFontPlaybackConfiguration,
-  BandSoundFontPlaybackTrack,
-  GrooveSoundFontInstrument,
-  GrooveSoundFontPlaybackConfiguration,
-  GrooveSoundFontPlaybackTrack,
   SoundFontPlaybackCell,
-  SoundFontPlaybackBarEvent,
   SoundFontPlaybackConfiguration,
   SoundFontPlaybackFinishEvent,
   SoundFontPlaybackOptions,
   SoundFontPlaybackStartResult,
   SoundFontPlaybackStep,
-  SoundFontPlaybackTrack,
   SoundFontPlayerErrorCode,
   SoundFontPlayerModuleEvents,
-  SoundFontRestartPlaybackOptions,
 } from './sound-font-player.types';
 
 type EventSubscription = {
@@ -38,34 +26,21 @@ type EventSubscription = {
 };
 
 declare class NativeSoundFontPlayerModule extends NativeModule<SoundFontPlayerModuleEvents> {
-  isPlaying(): boolean;
-  playBand(
-    configuration: BandSoundFontPlaybackConfiguration,
-    options: SoundFontPlaybackOptions,
+  playPiano(
+    configuration: SoundFontPlaybackConfiguration,
+    options: Required<SoundFontPlaybackOptions>,
   ): Promise<SoundFontPlaybackStartResult>;
   playGroove(
-    configuration: GrooveSoundFontPlaybackConfiguration,
-    options: SoundFontPlaybackOptions,
+    configuration: SoundFontPlaybackConfiguration,
+    options: Required<SoundFontPlaybackOptions>,
   ): Promise<SoundFontPlaybackStartResult>;
-  restartBand(
-    configuration: BandSoundFontPlaybackConfiguration,
-    options: SoundFontRestartPlaybackOptions,
-  ): Promise<SoundFontPlaybackStartResult>;
-  restartGroove(
-    configuration: GrooveSoundFontPlaybackConfiguration,
-    options: SoundFontRestartPlaybackOptions,
-  ): Promise<SoundFontPlaybackStartResult>;
-  prepareSoundFonts(): Promise<void>;
-  stop(): Promise<void>;
+  stop(playbackId: number): Promise<void>;
 }
 
-type NativeError = Error & {
-  code?: string;
-};
+type NativeError = Error & { code?: string };
 
 const errorMessages: Record<SoundFontPlayerErrorCode, string> = {
-  ERR_SOUNDFONT_ALREADY_PLAYING: 'The SoundFont player is already playing.',
-  ERR_SOUNDFONT_EMPTY_CONFIGURATION: 'There are no playable tracks.',
+  ERR_SOUNDFONT_EMPTY_CONFIGURATION: 'There are no playable parts.',
   ERR_SOUNDFONT_ENGINE_START_FAILED: 'The SoundFont player could not start audio playback.',
   ERR_SOUNDFONT_INVALID_CONFIGURATION: 'The SoundFont playback configuration is invalid.',
   ERR_SOUNDFONT_LOAD_FAILED: 'The SoundFont sound could not be loaded.',
@@ -125,64 +100,33 @@ async function callNative<T>(operation: () => Promise<T>): Promise<T> {
   }
 }
 
-export function prepareSoundFonts(): Promise<void> {
-  return callNative(() => getNativeModule().prepareSoundFonts());
+function normalizeOptions(options: SoundFontPlaybackOptions): Required<SoundFontPlaybackOptions> {
+  return {
+    leadIn: options.leadIn ?? false,
+    repetitions: Math.max(1, options.repetitions ?? 1),
+  };
 }
 
-export function playBand(
-  configuration: BandSoundFontPlaybackConfiguration,
+export function playPiano(
+  configuration: SoundFontPlaybackConfiguration,
   options: SoundFontPlaybackOptions = {},
 ): Promise<SoundFontPlaybackStartResult> {
-  return callNative(() => getNativeModule().playBand(configuration, normalizeOptions(options)));
+  return callNative(() => getNativeModule().playPiano(configuration, normalizeOptions(options)));
 }
 
 export function playGroove(
-  configuration: GrooveSoundFontPlaybackConfiguration,
+  configuration: SoundFontPlaybackConfiguration,
   options: SoundFontPlaybackOptions = {},
 ): Promise<SoundFontPlaybackStartResult> {
   return callNative(() => getNativeModule().playGroove(configuration, normalizeOptions(options)));
 }
 
-export function restartBand(
-  configuration: BandSoundFontPlaybackConfiguration,
-  options: SoundFontRestartPlaybackOptions,
-): Promise<SoundFontPlaybackStartResult> {
-  return callNative(() => getNativeModule().restartBand(configuration, normalizeOptions(options)));
-}
-
-export function restartGroove(
-  configuration: GrooveSoundFontPlaybackConfiguration,
-  options: SoundFontRestartPlaybackOptions,
-): Promise<SoundFontPlaybackStartResult> {
-  return callNative(() =>
-    getNativeModule().restartGroove(configuration, normalizeOptions(options)),
-  );
-}
-
-export function stop(): Promise<void> {
-  return callNative(() => getNativeModule().stop());
-}
-
-export function isPlaying(): boolean {
-  return getNativeModule().isPlaying();
-}
-
-export function addPlaybackBarListener(
-  listener: (event: SoundFontPlaybackBarEvent) => void,
-): EventSubscription {
-  return getNativeModule().addListener('onPlaybackBar', listener);
+export function stop(playbackId: number): Promise<void> {
+  return callNative(() => getNativeModule().stop(playbackId));
 }
 
 export function addPlaybackFinishListener(
   listener: (event: SoundFontPlaybackFinishEvent) => void,
 ): EventSubscription {
   return getNativeModule().addListener('onPlaybackFinish', listener);
-}
-
-function normalizeOptions(options: SoundFontPlaybackOptions): Required<SoundFontPlaybackOptions> {
-  return {
-    leadIn: options.leadIn ?? false,
-    cycles: options.cycles ?? 1,
-    repeat: options.repeat ?? false,
-  };
 }

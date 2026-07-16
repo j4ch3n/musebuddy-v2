@@ -9,6 +9,7 @@ export type DetectionNote = {
 };
 
 export type DetectionResult = {
+  recognitionId: number;
   detectionId: number;
   type: 'periodic' | 'final';
   recordedDurationMs: number;
@@ -21,6 +22,10 @@ export type DetectionResult = {
 export type RecognitionOptions = {
   detectionIntervalMs?: number;
   rollingWindowMs?: number;
+};
+
+export type RecognitionStartResult = {
+  recognitionId: number;
 };
 
 export type BasicPitchModuleEvents = {

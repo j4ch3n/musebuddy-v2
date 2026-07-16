@@ -13,6 +13,11 @@ export {
   type ChordDisplayTokenType,
 } from './chord-display';
 export {
+  getChordListenMatchScore,
+  isChordListenMatch,
+  type ChordListenMatchScore,
+} from './chord-listen-recognition';
+export {
   prepareTrainingSessionDisplay,
   type PreparedTrainingSession,
 } from './training-session-display';

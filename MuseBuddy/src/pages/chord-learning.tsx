@@ -2,10 +2,11 @@ import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
-import { ChordLearning, ChordSessionSummary } from '@/components/chord-learning';
+import { ChordLearning, ChordListenNotes, ChordSessionSummary } from '@/components/chord-learning';
 import {
   PerformanceGuidanceButton,
   PerformanceGuidanceProvider,
+  usePerformanceGuidance,
 } from '@/components/performance-guidance';
 import { useTrainingSession } from '@/contexts/training-session-context';
 import {
@@ -13,7 +14,7 @@ import {
   buildChordSummarySoundFontPlaybackConfiguration,
   type ChordDisplay,
 } from '@/music-theory';
-import { Carousel } from '@/ui';
+import { Carousel, type CarouselProps } from '@/ui';
 
 import { PlaceholderPanel } from './placeholder-panel';
 import { TrainingScreenShell } from './training-screen-shell';
@@ -78,9 +79,11 @@ export function ChordLearningPage() {
   }, []);
 
   const renderSlide = useCallback(
-    (slide: ChordLearningSlide) => {
+    (slide: ChordLearningSlide, index: number) => {
       if (slide.type === 'summary') {
-        return <ChordSessionSummary displays={slide.displays} />;
+        return (
+          <ChordSessionSummary displays={slide.displays} isActive={index === currentSlideIndex} />
+        );
       }
 
       const chordKey = getChordKey(slide.display, slide.chordIndex);
@@ -105,7 +108,7 @@ export function ChordLearningPage() {
         />
       );
     },
-    [flippedChordIds, getChordKey],
+    [currentSlideIndex, flippedChordIds, getChordKey],
   );
 
   const playbackConfiguration = useMemo(() => {
@@ -136,13 +139,16 @@ export function ChordLearningPage() {
       footer={
         session ? (
           <View style={styles.footer}>
+            {currentSlide?.type === 'chord' ? (
+              <ChordListenNotes display={currentSlide.display} />
+            ) : null}
             <PerformanceGuidanceButton />
           </View>
         ) : null
       }
     >
       {session ? (
-        <Carousel
+        <GuidedChordCarousel
           accessibilityLabel="Chords"
           getItemAccessibilityLabel={getSlideAccessibilityLabel}
           items={slides}
@@ -170,7 +176,7 @@ export function ChordLearningPage() {
     <PerformanceGuidanceProvider
       demoListenCycleCount={3}
       finishText={finishText}
-      key={`${getSlideKey(currentSlide)}-${learningConfig.bpm}`}
+      key={getSlideKey(currentSlide)}
       onFinish={() => {
         if (currentSlide.type === 'summary') {
           router.push('/rhythm-training');
@@ -184,13 +190,20 @@ export function ChordLearningPage() {
       }}
       playback={{
         configuration: playbackConfiguration,
-        kind: 'band',
+        kind: 'piano',
       }}
+      listeningEnabled
       startPhase="prepare"
     >
       {content}
     </PerformanceGuidanceProvider>
   );
+}
+
+function GuidedChordCarousel(props: CarouselProps<ChordLearningSlide>) {
+  const { phase } = usePerformanceGuidance();
+
+  return <Carousel {...props} swipeEnabled={phase === 'pending'} />;
 }
 
 const styles = StyleSheet.create({

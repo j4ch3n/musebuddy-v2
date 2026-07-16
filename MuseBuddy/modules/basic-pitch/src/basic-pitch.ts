@@ -6,6 +6,7 @@ import type {
   BasicPitchModuleEvents,
   DetectionResult,
   RecognitionOptions,
+  RecognitionStartResult,
 } from './basic-pitch.types';
 
 export type {
@@ -14,6 +15,7 @@ export type {
   DetectionNote,
   DetectionResult,
   RecognitionOptions,
+  RecognitionStartResult,
 } from './basic-pitch.types';
 
 type EventSubscription = {
@@ -22,8 +24,9 @@ type EventSubscription = {
 
 declare class NativeBasicPitchModule extends NativeModule<BasicPitchModuleEvents> {
   initialize(): Promise<void>;
-  startRecognition(options: Required<RecognitionOptions>): Promise<void>;
-  stopRecognition(): Promise<DetectionResult>;
+  startRecognition(options: Required<RecognitionOptions>): Promise<RecognitionStartResult>;
+  cancelRecognition(recognitionId: number): Promise<void>;
+  stopRecognition(recognitionId: number): Promise<DetectionResult>;
   shareRecording(): Promise<void>;
   isRecognizing(): boolean;
 }
@@ -103,7 +106,9 @@ export function initialize(): Promise<void> {
   return callNative(() => getNativeModule().initialize());
 }
 
-export function startRecognition(options: RecognitionOptions = {}): Promise<void> {
+export function startRecognition(
+  options: RecognitionOptions = {},
+): Promise<RecognitionStartResult> {
   return callNative(() =>
     getNativeModule().startRecognition({
       detectionIntervalMs: options.detectionIntervalMs ?? 500,
@@ -112,8 +117,12 @@ export function startRecognition(options: RecognitionOptions = {}): Promise<void
   );
 }
 
-export function stopRecognition(): Promise<DetectionResult> {
-  return callNative(() => getNativeModule().stopRecognition());
+export function cancelRecognition(recognitionId: number): Promise<void> {
+  return callNative(() => getNativeModule().cancelRecognition(recognitionId));
+}
+
+export function stopRecognition(recognitionId: number): Promise<DetectionResult> {
+  return callNative(() => getNativeModule().stopRecognition(recognitionId));
 }
 
 export function shareRecording(): Promise<void> {

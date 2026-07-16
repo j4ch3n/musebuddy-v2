@@ -73,30 +73,25 @@ describe('buildRhythmSoundFontPlaybackConfiguration', () => {
 
     expect(configuration).toEqual({
       bpm: 120,
-      tracks: [
-        {
-          instrument: 'percussion',
-          parts: [
-            [
-              [{ midi: 45, velocity: 112 }],
-              [{ midi: -50, velocity: null }],
-              [{ midi: null, velocity: null }],
-              [{ midi: 50, velocity: 74 }],
-              [{ midi: null, velocity: null }],
-              [{ midi: null, velocity: null }],
-              [{ midi: null, velocity: null }],
-              [{ midi: null, velocity: null }],
-              [{ midi: null, velocity: null }],
-              [{ midi: null, velocity: null }],
-              [{ midi: null, velocity: null }],
-              [{ midi: null, velocity: null }],
-              [{ midi: null, velocity: null }],
-              [{ midi: null, velocity: null }],
-              [{ midi: null, velocity: null }],
-              [{ midi: null, velocity: null }],
-            ],
-          ],
-        },
+      parts: [
+        [
+          [{ midi: 45, velocity: 112 }],
+          [{ midi: -50, velocity: null }],
+          [{ midi: null, velocity: null }],
+          [{ midi: 50, velocity: 74 }],
+          [{ midi: null, velocity: null }],
+          [{ midi: null, velocity: null }],
+          [{ midi: null, velocity: null }],
+          [{ midi: null, velocity: null }],
+          [{ midi: null, velocity: null }],
+          [{ midi: null, velocity: null }],
+          [{ midi: null, velocity: null }],
+          [{ midi: null, velocity: null }],
+          [{ midi: null, velocity: null }],
+          [{ midi: null, velocity: null }],
+          [{ midi: null, velocity: null }],
+          [{ midi: null, velocity: null }],
+        ],
       ],
     });
   });
@@ -114,10 +109,8 @@ describe('buildSoundFontPlaybackConfiguration', () => {
     );
 
     expect(configuration.bpm).toBe(60);
-    expect(configuration.tracks).toHaveLength(1);
-    expect(configuration.tracks[0]?.instrument).toBe('piano');
-    expect(configuration.tracks[0]?.parts).toHaveLength(2);
-    expect(configuration.tracks[0]?.parts[0]?.slice(0, 4)).toEqual([
+    expect(configuration.parts).toHaveLength(2);
+    expect(configuration.parts[0]?.slice(0, 4)).toEqual([
       [{ midi: 60, velocity: 40 }],
       [{ midi: -50, velocity: null }],
       [{ midi: 64, velocity: 90 }],
@@ -134,11 +127,9 @@ describe('buildChordPreviewSoundFontPlaybackConfiguration', () => {
     );
 
     expect(configuration.bpm).toBe(88);
-    expect(configuration.tracks).toHaveLength(1);
-    expect(configuration.tracks[0]?.instrument).toBe('piano');
-    expect(configuration.tracks[0]?.parts).toHaveLength(1);
+    expect(configuration.parts).toHaveLength(1);
 
-    const part = configuration.tracks[0]?.parts[0];
+    const part = configuration.parts[0];
     expect(part).toHaveLength(16);
 
     const noteStep = (velocity: number) => [
@@ -168,21 +159,15 @@ describe('buildChordSummarySoundFontPlaybackConfiguration', () => {
     );
 
     expect(configuration.bpm).toBe(104);
-    expect(configuration.tracks).toHaveLength(1);
-    expect(configuration.tracks[0]?.instrument).toBe('piano');
-    expect(configuration.tracks[0]?.parts).toHaveLength(2);
-    expect(configuration.tracks[0]?.parts[0]?.filter((step) => step[0]?.midi === 60)).toHaveLength(
-      4,
-    );
-    expect(configuration.tracks[0]?.parts[1]?.filter((step) => step[0]?.midi === 65)).toHaveLength(
-      4,
-    );
-    expect(configuration.tracks[0]?.parts[0]?.[0]).toEqual([
+    expect(configuration.parts).toHaveLength(2);
+    expect(configuration.parts[0]?.filter((step) => step[0]?.midi === 60)).toHaveLength(4);
+    expect(configuration.parts[1]?.filter((step) => step[0]?.midi === 65)).toHaveLength(4);
+    expect(configuration.parts[0]?.[0]).toEqual([
       { midi: 60, velocity: 96 },
       { midi: 64, velocity: 96 },
       { midi: 67, velocity: 96 },
     ]);
-    expect(configuration.tracks[0]?.parts[1]?.[12]).toEqual([
+    expect(configuration.parts[1]?.[12]).toEqual([
       { midi: 65, velocity: 96 },
       { midi: 69, velocity: 96 },
       { midi: 72, velocity: 96 },

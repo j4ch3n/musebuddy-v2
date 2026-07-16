@@ -101,6 +101,7 @@ struct DetectionNoteRecord: Record {
 }
 
 struct DetectionResultRecord: Record {
+  @Field var recognitionId: Int = 0
   @Field var detectionId: Int = 0
   @Field var type: String = ""
   @Field var recordedDurationMs: Double = 0

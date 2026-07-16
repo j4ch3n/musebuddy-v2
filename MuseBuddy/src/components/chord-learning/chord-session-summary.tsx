@@ -1,43 +1,107 @@
-import { StyleSheet, View } from 'react-native';
+import Lucide from '@react-native-vector-icons/lucide';
+import { StyleSheet, Text, View } from 'react-native';
 
+import {
+  museBuddyBorders,
+  museBuddyColors,
+  museBuddyRadii,
+  museBuddyTypography,
+} from '@/constants/design-tokens';
 import type { ChordDisplay } from '@/music-theory';
 import { FlashCard } from '@/ui';
 
 import { ChordName } from './chord-name';
+import { useChordListenRecognition } from './use-chord-listen-recognition';
 
 type ChordSessionSummaryProps = {
   displays: readonly ChordDisplay[];
+  isActive: boolean;
 };
 
-export function ChordSessionSummary({ displays }: ChordSessionSummaryProps) {
+export function ChordSessionSummary({ displays, isActive }: ChordSessionSummaryProps) {
+  const { completedChordIndexes, errorMessage } = useChordListenRecognition({
+    displays,
+    enabled: isActive,
+  });
+
   return (
-    <FlashCard
-      accessibilityLabel="All chords in this session"
-      sideA={
-        <View style={styles.container}>
-          {displays.map((display, index) => (
-            <ChordName
-              display={display}
-              key={`${display.idName}-${index}`}
-              size="large"
-              style={styles.chordName}
-            />
-          ))}
-        </View>
-      }
-    />
+    <View style={styles.root}>
+      <FlashCard
+        accessibilityLabel="All chords in this session"
+        sideA={
+          <View style={styles.container}>
+            {displays.map((display, index) => {
+              const isComplete = completedChordIndexes.has(index);
+
+              return (
+                <View
+                  accessibilityLabel={`${display.friendlyName}, ${isComplete ? 'complete' : 'not complete'}`}
+                  accessible
+                  key={`${display.idName}-${index}`}
+                  style={styles.chordRow}
+                >
+                  <View accessibilityElementsHidden style={styles.checkSpacer} />
+                  <ChordName display={display} size="large" style={styles.chordName} />
+                  <View
+                    accessibilityElementsHidden
+                    importantForAccessibility="no-hide-descendants"
+                    style={[styles.checkSlot, isComplete ? styles.checkSlotComplete : null]}
+                  >
+                    {isComplete ? (
+                      <Lucide color={museBuddyColors.ink} name="check" size={24} />
+                    ) : null}
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        }
+      />
+      {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  checkSlot: {
+    alignItems: 'center',
+    backgroundColor: museBuddyColors.surfaceMuted,
+    borderColor: museBuddyColors.ink,
+    borderRadius: museBuddyRadii.medium,
+    borderWidth: museBuddyBorders.bold,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
+  },
+  checkSlotComplete: {
+    backgroundColor: museBuddyColors.accentGreen,
+  },
+  checkSpacer: {
+    width: 40,
+  },
   chordName: {
+    flex: 1,
     textAlign: 'center',
   },
-  container: {
+  chordRow: {
     alignItems: 'center',
-    gap: 18,
+    flexDirection: 'row',
+    gap: 8,
+  },
+  container: {
+    gap: 12,
     justifyContent: 'center',
     minHeight: 320,
     paddingVertical: 24,
+  },
+  errorText: {
+    color: museBuddyColors.accentRed,
+    fontFamily: museBuddyTypography.rounded,
+    fontSize: 13,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  root: {
+    gap: 12,
   },
 });

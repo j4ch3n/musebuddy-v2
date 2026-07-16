@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { View } from 'react-native';
 
@@ -44,7 +44,7 @@ export function RhythmTrainingPage() {
     <PerformanceGuidanceProvider
       demoListenCycleCount={3}
       finishText="this rhythm is fun!"
-      key={`rhythm-${learningConfig.bpm}-${pattern.join('')}`}
+      key={`rhythm-${pattern.join('')}`}
       onFinish={() => {
         router.push('/pattern-training');
       }}
@@ -63,7 +63,13 @@ export function RhythmTrainingPage() {
 }
 
 function RhythmTrainingContent({ pattern }: { pattern: RhythmPattern }) {
-  const { currentStepIndex } = usePerformanceGuidance();
+  const { completeListening, currentStepIndex, latestDetection, phase } = usePerformanceGuidance();
+
+  useEffect(() => {
+    if (phase === 'listening' && latestDetection?.notes.length) {
+      void completeListening();
+    }
+  }, [completeListening, latestDetection, phase]);
 
   return (
     <TrainingScreenShell

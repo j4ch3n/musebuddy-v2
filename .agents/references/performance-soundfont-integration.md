@@ -1,67 +1,61 @@
 # Performance Guidance And SoundFont Integration
 
-This reference explains how the React performance guidance components and the native
-SoundFont player work together. Keep native module details in `sound-font-player.md` and
-React component/page details in `performance-guidance.md`.
+This reference defines the JS/native handshake between performance guidance, the
+SoundFont module, and Basic Pitch. Native details live in `sound-font-player.md`; UI/page
+details live in `performance-guidance.md`.
 
 ## Responsibility Split
 
-- SoundFont player owns low-level playback: optional lead-in audio, finite cycle playback,
-  infinite repeat playback, stop, native `onPlaybackBar` timing anchors, and the finite
-  `onPlaybackFinish` event.
-- Performance guidance owns UI state, labels, progress animations, finish messages,
-  lead-in countdown display, rhythm highlighting from audio-clocked native bar anchors,
-  listening delay, demo/listen round progression, and navigation callbacks.
-- JavaScript starts one native sequence for session goal, or one one-cycle native demo per
-  chord/rhythm listening round. It stores the returned `playbackId` and ignores stale
-  finish events.
-- JavaScript may call `stop()` for cancellation and cleanup: main-button reset, skip,
-  unmount, route change, explicit finish requests, or playback failure.
+- Native SoundFont playback creates, loads, runs, and fully disposes one fresh audio graph
+  per request. It owns the audible lead-in and finite repetitions.
+- Native Basic Pitch owns microphone capture and tags each detection with a recognition
+  ID.
+- The provider owns flow generations, UI phase/progress, timing from `startedAtMs`, event
+  filtering, demo/listen progression, and navigation timers.
+- The shared coordinator serializes native playback and recognition so they never overlap,
+  and protects newer owners from stale cleanup.
 
-## Start Contract
+## Playback Requests
 
-`PerformanceGuidanceProvider` passes playback options separately from the page-provided
-SoundFont configuration when calling `playBand()` or `playGroove()`:
+Session goal calls:
 
-- `leadIn`: true for the first demo in a page flow, false for later demos.
-- `cycles`: `2` for session goal, `1` for each chord/rhythm demo.
+```ts
+playPiano(configuration, { leadIn: true, repetitions: 2 });
+```
 
-This keeps page builders focused on musical content. Pages should not pre-bake guidance
-cycle policy into music-theory playback builders.
+Chord learning calls `playPiano`; rhythm training calls `playGroove`. Their first round and
+BPM restarts use `{ leadIn: true, repetitions: 1 }`. Rounds two and three use
+`{ leadIn: false, repetitions: 1 }`.
 
-## Event Contract
+While a play promise is pending, the UI remains in `prepare` at `4`. The promise resolves
+only after native has created the graph, loaded the requested SoundFont plus optional
+lead-in SoundFont, confirmed output rendering, and started sequencing. The returned
+`startedAtMs` anchors countdown, demo labels, and rhythm highlighting.
 
-The guidance provider subscribes to `onPlaybackBar` and `onPlaybackFinish` and ignores
-stale playback ids. JS timers still drive the prepare countdown, but rhythm
-`currentStepIndex` is derived from native bar events and the Expo Audio clock while native
-SoundFont audio plays.
+## Playback Finish And Recognition Handoff
 
-- `onPlaybackBar` supplies the native bar boundary, sequence `playbackPositionMs`, and
-  native `absoluteTimeMs`. JS uses the absolute timestamp to compensate for bridge/event
-  latency.
-- An `expo-audio` silent clock player supplies the JS-side elapsed audio time between
-  native bar anchors.
+Native natural finish first stops sequencing, silences and releases samplers, stops the
+engine, and deactivates its audio session. It then emits `onPlaybackFinish({ playbackId })`.
+The provider ignores nonmatching IDs, acknowledges the matching playback as idle in the
+coordinator, and only then starts recognition:
 
-- Session goal: native finish moves directly to `finish`.
-- Chord/rhythm learning: native finish enters `listening`; after the 3-second listening
-  delay, JS increments `completedCycles` and either starts the next one-cycle demo or
-  enters `finish`.
+```ts
+startRecognition({ detectionIntervalMs: 200, rollingWindowMs: 2000 });
+```
 
-## Page Defaults
+The UI enters `listening` after this promise returns `{ recognitionId }`. Detection events
+must match that ID. A completed listening round awaits
+`cancelRecognition(recognitionId)` before any next SoundFont request.
 
-- Session goal: `listeningEnabled={false}`, `cycleCount={2}`, band playback.
-- Chord learning: `listeningEnabled={true}`, `demoListenCycleCount={3}`, band playback.
-- Rhythm training: `listeningEnabled={true}`, `demoListenCycleCount={3}`, groove playback.
+Session goal skips this handoff and enters `finish` directly.
 
-Skip routing is page-owned. Finishing can either advance an in-page unit, such as the
-next chord slide, or route to the next training page.
+## Cancellation And Restarts
 
-## Change Guidelines
+SoundFont cancellation always carries the exact playback ID. Recognition cancellation
+always carries the exact recognition ID. BPM changes, reset, skip, navigation, and unmount
+invalidate the flow generation before awaiting cleanup. Results and events from older
+generations are ignored. Provider owner IDs ensure cleanup from an old route cannot stop
+audio already owned by a newer route.
 
-- If changing event payloads, update all three references: native details, React behavior,
-  and this integration contract.
-- If changing button visuals only, update `performance-guidance.md`; do not edit the
-  SoundFont reference.
-- If changing native scheduling only, update `sound-font-player.md`; update this file only
-  when the JS/native handshake changes.
-- Keep the JS listening delay hardcoded at 3 seconds unless product requirements change.
+There are no prepare, resume, restart, repeat, is-playing, or playback-bar APIs. Every demo
+uses a fresh native graph, including rounds without a lead-in.

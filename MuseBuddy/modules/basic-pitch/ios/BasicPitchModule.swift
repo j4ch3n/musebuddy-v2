@@ -16,7 +16,7 @@ public final class BasicPitchModule: Module {
 
     OnDestroy {
       self.service.onDetectionFinish = nil
-      self.service.cancelRecognition()
+      self.service.cancelAnyRecognition()
     }
 
     AsyncFunction("initialize") { () async throws in
@@ -29,15 +29,20 @@ public final class BasicPitchModule: Module {
 
     AsyncFunction("startRecognition") { (options: [String: Double]) async throws in
       do {
-        try await self.service.startRecognition(options: options)
+        let recognitionId = try await self.service.startRecognition(options: options)
+        return ["recognitionId": recognitionId]
       } catch let error as BasicPitchError {
         throw BasicPitchException(error)
       }
     }
 
-    AsyncFunction("stopRecognition") { () async throws -> DetectionResultRecord in
+    AsyncFunction("cancelRecognition") { (recognitionId: Int) async in
+      await self.service.cancelRecognition(recognitionId: recognitionId)
+    }
+
+    AsyncFunction("stopRecognition") { (recognitionId: Int) async throws -> DetectionResultRecord in
       do {
-        return try await self.service.stopRecognition()
+        return try await self.service.stopRecognition(recognitionId: recognitionId)
       } catch let error as BasicPitchError {
         throw BasicPitchException(error)
       }

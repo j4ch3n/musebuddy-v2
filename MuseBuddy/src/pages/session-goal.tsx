@@ -47,7 +47,7 @@ export function SessionGoalPage() {
     <PerformanceGuidanceProvider
       cycleCount={2}
       finishText="I'm excited, let's go!"
-      key={`session-goal-${learningConfig.bpm}`}
+      key="session-goal"
       listeningEnabled={false}
       onFinish={() => {
         router.push('/chord-learning');
@@ -57,7 +57,7 @@ export function SessionGoalPage() {
       }}
       playback={{
         configuration: playbackConfiguration,
-        kind: 'band',
+        kind: 'piano',
       }}
     >
       {content}

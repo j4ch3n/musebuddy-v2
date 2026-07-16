@@ -1,50 +1,100 @@
 import { describe, expect, it } from 'vitest';
 
+import type { DetectionResult } from '@modules/basic-pitch';
 import type { SoundFontPlaybackConfiguration } from '@modules/sound-font-player';
 
 import {
+  createGuidanceState,
+  getPlaybackClockState,
   getSoundFontDemoDurationMs,
   getSoundFontPartCount,
   getSoundFontStepCount,
+  guidanceReducer,
+  shouldHandleDetection,
   shouldHandlePlaybackEvent,
 } from './performance-guidance-state';
 
-const configuration: SoundFontPlaybackConfiguration = {
-  bpm: 100,
-  tracks: [
-    {
-      instrument: 'piano',
-      parts: [[[{ midi: 60, velocity: 90 }]], [[{ midi: 62, velocity: 90 }]]],
-    },
-    {
-      instrument: 'bass',
-      parts: [[[{ midi: 48, velocity: 80 }]]],
-    },
-  ],
+const part = Array.from({ length: 16 }, () => [{ midi: 60, velocity: 90 }]);
+const configuration: SoundFontPlaybackConfiguration = { bpm: 120, parts: [part, part] };
+const detection: DetectionResult = {
+  recognitionId: 7,
+  detectionId: 1,
+  notes: [],
+  processingDurationMs: 1,
+  recordedDurationMs: 3_000,
+  type: 'periodic',
+  windowEndMs: 3_000,
+  windowStartMs: 1_000,
 };
 
-describe('performance guidance state helpers', () => {
-  it('derives the demo length from the longest SoundFont track', () => {
+describe('performance guidance state', () => {
+  it('derives playback length and duration from public parts', () => {
     expect(getSoundFontPartCount(configuration)).toBe(2);
     expect(getSoundFontStepCount(configuration)).toBe(32);
+    expect(getSoundFontDemoDurationMs(configuration)).toBe(4_000);
   });
 
-  it('returns zero length when playback is unavailable', () => {
-    expect(getSoundFontPartCount(null)).toBe(0);
-    expect(getSoundFontStepCount(null)).toBe(0);
+  it('holds at four until native playback supplies a start time', () => {
+    expect(createGuidanceState('prepare')).toMatchObject({
+      countdownValue: 4,
+      phase: 'prepare',
+    });
   });
 
-  it('derives the demo duration from the longest SoundFont track and BPM', () => {
-    expect(getSoundFontDemoDurationMs(configuration)).toBe(4800);
+  it('derives lead-in countdown and demo steps from startedAtMs', () => {
+    expect(
+      getPlaybackClockState({
+        completedCycles: 0,
+        configuration,
+        leadIn: true,
+        nowMs: 10_750,
+        repetitions: 1,
+        startedAtMs: 10_000,
+      }),
+    ).toMatchObject({ countdownValue: 3, currentStepIndex: null, phase: 'prepare' });
+
+    expect(
+      getPlaybackClockState({
+        completedCycles: 0,
+        configuration,
+        leadIn: true,
+        nowMs: 12_375,
+        repetitions: 1,
+        startedAtMs: 10_000,
+      }),
+    ).toMatchObject({ currentStepIndex: 3, phase: 'demo' });
   });
 
-  it('ignores playback events until a start result has established the active id', () => {
-    expect(shouldHandlePlaybackEvent(null, 42)).toBe(false);
-    expect(shouldHandlePlaybackEvent(41, 42)).toBe(false);
-    expect(shouldHandlePlaybackEvent(42, 42)).toBe(true);
+  it('updates the session-goal repetition label from the same native clock', () => {
+    expect(
+      getPlaybackClockState({
+        completedCycles: 0,
+        configuration,
+        leadIn: false,
+        nowMs: 14_100,
+        repetitions: 2,
+        startedAtMs: 10_000,
+      }).completedCycles,
+    ).toBe(1);
   });
 
-  it('ignores stale playback finish events with mismatched playback ids', () => {
-    expect(shouldHandlePlaybackEvent(12, 11)).toBe(false);
+  it('resets progress, input, and errors on a fresh prepare', () => {
+    const dirtyState = {
+      ...createGuidanceState('pending'),
+      completedCycles: 2,
+      errorMessage: 'failed',
+      latestDetection: detection,
+    };
+    expect(guidanceReducer(dirtyState, { type: 'prepare' })).toEqual(
+      createGuidanceState('prepare'),
+    );
+  });
+
+  it('filters stale playback and recognition events by active id', () => {
+    expect(shouldHandlePlaybackEvent(null, 4)).toBe(false);
+    expect(shouldHandlePlaybackEvent(4, 3)).toBe(false);
+    expect(shouldHandlePlaybackEvent(4, 4)).toBe(true);
+    expect(shouldHandleDetection(8, detection)).toBe(false);
+    expect(shouldHandleDetection(7, detection)).toBe(true);
   });
 });

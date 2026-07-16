@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   addDetectionFinishListener,
   BasicPitchError,
+  cancelRecognition,
   initialize,
   shareRecording,
   startRecognition,
@@ -55,6 +56,7 @@ export function useTranscription() {
   const isMountedRef = useRef(true);
   const recordingStartedAtRef = useRef<number | null>(null);
   const elapsedTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recognitionIdRef = useRef<number | null>(null);
 
   const stopElapsedTimer = useCallback(() => {
     if (elapsedTimerRef.current !== null) {
@@ -121,7 +123,11 @@ export function useTranscription() {
 
   useEffect(() => {
     const subscription = addDetectionFinishListener((detection) => {
-      if (isMountedRef.current) {
+      if (
+        isMountedRef.current &&
+        recognitionIdRef.current !== null &&
+        detection.recognitionId === recognitionIdRef.current
+      ) {
         handleDetection(detection);
       }
     });
@@ -136,7 +142,11 @@ export function useTranscription() {
     return () => {
       isMountedRef.current = false;
       stopElapsedTimer();
-      void stopRecognition().catch(() => {});
+      const recognitionId = recognitionIdRef.current;
+      recognitionIdRef.current = null;
+      if (recognitionId !== null) {
+        void cancelRecognition(recognitionId).catch(() => {});
+      }
     };
   }, [stopElapsedTimer]);
 
@@ -148,10 +158,12 @@ export function useTranscription() {
     setPhase('starting');
 
     try {
-      await startRecognition();
+      const { recognitionId } = await startRecognition();
       if (!isMountedRef.current) {
+        await cancelRecognition(recognitionId);
         return;
       }
+      recognitionIdRef.current = recognitionId;
       startElapsedTimer();
       setPhase('recording');
     } catch (error) {
@@ -179,7 +191,12 @@ export function useTranscription() {
     setStatusMessage('');
     setPhase('predicting');
     try {
-      const finalDetection = await stopRecognition();
+      const recognitionId = recognitionIdRef.current;
+      if (recognitionId === null) {
+        return;
+      }
+      const finalDetection = await stopRecognition(recognitionId);
+      recognitionIdRef.current = null;
       if (!isMountedRef.current) {
         return;
       }

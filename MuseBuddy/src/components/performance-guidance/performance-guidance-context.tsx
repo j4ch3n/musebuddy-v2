@@ -4,57 +4,44 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useReducer,
   useRef,
   useState,
   type ReactNode,
 } from 'react';
 
+import { addDetectionFinishListener, BasicPitchError } from '@modules/basic-pitch';
 import {
-  addPlaybackBarListener,
   addPlaybackFinishListener,
-  playBand,
-  playGroove,
   SoundFontPlayerError,
-  stop,
-  type BandSoundFontPlaybackConfiguration,
-  type GrooveSoundFontPlaybackConfiguration,
+  type SoundFontPlaybackConfiguration,
 } from '@modules/sound-font-player';
-import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 
 import {
-  createPlaybackClockAnchor,
-  getClockedCurrentStepIndex,
-  type PlaybackClockAnchor,
-} from './performance-guidance-clock';
-import {
-  getSoundFontDemoDurationMs,
+  createGuidanceState,
+  getPlaybackClockState,
   getSoundFontPartCount,
   getSoundFontStepCount,
+  guidanceReducer,
+  shouldHandleDetection,
   shouldHandlePlaybackEvent,
-  type PerformanceGuidancePhase,
+  type GuidanceAction,
+  type GuidanceState,
   type PerformanceGuidanceStartPhase,
 } from './performance-guidance-state';
+import { trainingAudioCoordinator } from './training-audio-coordinator';
 
-type PerformanceGuidancePlayback =
-  | {
-      configuration: BandSoundFontPlaybackConfiguration | null;
-      kind: 'band';
-    }
-  | {
-      configuration: GrooveSoundFontPlaybackConfiguration | null;
-      kind: 'groove';
-    };
+type PerformanceGuidancePlayback = {
+  configuration: SoundFontPlaybackConfiguration | null;
+  kind: 'groove' | 'piano';
+};
 
-export type PerformanceGuidanceContextValue = {
-  completedCycles: number;
+export type PerformanceGuidanceContextValue = GuidanceState & {
+  completeListening: () => Promise<void>;
   cycleCount: number;
-  countdownValue: number;
-  currentStepIndex: number | null;
-  errorMessage: string;
   finishText: string;
   isDisabled: boolean;
   listeningEnabled: boolean;
-  phase: PerformanceGuidancePhase;
   requestFinish: (message?: string) => void;
   requestSkip: () => void;
   reset: () => void;
@@ -73,13 +60,14 @@ type PerformanceGuidanceProviderProps = {
   startPhase?: PerformanceGuidanceStartPhase;
 };
 
-const LEAD_IN_BEATS = 4;
-const LISTENING_DURATION_MS = 3000;
-const STEP_DURATION_BEATS = 0.25;
-const BAR_DURATION_BEATS = 4;
-const CLOCK_UPDATE_INTERVAL_MS = 50;
-const silentClockSource = require('@assets/audio/silent-clock.wav') as number;
+const FINISH_DURATION_MS = 3_000;
+const CLOCK_INTERVAL_MS = 30;
+const RECOGNITION_OPTIONS = {
+  detectionIntervalMs: 200,
+  rollingWindowMs: 2_000,
+} as const;
 
+let nextOwnerId = 1;
 const PerformanceGuidanceContext = createContext<PerformanceGuidanceContextValue | null>(null);
 
 export function PerformanceGuidanceProvider({
@@ -93,31 +81,37 @@ export function PerformanceGuidanceProvider({
   playback,
   startPhase = 'pending',
 }: PerformanceGuidanceProviderProps) {
-  const [phase, setPhase] = useState<PerformanceGuidancePhase>(startPhase);
-  const [countdownValue, setCountdownValue] = useState(LEAD_IN_BEATS);
-  const [completedCycles, setCompletedCycles] = useState(0);
-  const [currentStepIndex, setCurrentStepIndex] = useState<number | null>(null);
-  const [errorMessage, setErrorMessage] = useState('');
+  const ownerIdRef = useRef(nextOwnerId++);
+  const [state, reactDispatch] = useReducer(guidanceReducer, startPhase, createGuidanceState);
+  const stateRef = useRef(state);
   const [finishMessageOverride, setFinishMessageOverride] = useState<string | null>(null);
-  const clockPlayer = useAudioPlayer(silentClockSource, {
-    keepAudioSessionActive: true,
-    updateInterval: CLOCK_UPDATE_INTERVAL_MS,
-  });
-  const clockStatus = useAudioPlayerStatus(clockPlayer);
-  const phaseRef = useRef<PerformanceGuidancePhase>(startPhase);
-  const didAutoStartRef = useRef(false);
+  const playbackRef = useRef(playback);
+  const previousConfigurationRef = useRef(playback.configuration);
+  const flowGenerationRef = useRef(0);
   const playbackIdRef = useRef<number | null>(null);
-  const clockAnchorRef = useRef<PlaybackClockAnchor | null>(null);
-  const isHighlightActiveRef = useRef(false);
-  const audioClockMsRef = useRef(0);
-  const flowIdRef = useRef(0);
+  const recognitionIdRef = useRef<number | null>(null);
+  const completionInProgressRef = useRef(false);
+  const clockTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const finishTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const listeningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const visualTimerRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const partCount = getSoundFontPartCount(playback.configuration);
-  const expectedStepCount = getSoundFontStepCount(playback.configuration);
+  const didAutoStartRef = useRef(false);
   const totalCycleCount = demoListenCycleCount ?? cycleCount;
-  const isDisabled = !playback.configuration || partCount === 0 || expectedStepCount === 0;
+  const configuration = playback.configuration;
+  const isDisabled =
+    !configuration ||
+    getSoundFontPartCount(configuration) === 0 ||
+    getSoundFontStepCount(configuration) === 0;
+
+  const dispatch = useCallback((action: GuidanceAction) => {
+    stateRef.current = guidanceReducer(stateRef.current, action);
+    reactDispatch(action);
+  }, []);
+
+  const clearClock = useCallback(() => {
+    if (clockTimerRef.current) {
+      clearInterval(clockTimerRef.current);
+      clockTimerRef.current = null;
+    }
+  }, []);
 
   const clearFinishTimer = useCallback(() => {
     if (finishTimerRef.current) {
@@ -126,454 +120,333 @@ export function PerformanceGuidanceProvider({
     }
   }, []);
 
-  const clearListeningTimer = useCallback(() => {
-    if (listeningTimerRef.current) {
-      clearTimeout(listeningTimerRef.current);
-      listeningTimerRef.current = null;
-    }
-  }, []);
-
-  const clearVisualTimers = useCallback(() => {
-    visualTimerRefs.current.forEach((timer) => {
-      clearTimeout(timer);
-    });
-    visualTimerRefs.current = [];
-  }, []);
-
-  const stopClock = useCallback(() => {
-    clockAnchorRef.current = null;
-    isHighlightActiveRef.current = false;
-    safelyPauseClock(clockPlayer);
-    void safelySeekClockToStart(clockPlayer);
-  }, [clockPlayer]);
-
-  const startClock = useCallback(async () => {
-    clockAnchorRef.current = null;
-    isHighlightActiveRef.current = false;
-    safelyPauseClock(clockPlayer);
-    await safelySeekClockToStart(clockPlayer);
-    audioClockMsRef.current = 0;
-    safelyPlayClock(clockPlayer);
-  }, [clockPlayer]);
-
-  const setPhaseValue = useCallback((nextPhase: PerformanceGuidancePhase) => {
-    phaseRef.current = nextPhase;
-    setPhase(nextPhase);
-  }, []);
-
-  const resetPlaybackMarkers = useCallback(() => {
-    playbackIdRef.current = null;
-    stopClock();
-    setCurrentStepIndex(null);
-  }, [stopClock]);
-
   const enterFinish = useCallback(
-    (message?: string) => {
+    (generation: number, message?: string) => {
+      if (flowGenerationRef.current !== generation) {
+        return;
+      }
+      clearClock();
       clearFinishTimer();
-      clearListeningTimer();
-      clearVisualTimers();
-      resetPlaybackMarkers();
+      playbackIdRef.current = null;
+      recognitionIdRef.current = null;
+      completionInProgressRef.current = false;
       setFinishMessageOverride(message ?? null);
-      setPhaseValue('finish');
+      dispatch({ type: 'finish' });
       finishTimerRef.current = setTimeout(() => {
-        onFinish();
-      }, 3000);
+        finishTimerRef.current = null;
+        if (flowGenerationRef.current !== generation) {
+          return;
+        }
+        void trainingAudioCoordinator.release(ownerIdRef.current).finally(onFinish);
+      }, FINISH_DURATION_MS);
     },
-    [
-      clearFinishTimer,
-      clearListeningTimer,
-      clearVisualTimers,
-      onFinish,
-      resetPlaybackMarkers,
-      setPhaseValue,
-    ],
+    [clearClock, clearFinishTimer, dispatch, onFinish],
   );
 
-  const requestFinish = useCallback(
-    (message?: string) => {
-      flowIdRef.current += 1;
-      void stop();
-      enterFinish(message);
-    },
-    [enterFinish],
-  );
-
-  const requestSkip = useCallback(() => {
-    clearFinishTimer();
-    clearListeningTimer();
-    clearVisualTimers();
-    flowIdRef.current += 1;
-    void stop();
-    resetPlaybackMarkers();
-    onSkip();
-  }, [clearFinishTimer, clearListeningTimer, clearVisualTimers, onSkip, resetPlaybackMarkers]);
-
-  const reset = useCallback(() => {
-    clearFinishTimer();
-    clearListeningTimer();
-    clearVisualTimers();
-    flowIdRef.current += 1;
-    void stop();
-    resetPlaybackMarkers();
-    setCountdownValue(LEAD_IN_BEATS);
-    setCompletedCycles(0);
-    setErrorMessage('');
-    setFinishMessageOverride(null);
-    setPhaseValue('pending');
-  }, [
-    clearFinishTimer,
-    clearListeningTimer,
-    clearVisualTimers,
-    resetPlaybackMarkers,
-    setPhaseValue,
-  ]);
-
-  const scheduleVisualTimer = useCallback((callback: () => void, delay: number) => {
-    const timer = setTimeout(() => {
-      visualTimerRefs.current = visualTimerRefs.current.filter((entry) => entry !== timer);
-      callback();
-    }, delay);
-    visualTimerRefs.current.push(timer);
-  }, []);
-
-  const startHighlighting = useCallback(
-    (flowId: number, beatDurationMs: number) => {
-      if (flowIdRef.current !== flowId || phaseRef.current !== 'demo') {
-        return;
-      }
-
-      const anchor: PlaybackClockAnchor = {
-        audioClockMsAtReceipt: audioClockMsRef.current,
-        userPlaybackPositionMsAtReceipt: 0,
+  const startClock = useCallback(
+    ({
+      generation,
+      leadIn,
+      repetitions,
+      startedAtMs,
+    }: {
+      generation: number;
+      leadIn: boolean;
+      repetitions: number;
+      startedAtMs: number;
+    }) => {
+      clearClock();
+      const update = () => {
+        const currentConfiguration = playbackRef.current.configuration;
+        if (!currentConfiguration || flowGenerationRef.current !== generation) {
+          clearClock();
+          return;
+        }
+        const clockState = getPlaybackClockState({
+          completedCycles: stateRef.current.completedCycles,
+          configuration: currentConfiguration,
+          leadIn,
+          nowMs: Date.now(),
+          repetitions,
+          startedAtMs,
+        });
+        dispatch({ type: 'clock', ...clockState });
       };
-      clockAnchorRef.current = anchor;
-      isHighlightActiveRef.current = true;
-
-      const stepIndex = getClockedCurrentStepIndex({
-        anchor,
-        audioClockMs: audioClockMsRef.current,
-        expectedStepCount,
-        stepDurationMs: STEP_DURATION_BEATS * beatDurationMs,
-      });
-      setCurrentStepIndex(stepIndex);
+      update();
+      clockTimerRef.current = setInterval(update, CLOCK_INTERVAL_MS);
     },
-    [expectedStepCount],
+    [clearClock, dispatch],
   );
 
-  const stopHighlighting = useCallback((flowId: number) => {
-    if (flowIdRef.current !== flowId) {
-      return;
-    }
-
-    clockAnchorRef.current = null;
-    isHighlightActiveRef.current = false;
-    setCurrentStepIndex(null);
-  }, []);
-
-  const startDemoPlayback = useCallback(
-    async ({ flowId, leadIn }: { flowId: number; leadIn: boolean }) => {
-      if (!playback.configuration || isDisabled) {
+  const startDemo = useCallback(
+    async (generation: number, leadIn: boolean) => {
+      const currentPlayback = playbackRef.current;
+      if (!currentPlayback.configuration) {
         return;
       }
 
-      clearVisualTimers();
-      setCurrentStepIndex(null);
-      setCountdownValue(LEAD_IN_BEATS);
-      setPhaseValue(leadIn ? 'prepare' : 'demo');
-
+      clearClock();
+      completionInProgressRef.current = false;
+      dispatch(leadIn ? { type: 'prepare' } : { type: 'demo' });
+      const repetitions = listeningEnabled ? 1 : totalCycleCount;
       try {
-        const cycles = listeningEnabled ? 1 : totalCycleCount;
-        await startClock();
-        const result =
-          playback.kind === 'band'
-            ? await playBand(playback.configuration as BandSoundFontPlaybackConfiguration, {
-                cycles,
-                leadIn,
-              })
-            : await playGroove(playback.configuration as GrooveSoundFontPlaybackConfiguration, {
-                cycles,
-                leadIn,
-              });
-
-        if (flowIdRef.current !== flowId) {
+        const result = await trainingAudioCoordinator.play(
+          ownerIdRef.current,
+          currentPlayback.kind,
+          currentPlayback.configuration,
+          { leadIn, repetitions },
+        );
+        if (flowGenerationRef.current !== generation) {
+          await trainingAudioCoordinator.releasePlayback(ownerIdRef.current, result.playbackId);
           return;
         }
-
         playbackIdRef.current = result.playbackId;
-
-        const beatDurationMs = 60_000 / playback.configuration.bpm;
-        const demoDurationMs = getSoundFontDemoDurationMs(playback.configuration);
-        const demoStartDelayMs = leadIn ? LEAD_IN_BEATS * beatDurationMs : 0;
-        const activeDemoDurationMs = cycles * demoDurationMs;
-
-        if (leadIn) {
-          for (let beatIndex = 1; beatIndex < LEAD_IN_BEATS; beatIndex += 1) {
-            scheduleVisualTimer(() => {
-              if (flowIdRef.current === flowId && phaseRef.current === 'prepare') {
-                setCountdownValue(LEAD_IN_BEATS - beatIndex);
-              }
-            }, beatIndex * beatDurationMs);
-          }
-          scheduleVisualTimer(() => {
-            if (flowIdRef.current === flowId && phaseRef.current === 'prepare') {
-              setPhaseValue('demo');
-              startHighlighting(flowId, beatDurationMs);
-            }
-          }, demoStartDelayMs);
-        } else {
-          startHighlighting(flowId, beatDurationMs);
-        }
-
-        scheduleVisualTimer(() => {
-          stopHighlighting(flowId);
-        }, demoStartDelayMs + activeDemoDurationMs);
-
-        if (!listeningEnabled) {
-          for (let cycleIndex = 1; cycleIndex < totalCycleCount; cycleIndex += 1) {
-            scheduleVisualTimer(
-              () => {
-                if (flowIdRef.current === flowId && phaseRef.current === 'demo') {
-                  setCompletedCycles(cycleIndex);
-                }
-              },
-              demoStartDelayMs + cycleIndex * demoDurationMs,
-            );
-          }
-        }
+        recognitionIdRef.current = null;
+        startClock({ generation, leadIn, repetitions, startedAtMs: result.startedAtMs });
       } catch (error) {
-        if (flowIdRef.current !== flowId) {
+        if (flowGenerationRef.current !== generation) {
           return;
         }
-
-        clearVisualTimers();
-        resetPlaybackMarkers();
-        setPhaseValue('pending');
-        setErrorMessage(messageFor(error));
+        clearClock();
+        playbackIdRef.current = null;
+        recognitionIdRef.current = null;
+        dispatch({ type: 'pending', errorMessage: messageFor(error, 'Playback failed.') });
       }
     },
-    [
-      clearVisualTimers,
-      isDisabled,
-      listeningEnabled,
-      playback,
-      resetPlaybackMarkers,
-      scheduleVisualTimer,
-      setPhaseValue,
-      startClock,
-      startHighlighting,
-      stopHighlighting,
-      totalCycleCount,
-    ],
+    [clearClock, dispatch, listeningEnabled, startClock, totalCycleCount],
   );
 
-  const startPrepare = useCallback(() => {
-    if (!playback.configuration || isDisabled) {
-      return;
-    }
-
-    flowIdRef.current += 1;
-    const flowId = flowIdRef.current;
-    clearFinishTimer();
-    clearListeningTimer();
-    setErrorMessage('');
-    setCompletedCycles(0);
-    resetPlaybackMarkers();
-    void startDemoPlayback({ flowId, leadIn: true });
-  }, [
-    clearFinishTimer,
-    clearListeningTimer,
-    isDisabled,
-    playback.configuration,
-    resetPlaybackMarkers,
-    startDemoPlayback,
-  ]);
-
-  useEffect(() => {
-    audioClockMsRef.current = clockStatus.currentTime * 1000;
-  }, [clockStatus.currentTime]);
-
-  useEffect(() => {
-    const playbackBarSubscription = addPlaybackBarListener((event) => {
-      if (!shouldHandlePlaybackEvent(playbackIdRef.current, event.playbackId)) {
-        return;
+  const startRecognition = useCallback(
+    async (generation: number) => {
+      try {
+        const result = await trainingAudioCoordinator.startRecognition(
+          ownerIdRef.current,
+          RECOGNITION_OPTIONS,
+        );
+        if (flowGenerationRef.current !== generation) {
+          await trainingAudioCoordinator.releaseRecognition(
+            ownerIdRef.current,
+            result.recognitionId,
+          );
+          return;
+        }
+        recognitionIdRef.current = result.recognitionId;
+        completionInProgressRef.current = false;
+        dispatch({ type: 'listening' });
+      } catch (error) {
+        if (flowGenerationRef.current !== generation) {
+          return;
+        }
+        recognitionIdRef.current = null;
+        dispatch({
+          type: 'pending',
+          errorMessage: messageFor(error, 'Recognition could not start.'),
+        });
       }
+    },
+    [dispatch],
+  );
 
-      if (phaseRef.current !== 'demo' || !isHighlightActiveRef.current) {
-        return;
-      }
-
-      const beatDurationMs = 60_000 / event.bpm;
-      const barDurationMs = BAR_DURATION_BEATS * beatDurationMs;
-      const anchor = createPlaybackClockAnchor({
-        audioClockMs: audioClockMsRef.current,
-        barDurationMs,
-        event,
-        receivedAtMs: Date.now(),
-      });
-      clockAnchorRef.current = anchor;
-
-      const stepIndex = getClockedCurrentStepIndex({
-        anchor,
-        audioClockMs: audioClockMsRef.current,
-        expectedStepCount,
-        stepDurationMs: STEP_DURATION_BEATS * beatDurationMs,
-      });
-      setCurrentStepIndex(stepIndex);
-    });
-
-    return () => {
-      playbackBarSubscription.remove();
-    };
-  }, [expectedStepCount]);
-
-  useEffect(() => {
+  const start = useCallback(() => {
+    const currentConfiguration = playbackRef.current.configuration;
     if (
-      phase !== 'demo' ||
-      !playback.configuration ||
-      !clockAnchorRef.current ||
-      !isHighlightActiveRef.current
+      !currentConfiguration ||
+      getSoundFontPartCount(currentConfiguration) === 0 ||
+      getSoundFontStepCount(currentConfiguration) === 0
     ) {
       return;
     }
-
-    const beatDurationMs = 60_000 / playback.configuration.bpm;
-    const stepIndex = getClockedCurrentStepIndex({
-      anchor: clockAnchorRef.current,
-      audioClockMs: clockStatus.currentTime * 1000,
-      expectedStepCount,
-      stepDurationMs: STEP_DURATION_BEATS * beatDurationMs,
+    flowGenerationRef.current += 1;
+    const generation = flowGenerationRef.current;
+    clearFinishTimer();
+    setFinishMessageOverride(null);
+    dispatch({ type: 'prepare' });
+    void trainingAudioCoordinator.release(ownerIdRef.current).then(() => {
+      if (flowGenerationRef.current === generation) {
+        void startDemo(generation, true);
+      }
     });
-    setCurrentStepIndex((currentStepIndex) =>
-      currentStepIndex === stepIndex ? currentStepIndex : stepIndex,
-    );
-  }, [clockStatus.currentTime, expectedStepCount, phase, playback.configuration]);
+  }, [clearFinishTimer, dispatch, startDemo]);
+
+  const completeListening = useCallback(async () => {
+    const recognitionId = recognitionIdRef.current;
+    if (
+      stateRef.current.phase !== 'listening' ||
+      recognitionId === null ||
+      completionInProgressRef.current
+    ) {
+      return;
+    }
+    completionInProgressRef.current = true;
+    const generation = flowGenerationRef.current;
+    try {
+      await trainingAudioCoordinator.releaseRecognition(ownerIdRef.current, recognitionId);
+      if (flowGenerationRef.current !== generation) {
+        return;
+      }
+      recognitionIdRef.current = null;
+      const completedCycles = stateRef.current.completedCycles + 1;
+      dispatch({ type: 'complete-cycle', completedCycles });
+      if (completedCycles >= totalCycleCount) {
+        enterFinish(generation);
+      } else {
+        await startDemo(generation, false);
+      }
+    } catch (error) {
+      if (flowGenerationRef.current === generation) {
+        recognitionIdRef.current = null;
+        dispatch({ type: 'pending', errorMessage: messageFor(error, 'Recognition failed.') });
+      }
+    } finally {
+      if (flowGenerationRef.current === generation) {
+        completionInProgressRef.current = false;
+      }
+    }
+  }, [dispatch, enterFinish, startDemo, totalCycleCount]);
+
+  const reset = useCallback(() => {
+    flowGenerationRef.current += 1;
+    clearClock();
+    clearFinishTimer();
+    playbackIdRef.current = null;
+    recognitionIdRef.current = null;
+    completionInProgressRef.current = false;
+    setFinishMessageOverride(null);
+    dispatch({ type: 'pending' });
+    void trainingAudioCoordinator.release(ownerIdRef.current);
+  }, [clearClock, clearFinishTimer, dispatch]);
+
+  const requestSkip = useCallback(() => {
+    flowGenerationRef.current += 1;
+    clearClock();
+    clearFinishTimer();
+    playbackIdRef.current = null;
+    recognitionIdRef.current = null;
+    dispatch({ type: 'pending' });
+    void trainingAudioCoordinator.release(ownerIdRef.current).finally(onSkip);
+  }, [clearClock, clearFinishTimer, dispatch, onSkip]);
+
+  const requestFinish = useCallback(
+    (message?: string) => {
+      flowGenerationRef.current += 1;
+      const generation = flowGenerationRef.current;
+      clearClock();
+      void trainingAudioCoordinator.release(ownerIdRef.current).then(() => {
+        enterFinish(generation, message);
+      });
+    },
+    [clearClock, enterFinish],
+  );
 
   useEffect(() => {
-    const playbackFinishSubscription = addPlaybackFinishListener((event) => {
+    playbackRef.current = playback;
+  }, [playback]);
+
+  useEffect(() => {
+    const playbackSubscription = addPlaybackFinishListener((event) => {
       if (!shouldHandlePlaybackEvent(playbackIdRef.current, event.playbackId)) {
         return;
       }
-
-      const flowId = flowIdRef.current;
-      setCurrentStepIndex(null);
-      clearVisualTimers();
-      stopClock();
-
-      if (!listeningEnabled) {
-        setCompletedCycles(event.completedCycles);
-        enterFinish();
+      const generation = flowGenerationRef.current;
+      playbackIdRef.current = null;
+      clearClock();
+      void trainingAudioCoordinator
+        .finishPlayback(ownerIdRef.current, event.playbackId)
+        .then(() => {
+          if (flowGenerationRef.current !== generation) {
+            return;
+          }
+          if (listeningEnabled) {
+            void startRecognition(generation);
+          } else {
+            dispatch({ type: 'complete-cycle', completedCycles: totalCycleCount });
+            enterFinish(generation);
+          }
+        });
+    });
+    const detectionSubscription = addDetectionFinishListener((event) => {
+      if (
+        stateRef.current.phase !== 'listening' ||
+        completionInProgressRef.current ||
+        !shouldHandleDetection(recognitionIdRef.current, event)
+      ) {
         return;
       }
-
-      setPhaseValue('listening');
-      clearListeningTimer();
-      listeningTimerRef.current = setTimeout(() => {
-        listeningTimerRef.current = null;
-        if (flowIdRef.current !== flowId) {
-          return;
-        }
-
-        const nextCompletedCycles = completedCycles + 1;
-        setCompletedCycles(nextCompletedCycles);
-
-        if (nextCompletedCycles >= totalCycleCount) {
-          enterFinish();
-          return;
-        }
-
-        void startDemoPlayback({ flowId, leadIn: false });
-      }, LISTENING_DURATION_MS);
+      dispatch({ type: 'detection', detection: event });
     });
-
     return () => {
-      playbackFinishSubscription.remove();
+      playbackSubscription.remove();
+      detectionSubscription.remove();
     };
-  }, [
-    clearListeningTimer,
-    clearVisualTimers,
-    completedCycles,
-    enterFinish,
-    listeningEnabled,
-    setPhaseValue,
-    startDemoPlayback,
-    stopClock,
-    totalCycleCount,
-  ]);
+  }, [clearClock, dispatch, enterFinish, listeningEnabled, startRecognition, totalCycleCount]);
 
   useEffect(() => {
-    if (startPhase !== 'prepare' || !didAutoStartRef.current || !playback.configuration) {
+    const previousConfiguration = previousConfigurationRef.current;
+    previousConfigurationRef.current = configuration;
+    if (previousConfiguration === configuration || stateRef.current.phase === 'pending') {
+      return;
+    }
+    if (stateRef.current.phase === 'finish') {
       return;
     }
 
-    flowIdRef.current += 1;
-    const flowId = flowIdRef.current;
+    flowGenerationRef.current += 1;
+    const generation = flowGenerationRef.current;
+    clearClock();
     clearFinishTimer();
-    clearListeningTimer();
-    setErrorMessage('');
-    setCompletedCycles(0);
-    resetPlaybackMarkers();
-    void stop();
-    void startDemoPlayback({ flowId, leadIn: true });
-  }, [
-    clearFinishTimer,
-    clearListeningTimer,
-    playback.configuration,
-    resetPlaybackMarkers,
-    startDemoPlayback,
-    startPhase,
-  ]);
+    playbackIdRef.current = null;
+    recognitionIdRef.current = null;
+    completionInProgressRef.current = false;
+    dispatch({ type: 'prepare' });
+    void trainingAudioCoordinator.release(ownerIdRef.current).then(() => {
+      if (flowGenerationRef.current === generation) {
+        void startDemo(generation, true);
+      }
+    });
+  }, [clearClock, clearFinishTimer, configuration, dispatch, startDemo]);
 
   useEffect(() => {
-    if (startPhase !== 'prepare' || didAutoStartRef.current) {
-      return;
+    if (startPhase === 'prepare' && !didAutoStartRef.current) {
+      didAutoStartRef.current = true;
+      start();
     }
-
-    didAutoStartRef.current = true;
-    startPrepare();
-  }, [startPhase, startPrepare]);
+  }, [start, startPhase]);
 
   useEffect(
     () => () => {
+      flowGenerationRef.current += 1;
+      clearClock();
       clearFinishTimer();
-      clearListeningTimer();
-      clearVisualTimers();
-      stopClock();
-      void stop();
+      void trainingAudioCoordinator.release(ownerIdRef.current);
     },
-    [clearFinishTimer, clearListeningTimer, clearVisualTimers, stopClock],
+    [clearClock, clearFinishTimer],
   );
 
   const value = useMemo<PerformanceGuidanceContextValue>(
     () => ({
-      completedCycles,
+      ...state,
+      completeListening,
       cycleCount: totalCycleCount,
-      countdownValue,
-      currentStepIndex,
-      errorMessage,
       finishText: finishMessageOverride ?? finishText,
       isDisabled,
       listeningEnabled,
-      phase,
       requestFinish,
       requestSkip,
       reset,
-      start: startPrepare,
+      start,
     }),
     [
-      completedCycles,
-      totalCycleCount,
-      countdownValue,
-      currentStepIndex,
-      errorMessage,
+      completeListening,
       finishMessageOverride,
       finishText,
       isDisabled,
       listeningEnabled,
-      phase,
       requestFinish,
       requestSkip,
       reset,
-      startPrepare,
+      start,
+      state,
+      totalCycleCount,
     ],
   );
 
@@ -586,56 +459,18 @@ export function PerformanceGuidanceProvider({
 
 export function usePerformanceGuidance(): PerformanceGuidanceContextValue {
   const context = useContext(PerformanceGuidanceContext);
-
   if (!context) {
     throw new Error('usePerformanceGuidance must be used within PerformanceGuidanceProvider.');
   }
-
   return context;
 }
 
-function messageFor(error: unknown) {
-  if (error instanceof SoundFontPlayerError) {
+function messageFor(error: unknown, fallback: string): string {
+  if (error instanceof SoundFontPlayerError || error instanceof BasicPitchError) {
     if (__DEV__ && error.nativeMessage) {
       return `${error.message} ${error.nativeMessage}`;
     }
-
     return error.message;
   }
-
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  return 'Playback failed.';
-}
-
-type ExpoAudioClockPlayer = {
-  pause(): void;
-  play(): void;
-  seekTo(seconds: number): Promise<void>;
-};
-
-function safelyPauseClock(clockPlayer: ExpoAudioClockPlayer) {
-  try {
-    clockPlayer.pause();
-  } catch {
-    // Expo Audio may release its native shared object before React cleanup runs.
-  }
-}
-
-function safelyPlayClock(clockPlayer: ExpoAudioClockPlayer) {
-  try {
-    clockPlayer.play();
-  } catch {
-    // SoundFont playback still runs; native bar events can continue to recalibrate on restart.
-  }
-}
-
-async function safelySeekClockToStart(clockPlayer: ExpoAudioClockPlayer) {
-  try {
-    await clockPlayer.seekTo(0);
-  } catch {
-    // Ignore released-player cleanup failures from Expo Audio.
-  }
+  return error instanceof Error ? error.message : fallback;
 }

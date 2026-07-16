@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+  cancelAnimation,
   Easing,
   ReduceMotion,
   runOnJS,
@@ -34,6 +35,7 @@ export type CarouselProps<T> = {
   onCurrentIndexChange?: (index: number) => void;
   renderItem: (item: T, index: number) => ReactNode;
   selectedIndex?: number;
+  swipeEnabled?: boolean;
 };
 
 type CarouselItemProps = {
@@ -112,6 +114,7 @@ export function Carousel<T>({
   onCurrentIndexChange,
   renderItem,
   selectedIndex,
+  swipeEnabled = true,
 }: CarouselProps<T>) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [width, setWidth] = useState(0);
@@ -148,6 +151,17 @@ export function Carousel<T>({
   }, [animatedCurrentIndex, dragOffset, safeCurrentIndex]);
 
   useEffect(() => {
+    if (swipeEnabled) {
+      return;
+    }
+
+    cancelAnimation(dragOffset);
+    animatedCurrentIndex.value = safeCurrentIndex;
+    dragOffset.value = 0;
+    isTransitioning.value = false;
+  }, [animatedCurrentIndex, dragOffset, isTransitioning, safeCurrentIndex, swipeEnabled]);
+
+  useEffect(() => {
     onCurrentIndexChange?.(safeCurrentIndex);
   }, [onCurrentIndexChange, safeCurrentIndex]);
 
@@ -169,7 +183,13 @@ export function Carousel<T>({
 
   const move = useCallback(
     (direction: CarouselDirection) => {
-      if (itemCount <= 1 || width <= 0 || isTransitioning.value || !canMove(direction)) {
+      if (
+        !swipeEnabled ||
+        itemCount <= 1 ||
+        width <= 0 ||
+        isTransitioning.value ||
+        !canMove(direction)
+      ) {
         return;
       }
 
@@ -200,6 +220,7 @@ export function Carousel<T>({
       itemCount,
       safeCurrentIndex,
       stride,
+      swipeEnabled,
       width,
     ],
   );
@@ -207,7 +228,7 @@ export function Carousel<T>({
   const panGesture = useMemo(
     () =>
       Gesture.Pan()
-        .enabled(itemCount > 1)
+        .enabled(swipeEnabled && itemCount > 1)
         .activeOffsetX([-ACTIVE_OFFSET, ACTIVE_OFFSET])
         .failOffsetY([-ACTIVE_OFFSET, ACTIVE_OFFSET])
         .onUpdate((event) => {
@@ -259,7 +280,16 @@ export function Carousel<T>({
 
           dragOffset.value = withSpring(0, SLIDE_SPRING);
         }),
-    [animatedCurrentIndex, completeMove, dragOffset, isTransitioning, itemCount, stride, width],
+    [
+      animatedCurrentIndex,
+      completeMove,
+      dragOffset,
+      isTransitioning,
+      itemCount,
+      stride,
+      swipeEnabled,
+      width,
+    ],
   );
 
   const handleLayout = useCallback((event: LayoutChangeEvent) => {
@@ -268,13 +298,17 @@ export function Carousel<T>({
 
   const handleAccessibilityAction = useCallback(
     (event: AccessibilityActionEvent) => {
+      if (!swipeEnabled) {
+        return;
+      }
+
       if (event.nativeEvent.actionName === 'increment') {
         move(1);
       } else if (event.nativeEvent.actionName === 'decrement') {
         move(-1);
       }
     },
-    [move],
+    [move, swipeEnabled],
   );
 
   if (!currentItem) {
@@ -285,13 +319,20 @@ export function Carousel<T>({
     <View onLayout={handleLayout} style={styles.viewport}>
       <View
         accessible
-        accessibilityActions={[
-          { label: 'Next item', name: 'increment' },
-          { label: 'Previous item', name: 'decrement' },
-        ]}
-        accessibilityHint={itemCount > 1 ? 'Swipe up or down to browse items.' : undefined}
+        accessibilityActions={
+          swipeEnabled
+            ? [
+                { label: 'Next item', name: 'increment' },
+                { label: 'Previous item', name: 'decrement' },
+              ]
+            : []
+        }
+        accessibilityHint={
+          swipeEnabled && itemCount > 1 ? 'Swipe up or down to browse items.' : undefined
+        }
         accessibilityLabel={itemLabel ? `${accessibilityLabel}, ${itemLabel}` : accessibilityLabel}
         accessibilityRole="adjustable"
+        accessibilityState={{ disabled: !swipeEnabled }}
         onAccessibilityAction={handleAccessibilityAction}
         style={styles.accessibilityControl}
       />

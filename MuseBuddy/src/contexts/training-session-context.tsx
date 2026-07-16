@@ -1,7 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 
 import { initialize, BasicPitchError } from '@modules/basic-pitch';
-import { prepareSoundFonts, SoundFontPlayerError } from '@modules/sound-font-player';
 import { prepareTrainingSessionDisplay, type PreparedTrainingSession } from '@/music-theory';
 import { createLogger } from '@/utils/logger';
 import { fetchDailyTrainingSession } from './training-session-api';
@@ -36,10 +35,6 @@ function messageFor(error: unknown) {
     return error.message;
   }
 
-  if (error instanceof SoundFontPlayerError) {
-    return error.message;
-  }
-
   if (error instanceof Error) {
     return error.message;
   }
@@ -68,11 +63,7 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
     logger.info('Daily training preparation started.');
 
     try {
-      const [, , loadedSession] = await Promise.all([
-        initialize(),
-        prepareSoundFonts(),
-        fetchDailyTrainingSession(),
-      ]);
+      const [, loadedSession] = await Promise.all([initialize(), fetchDailyTrainingSession()]);
       const preparedSession = prepareTrainingSessionDisplay(loadedSession);
       setSession(preparedSession);
       setPhase('ready');

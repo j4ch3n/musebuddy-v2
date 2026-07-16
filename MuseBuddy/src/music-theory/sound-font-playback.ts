@@ -3,11 +3,10 @@ import type { TrainingSessionKeyArrangement } from '@/contexts/training-session-
 import { splitRhythmPatternBars } from '@/components/rhythm-trainer/rhythm-pattern';
 import type { RhythmPattern } from '@/components/rhythm-trainer/types';
 import type {
-  BandSoundFontPlaybackConfiguration,
-  GrooveSoundFontPlaybackConfiguration,
   SoundFontPlaybackCell,
+  SoundFontPlaybackConfiguration,
   SoundFontPlaybackStep,
-} from '@modules/sound-font-player/src/sound-font-player.types';
+} from '@modules/sound-font-player';
 import type { ChordDisplay } from './chord-display';
 import { DEFAULT_BPM } from './tempo';
 
@@ -37,73 +36,58 @@ const REST_CELL: SoundFontPlaybackCell = {
 export function buildSoundFontPlaybackConfiguration(
   keyArrangement: TrainingSessionKeyArrangement,
   bpm: number = DEFAULT_BPM,
-): BandSoundFontPlaybackConfiguration {
+): SoundFontPlaybackConfiguration {
   return {
     bpm,
-    tracks: [
-      {
-        instrument: 'piano',
-        parts: buildPartsFromKeyArrangement(keyArrangement),
-      },
-    ],
+    parts: buildPartsFromKeyArrangement(keyArrangement),
   };
 }
 
 export function buildRhythmSoundFontPlaybackConfiguration(
   pattern: RhythmPattern,
   bpm: number,
-): GrooveSoundFontPlaybackConfiguration {
+): SoundFontPlaybackConfiguration {
   const bars = splitRhythmPatternBars(pattern);
 
   return {
     bpm,
-    tracks: [
-      {
-        instrument: 'percussion',
-        parts: bars.map((part) =>
-          part.map((step): SoundFontPlaybackStep => {
-            if (step === 's') {
-              return [STRONG_RHYTHM_NOTE];
-            }
+    parts: bars.map((part) =>
+      part.map((step): SoundFontPlaybackStep => {
+        if (step === 's') {
+          return [STRONG_RHYTHM_NOTE];
+        }
 
-            if (step === 'w') {
-              return [WEAK_RHYTHM_NOTE];
-            }
+        if (step === 'w') {
+          return [WEAK_RHYTHM_NOTE];
+        }
 
-            if (step === 'h') {
-              return [HOLD_CELL];
-            }
+        if (step === 'h') {
+          return [HOLD_CELL];
+        }
 
-            return [REST_CELL];
-          }),
-        ),
-      },
-    ],
+        return [REST_CELL];
+      }),
+    ),
   };
 }
 
 export function buildChordPreviewSoundFontPlaybackConfiguration(
   display: ChordDisplay,
   bpm: number,
-): BandSoundFontPlaybackConfiguration {
+): SoundFontPlaybackConfiguration {
   return {
     bpm,
-    tracks: [
-      {
-        instrument: 'piano',
-        parts: [
-          buildChordPart(
-            display,
-            [
-              { durationSteps: 4, startStep: 0, velocity: CHORD_NOTE_STRONG_VELOCITY },
-              { durationSteps: 4, startStep: 4, velocity: CHORD_NOTE_WEAK_VELOCITY },
-              { durationSteps: 4, startStep: 8, velocity: CHORD_NOTE_STRONG_VELOCITY },
-              { durationSteps: 4, startStep: 12, velocity: CHORD_NOTE_WEAK_VELOCITY },
-            ],
-            { includeRootSubOctave: true },
-          ),
+    parts: [
+      buildChordPart(
+        display,
+        [
+          { durationSteps: 4, startStep: 0, velocity: CHORD_NOTE_STRONG_VELOCITY },
+          { durationSteps: 4, startStep: 4, velocity: CHORD_NOTE_WEAK_VELOCITY },
+          { durationSteps: 4, startStep: 8, velocity: CHORD_NOTE_STRONG_VELOCITY },
+          { durationSteps: 4, startStep: 12, velocity: CHORD_NOTE_WEAK_VELOCITY },
         ],
-      },
+        { includeRootSubOctave: true },
+      ),
     ],
   };
 }
@@ -111,22 +95,17 @@ export function buildChordPreviewSoundFontPlaybackConfiguration(
 export function buildChordSummarySoundFontPlaybackConfiguration(
   displays: readonly ChordDisplay[],
   bpm: number,
-): BandSoundFontPlaybackConfiguration {
+): SoundFontPlaybackConfiguration {
   return {
     bpm,
-    tracks: [
-      {
-        instrument: 'piano',
-        parts: displays.map((display) =>
-          buildChordPart(display, [
-            { durationSteps: 4, startStep: 0, velocity: 96 },
-            { durationSteps: 4, startStep: 4, velocity: 75 },
-            { durationSteps: 4, startStep: 8, velocity: 80 },
-            { durationSteps: 4, startStep: 12, velocity: 96 },
-          ]),
-        ),
-      },
-    ],
+    parts: displays.map((display) =>
+      buildChordPart(display, [
+        { durationSteps: 4, startStep: 0, velocity: 96 },
+        { durationSteps: 4, startStep: 4, velocity: 75 },
+        { durationSteps: 4, startStep: 8, velocity: 80 },
+        { durationSteps: 4, startStep: 12, velocity: 96 },
+      ]),
+    ),
   };
 }
 

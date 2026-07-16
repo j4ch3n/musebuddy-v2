@@ -9,7 +9,7 @@ that compiled artifact, not the source `.mlpackage`.
 Run `pnpm compile:basic-pitch-model` from `MuseBuddy/` before CocoaPods installs or
 copies resources. The podspec also has a `prepare_command` that compiles `nmp.mlpackage`
 to `nmp.mlmodelc` during pod installation. The local `BasicPitch` Expo module owns model
-loading, audio conversion, inference, and decoding. Expo Audio owns microphone capture.
+loading, microphone capture, audio conversion, inference, and decoding.
 
 ## Model capability
 
@@ -28,17 +28,20 @@ Import the typed bridge from `MuseBuddy/modules/basic-pitch`:
 
 ```ts
 await initialize();
-const result = await predict(encodedRecordingBytes);
+const { recognitionId } = await startRecognition(options);
 ```
 
-`predict()` accepts the encoded bytes of a completed recording as a `Uint8Array`. It
-returns the converted audio duration, processing duration, and time-sorted attack/release
-events. An attack and release for the same note share an ID.
+`startRecognition()` returns a monotonically increasing recognition ID. Periodic detection
+events include both that `recognitionId` and a per-session `detectionId`; consumers must
+ignore events from another ID. Learning flows stop without final inference by awaiting
+`cancelRecognition(recognitionId)`. The debug transcription screen retains final inference
+and recording output through `stopRecognition(recognitionId)`.
 
-Call `initialize()` before prediction. Core ML loading, audio conversion, inference, and
-decoding remain off the main thread. Converted audio must contain at least three seconds
-at 22,050 Hz. Native errors cross the bridge with stable `BasicPitchErrorCode` values and
-retain their native diagnostic message for console logging.
+Both stop operations are conditional on the supplied ID, so stale cleanup cannot affect a
+newer microphone session. Call `initialize()` before recognition. Core ML loading, audio
+conversion, inference, and decoding remain off the main thread. Native errors cross the
+bridge with stable `BasicPitchErrorCode` values and retain their native diagnostic message
+for console logging.
 
 ## Native rebuild requirement
 
