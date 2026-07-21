@@ -48,7 +48,7 @@ export function SessionGoalPage() {
       cycleCount={2}
       finishText="I'm excited, let's go!"
       key="session-goal"
-      listeningEnabled={false}
+      listeningMode={{ kind: 'none' }}
       onFinish={() => {
         router.push('/chord-learning');
       }}

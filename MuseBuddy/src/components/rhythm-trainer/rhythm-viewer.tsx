@@ -5,14 +5,21 @@ import { FlashCard } from '@/ui';
 import { NoteBarViewer } from './note-bar-viewer';
 import { splitRhythmPatternBars } from './rhythm-pattern';
 import { RhythmBarViewer } from './rhythm-bar-viewer';
-import type { RhythmPattern } from './types';
+import type { RhythmAttackDot, RhythmPattern } from './types';
 
 type RhythmViewerProps = {
+  attackDots?: readonly RhythmAttackDot[];
   currentStepIndex: number | null;
   pattern: RhythmPattern;
+  stepDurationMs?: number;
 };
 
-export function RhythmViewer({ currentStepIndex, pattern }: RhythmViewerProps) {
+export function RhythmViewer({
+  attackDots = [],
+  currentStepIndex,
+  pattern,
+  stepDurationMs = 1,
+}: RhythmViewerProps) {
   const bars = splitRhythmPatternBars(pattern);
 
   return (
@@ -31,7 +38,13 @@ export function RhythmViewer({ currentStepIndex, pattern }: RhythmViewerProps) {
             padded={false}
             sideA={
               <View style={styles.barGroupContent}>
-                <RhythmBarViewer currentStepIndex={currentStepInBar} steps={steps} />
+                <RhythmBarViewer
+                  attackDots={attackDots}
+                  barIndex={barIndex}
+                  currentStepIndex={currentStepInBar}
+                  stepDurationMs={stepDurationMs}
+                  steps={steps}
+                />
                 <NoteBarViewer currentStepIndex={currentStepInBar} steps={steps} />
               </View>
             }

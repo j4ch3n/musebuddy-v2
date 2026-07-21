@@ -8,6 +8,11 @@ final class SoundFontPlayerService: @unchecked Sendable {
     let startedAtMs: Double
   }
 
+  private struct ActivePlayback {
+    let keepAudioSessionActive: Bool
+    let playbackId: Int
+  }
+
   private enum InstrumentRole: Hashable {
     case groove
     case leadIn
@@ -79,7 +84,7 @@ final class SoundFontPlayerService: @unchecked Sendable {
   private var audioEngine: AVAudioEngine?
   private var finishWorkItem: DispatchWorkItem?
   private var playbackId = 0
-  private var activePlaybackId: Int?
+  private var activePlayback: ActivePlayback?
   private var samplers: [InstrumentRole: AVAudioUnitSampler] = [:]
   private var sequencer: AVAudioSequencer?
 
@@ -102,8 +107,8 @@ final class SoundFontPlayerService: @unchecked Sendable {
   func stop(playbackId: Int) async {
     await withCheckedContinuation { continuation in
       workQueue.async {
-        if self.activePlaybackId == playbackId {
-          self.disposePlayback(deactivateAudioSession: true)
+        if self.activePlayback?.playbackId == playbackId {
+          self.disposePlayback()
         }
         continuation.resume()
       }
@@ -112,7 +117,7 @@ final class SoundFontPlayerService: @unchecked Sendable {
 
   func dispose() {
     workQueue.async {
-      self.disposePlayback(deactivateAudioSession: true)
+      self.disposePlayback()
     }
   }
 
@@ -143,7 +148,7 @@ final class SoundFontPlayerService: @unchecked Sendable {
     options: SoundFontPlaybackOptionsRecord,
     role: InstrumentRole
   ) throws -> PlaybackStartResult {
-    disposePlayback(deactivateAudioSession: true)
+    disposePlayback()
 
     guard configuration.bpm.isFinite, configuration.bpm > 0 else {
       throw SoundFontPlayerError.invalidConfiguration("BPM must be positive.")
@@ -154,11 +159,12 @@ final class SoundFontPlayerService: @unchecked Sendable {
     }
 
     let engine = AVAudioEngine()
+    var requestSamplers: [InstrumentRole: AVAudioUnitSampler] = [:]
     do {
       let primarySampler = try makeSampler(for: role, engine: engine)
-      var nextSamplers: [InstrumentRole: AVAudioUnitSampler] = [role: primarySampler]
+      requestSamplers[role] = primarySampler
       if options.leadIn {
-        nextSamplers[.leadIn] = try makeSampler(for: .leadIn, engine: engine)
+        requestSamplers[.leadIn] = try makeSampler(for: .leadIn, engine: engine)
       }
 
       try activateAudioSession()
@@ -172,7 +178,7 @@ final class SoundFontPlayerService: @unchecked Sendable {
         bpm: configuration.bpm,
         options: options,
         primaryRole: role,
-        samplers: nextSamplers
+        samplers: requestSamplers
       )
       nextSequencer.prepareToPlay()
       nextSequencer.currentPositionInBeats = 0
@@ -182,9 +188,12 @@ final class SoundFontPlayerService: @unchecked Sendable {
       playbackId += 1
       let nextPlaybackId = playbackId
       audioEngine = engine
-      samplers = nextSamplers
+      samplers = requestSamplers
       sequencer = nextSequencer
-      activePlaybackId = nextPlaybackId
+      activePlayback = ActivePlayback(
+        keepAudioSessionActive: options.keepAudioSessionActive,
+        playbackId: nextPlaybackId
+      )
 
       let secondsPerBeat = 60 / configuration.bpm
       let leadInSeconds = options.leadIn
@@ -198,12 +207,18 @@ final class SoundFontPlayerService: @unchecked Sendable {
 
       return PlaybackStartResult(playbackId: nextPlaybackId, startedAtMs: startedAtMs)
     } catch let error as SoundFontPlayerError {
+      silence(samplers: requestSamplers)
       disposeGraph(engine: engine)
-      deactivateAudioSession()
+      if !options.keepAudioSessionActive {
+        deactivateAudioSession()
+      }
       throw error
     } catch {
+      silence(samplers: requestSamplers)
       disposeGraph(engine: engine)
-      deactivateAudioSession()
+      if !options.keepAudioSessionActive {
+        deactivateAudioSession()
+      }
       throw SoundFontPlayerError.engineStartFailed(error.localizedDescription)
     }
   }
@@ -307,7 +322,11 @@ final class SoundFontPlayerService: @unchecked Sendable {
   private func activateAudioSession() throws {
     let session = AVAudioSession.sharedInstance()
     do {
-      try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+      try session.setCategory(
+        .playAndRecord,
+        mode: .default,
+        options: [.defaultToSpeaker, .allowBluetoothHFP, .mixWithOthers]
+      )
       try session.setActive(true)
     } catch {
       throw SoundFontPlayerError.engineStartFailed(error.localizedDescription)
@@ -334,15 +353,16 @@ final class SoundFontPlayerService: @unchecked Sendable {
   }
 
   private func finishPlayback(playbackId: Int) {
-    guard activePlaybackId == playbackId else {
+    guard activePlayback?.playbackId == playbackId else {
       return
     }
     let handler = onPlaybackFinish
-    disposePlayback(deactivateAudioSession: true)
+    disposePlayback()
     handler?(["playbackId": playbackId])
   }
 
-  private func disposePlayback(deactivateAudioSession: Bool) {
+  private func disposePlayback() {
+    let shouldDeactivateAudioSession = activePlayback.map { !$0.keepAudioSessionActive } ?? false
     finishWorkItem?.cancel()
     finishWorkItem = nil
     sequencer?.stop()
@@ -353,9 +373,9 @@ final class SoundFontPlayerService: @unchecked Sendable {
     }
     audioEngine = nil
     samplers.removeAll()
-    activePlaybackId = nil
-    if deactivateAudioSession {
-      self.deactivateAudioSession()
+    activePlayback = nil
+    if shouldDeactivateAudioSession {
+      deactivateAudioSession()
     }
   }
 
@@ -374,6 +394,10 @@ final class SoundFontPlayerService: @unchecked Sendable {
   }
 
   private func silenceAllSamplers() {
+    silence(samplers: samplers)
+  }
+
+  private func silence(samplers: [InstrumentRole: AVAudioUnitSampler]) {
     for sampler in samplers.values {
       for channel in UInt8(0) ... UInt8(15) {
         sampler.sendController(120, withValue: 0, onChannel: channel)

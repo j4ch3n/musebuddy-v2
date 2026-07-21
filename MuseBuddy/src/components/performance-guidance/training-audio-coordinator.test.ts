@@ -66,6 +66,30 @@ describe('TrainingAudioCoordinator', () => {
     });
   });
 
+  it('starts chord recognition only after the matching natural finish is acknowledged', async () => {
+    const api = createApi();
+    const coordinator = new TrainingAudioCoordinator(api);
+
+    const playback = await coordinator.play(1, 'piano', configuration, {
+      keepAudioSessionActive: false,
+      leadIn: true,
+      repetitions: 1,
+    });
+    await coordinator.finishPlayback(1, playback.playbackId);
+    await coordinator.startRecognition(1, {
+      detectionIntervalMs: 200,
+      rollingWindowMs: 2_000,
+    });
+
+    expect(api.stop).not.toHaveBeenCalled();
+    expect(api.startRecognition).toHaveBeenCalledOnce();
+    expect(coordinator.getActiveAudio()).toEqual({
+      kind: 'recognition',
+      ownerId: 1,
+      recognitionId: 3,
+    });
+  });
+
   it('does not let old-owner cleanup stop newer audio', async () => {
     const api = createApi();
     const coordinator = new TrainingAudioCoordinator(api);

@@ -66,6 +66,7 @@ struct SoundFontPlaybackConfigurationRecord: Record {
 }
 
 struct SoundFontPlaybackOptionsRecord: Record {
+  @Field var keepAudioSessionActive: Bool = false
   @Field var leadIn: Bool = false
   @Field var repetitions: Int = 1
 }

@@ -1,27 +1,72 @@
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 
-import type { RhythmStep } from './types';
+import { ATTACK_DOT_DIAMETER_PX, ATTACK_DOT_RADIUS_PX, STEP_GRID_GAP_PX } from './constants';
+import { getRhythmAttackDotPosition } from './rhythm-attack-geometry';
+import type { RhythmAttackDot, RhythmStep } from './types';
 
 type RhythmBarViewerProps = {
+  attackDots?: readonly RhythmAttackDot[];
+  barIndex?: number;
   currentStepIndex: number | null;
+  stepDurationMs?: number;
   steps: readonly RhythmStep[];
 };
 
-export function RhythmBarViewer({ currentStepIndex, steps }: RhythmBarViewerProps) {
+export function RhythmBarViewer({
+  attackDots = [],
+  barIndex = 0,
+  currentStepIndex,
+  stepDurationMs = 1,
+  steps,
+}: RhythmBarViewerProps) {
+  const [gridWidth, setGridWidth] = useState(0);
+  const positionedDots =
+    gridWidth > 0
+      ? attackDots.flatMap((dot) => {
+          const position = getRhythmAttackDotPosition({
+            attackOffsetMs: dot.attackOffsetMs,
+            gridWidth,
+            stepDurationMs,
+          });
+          return position.barIndex === barIndex ? [{ ...dot, left: position.left }] : [];
+        })
+      : [];
+
   return (
     <View
       accessibilityLabel="Rhythm bar with sixteen sixteenth-note steps"
       style={styles.container}
     >
-      <View style={styles.stepGrid}>
+      <View
+        onLayout={(event) => {
+          setGridWidth(event.nativeEvent.layout.width);
+        }}
+        style={styles.stepGrid}
+      >
         {steps.map((step, stepIndex) => (
           <StepPart
             key={stepIndex}
             isCurrent={currentStepIndex === stepIndex}
             step={step}
             stepIndex={stepIndex}
+          />
+        ))}
+      </View>
+      <View
+        accessibilityLabel="Detected piano attacks"
+        style={[styles.markerRow, { width: gridWidth }]}
+      >
+        {positionedDots.map((dot) => (
+          <View
+            key={dot.id}
+            style={[
+              styles.attackDot,
+              dot.matched ? styles.matchedAttackDot : styles.unmatchedAttackDot,
+              { left: dot.left },
+            ]}
           />
         ))}
       </View>
@@ -61,14 +106,31 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: museBuddyColors.white,
     borderRadius: museBuddyRadii.small,
-    minHeight: 82,
+    minHeight: 98,
     padding: 12,
   },
   stepGrid: {
     alignItems: 'flex-end',
     flexDirection: 'row',
-    gap: 4,
+    gap: STEP_GRID_GAP_PX,
     height: 54,
+  },
+  markerRow: {
+    height: ATTACK_DOT_DIAMETER_PX,
+    marginTop: 4,
+    position: 'relative',
+  },
+  attackDot: {
+    borderColor: museBuddyColors.ink,
+    borderRadius: ATTACK_DOT_RADIUS_PX,
+    borderWidth: 1,
+    height: ATTACK_DOT_DIAMETER_PX,
+    position: 'absolute',
+    top: 0,
+    width: ATTACK_DOT_DIAMETER_PX,
+  },
+  matchedAttackDot: {
+    backgroundColor: museBuddyColors.accentGreen,
   },
   stepPart: {
     alignItems: 'center',
@@ -98,6 +160,9 @@ const styles = StyleSheet.create({
   strongStepBar: {
     backgroundColor: museBuddyColors.primary,
     height: 40,
+  },
+  unmatchedAttackDot: {
+    backgroundColor: museBuddyColors.accentRed,
   },
   weakStepBar: {
     backgroundColor: museBuddyColors.accentBlue,

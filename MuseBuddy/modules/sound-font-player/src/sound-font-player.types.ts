@@ -11,6 +11,7 @@ export type SoundFontPlaybackConfiguration = {
 };
 
 export type SoundFontPlaybackOptions = {
+  keepAudioSessionActive?: boolean;
   leadIn?: boolean;
   repetitions?: number;
 };

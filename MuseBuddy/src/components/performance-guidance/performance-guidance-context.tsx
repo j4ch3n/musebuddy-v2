@@ -12,6 +12,11 @@ import {
 
 import { addDetectionFinishListener, BasicPitchError } from '@modules/basic-pitch';
 import {
+  PianoAttackDetectorError,
+  startListening as startPianoAttackDetector,
+  stopListening as stopPianoAttackDetector,
+} from '@modules/piano-attack-detector';
+import {
   addPlaybackFinishListener,
   SoundFontPlayerError,
   type SoundFontPlaybackConfiguration,
@@ -20,6 +25,7 @@ import {
 import {
   createGuidanceState,
   getPlaybackClockState,
+  getSoundFontDemoDurationMs,
   getSoundFontPartCount,
   getSoundFontStepCount,
   guidanceReducer,
@@ -36,12 +42,17 @@ type PerformanceGuidancePlayback = {
   kind: 'groove' | 'piano';
 };
 
+export type PerformanceGuidanceListeningMode =
+  | { kind: 'none' }
+  | { kind: 'basic-pitch' }
+  | { kind: 'piano-attack'; allowedOffsetMs: number };
+
 export type PerformanceGuidanceContextValue = GuidanceState & {
   completeListening: () => Promise<void>;
   cycleCount: number;
   finishText: string;
   isDisabled: boolean;
-  listeningEnabled: boolean;
+  listeningMode: PerformanceGuidanceListeningMode;
   requestFinish: (message?: string) => void;
   requestSkip: () => void;
   reset: () => void;
@@ -53,7 +64,7 @@ type PerformanceGuidanceProviderProps = {
   cycleCount?: number;
   demoListenCycleCount?: number;
   finishText: string;
-  listeningEnabled?: boolean;
+  listeningMode: PerformanceGuidanceListeningMode;
   onFinish: () => void;
   onSkip: () => void;
   playback: PerformanceGuidancePlayback;
@@ -75,7 +86,7 @@ export function PerformanceGuidanceProvider({
   cycleCount = 3,
   demoListenCycleCount,
   finishText,
-  listeningEnabled = true,
+  listeningMode,
   onFinish,
   onSkip,
   playback,
@@ -86,10 +97,14 @@ export function PerformanceGuidanceProvider({
   const stateRef = useRef(state);
   const [finishMessageOverride, setFinishMessageOverride] = useState<string | null>(null);
   const playbackRef = useRef(playback);
+  const listeningModeRef = useRef(listeningMode);
   const previousConfigurationRef = useRef(playback.configuration);
   const flowGenerationRef = useRef(0);
   const playbackIdRef = useRef<number | null>(null);
   const recognitionIdRef = useRef<number | null>(null);
+  const detectorListeningRef = useRef(false);
+  const detectorShouldRemainActiveRef = useRef(false);
+  const detectorStartPromiseRef = useRef<Promise<void> | null>(null);
   const completionInProgressRef = useRef(false);
   const clockTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const finishTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -119,6 +134,50 @@ export function PerformanceGuidanceProvider({
       finishTimerRef.current = null;
     }
   }, []);
+
+  const stopAttackDetector = useCallback(async () => {
+    if (!detectorListeningRef.current) {
+      return;
+    }
+    detectorListeningRef.current = false;
+    try {
+      await stopPianoAttackDetector();
+    } catch (error) {
+      if (
+        !(error instanceof PianoAttackDetectorError) ||
+        error.code !== 'ERR_ATTACK_DETECTOR_NOT_LISTENING'
+      ) {
+        throw error;
+      }
+    }
+  }, []);
+
+  const ensureAttackDetector = useCallback(async () => {
+    if (listeningModeRef.current.kind !== 'piano-attack' || detectorListeningRef.current) {
+      return;
+    }
+    if (!detectorStartPromiseRef.current) {
+      detectorStartPromiseRef.current = startPianoAttackDetector()
+        .then(async () => {
+          detectorListeningRef.current = true;
+          if (!detectorShouldRemainActiveRef.current) {
+            await stopAttackDetector();
+          }
+        })
+        .finally(() => {
+          detectorStartPromiseRef.current = null;
+        });
+    }
+    await detectorStartPromiseRef.current;
+  }, [stopAttackDetector]);
+
+  const releaseAllAudio = useCallback(async () => {
+    try {
+      await trainingAudioCoordinator.release(ownerIdRef.current);
+    } finally {
+      await stopAttackDetector();
+    }
+  }, [stopAttackDetector]);
 
   const enterFinish = useCallback(
     (generation: number, message?: string) => {
@@ -188,13 +247,18 @@ export function PerformanceGuidanceProvider({
       clearClock();
       completionInProgressRef.current = false;
       dispatch(leadIn ? { type: 'prepare' } : { type: 'demo' });
-      const repetitions = listeningEnabled ? 1 : totalCycleCount;
+      const mode = listeningModeRef.current;
+      const repetitions = mode.kind === 'none' ? totalCycleCount : 1;
       try {
         const result = await trainingAudioCoordinator.play(
           ownerIdRef.current,
           currentPlayback.kind,
           currentPlayback.configuration,
-          { leadIn, repetitions },
+          {
+            keepAudioSessionActive: mode.kind === 'piano-attack',
+            leadIn,
+            repetitions,
+          },
         );
         if (flowGenerationRef.current !== generation) {
           await trainingAudioCoordinator.releasePlayback(ownerIdRef.current, result.playbackId);
@@ -202,6 +266,14 @@ export function PerformanceGuidanceProvider({
         }
         playbackIdRef.current = result.playbackId;
         recognitionIdRef.current = null;
+        if (mode.kind === 'piano-attack') {
+          const beatDurationMs = 60_000 / currentPlayback.configuration.bpm;
+          const listeningStartedAtMs =
+            result.startedAtMs +
+            (leadIn ? 4 * beatDurationMs : 0) +
+            getSoundFontDemoDurationMs(currentPlayback.configuration);
+          dispatch({ type: 'schedule-listening', startedAtMs: listeningStartedAtMs });
+        }
         startClock({ generation, leadIn, repetitions, startedAtMs: result.startedAtMs });
       } catch (error) {
         if (flowGenerationRef.current !== generation) {
@@ -213,7 +285,7 @@ export function PerformanceGuidanceProvider({
         dispatch({ type: 'pending', errorMessage: messageFor(error, 'Playback failed.') });
       }
     },
-    [clearClock, dispatch, listeningEnabled, startClock, totalCycleCount],
+    [clearClock, dispatch, startClock, totalCycleCount],
   );
 
   const startRecognition = useCallback(
@@ -258,21 +330,35 @@ export function PerformanceGuidanceProvider({
     }
     flowGenerationRef.current += 1;
     const generation = flowGenerationRef.current;
+    detectorShouldRemainActiveRef.current = listeningModeRef.current.kind === 'piano-attack';
     clearFinishTimer();
     setFinishMessageOverride(null);
-    dispatch({ type: 'prepare' });
-    void trainingAudioCoordinator.release(ownerIdRef.current).then(() => {
-      if (flowGenerationRef.current === generation) {
-        void startDemo(generation, true);
-      }
-    });
-  }, [clearFinishTimer, dispatch, startDemo]);
+    dispatch({ type: 'prepare', flowId: generation });
+    void trainingAudioCoordinator
+      .release(ownerIdRef.current)
+      .then(ensureAttackDetector)
+      .then(() => {
+        if (flowGenerationRef.current === generation) {
+          void startDemo(generation, true);
+        }
+      })
+      .catch((error) => {
+        if (flowGenerationRef.current === generation) {
+          dispatch({
+            type: 'pending',
+            errorMessage: messageFor(error, 'The attack detector could not start.'),
+          });
+        }
+      });
+  }, [clearFinishTimer, dispatch, ensureAttackDetector, startDemo]);
 
   const completeListening = useCallback(async () => {
+    const mode = listeningModeRef.current;
     const recognitionId = recognitionIdRef.current;
     if (
       stateRef.current.phase !== 'listening' ||
-      recognitionId === null ||
+      mode.kind === 'none' ||
+      (mode.kind === 'basic-pitch' && recognitionId === null) ||
       completionInProgressRef.current
     ) {
       return;
@@ -280,7 +366,9 @@ export function PerformanceGuidanceProvider({
     completionInProgressRef.current = true;
     const generation = flowGenerationRef.current;
     try {
-      await trainingAudioCoordinator.releaseRecognition(ownerIdRef.current, recognitionId);
+      if (mode.kind === 'basic-pitch' && recognitionId !== null) {
+        await trainingAudioCoordinator.releaseRecognition(ownerIdRef.current, recognitionId);
+      }
       if (flowGenerationRef.current !== generation) {
         return;
       }
@@ -288,6 +376,10 @@ export function PerformanceGuidanceProvider({
       const completedCycles = stateRef.current.completedCycles + 1;
       dispatch({ type: 'complete-cycle', completedCycles });
       if (completedCycles >= totalCycleCount) {
+        detectorShouldRemainActiveRef.current = false;
+        if (mode.kind === 'piano-attack') {
+          await stopAttackDetector();
+        }
         enterFinish(generation);
       } else {
         await startDemo(generation, false);
@@ -302,7 +394,7 @@ export function PerformanceGuidanceProvider({
         completionInProgressRef.current = false;
       }
     }
-  }, [dispatch, enterFinish, startDemo, totalCycleCount]);
+  }, [dispatch, enterFinish, startDemo, stopAttackDetector, totalCycleCount]);
 
   const reset = useCallback(() => {
     flowGenerationRef.current += 1;
@@ -312,35 +404,41 @@ export function PerformanceGuidanceProvider({
     recognitionIdRef.current = null;
     completionInProgressRef.current = false;
     setFinishMessageOverride(null);
-    dispatch({ type: 'pending' });
+    dispatch({ type: 'pending', flowId: flowGenerationRef.current });
     void trainingAudioCoordinator.release(ownerIdRef.current);
   }, [clearClock, clearFinishTimer, dispatch]);
 
   const requestSkip = useCallback(() => {
     flowGenerationRef.current += 1;
+    detectorShouldRemainActiveRef.current = false;
     clearClock();
     clearFinishTimer();
     playbackIdRef.current = null;
     recognitionIdRef.current = null;
-    dispatch({ type: 'pending' });
-    void trainingAudioCoordinator.release(ownerIdRef.current).finally(onSkip);
-  }, [clearClock, clearFinishTimer, dispatch, onSkip]);
+    dispatch({ type: 'pending', flowId: flowGenerationRef.current });
+    void releaseAllAudio().finally(onSkip);
+  }, [clearClock, clearFinishTimer, dispatch, onSkip, releaseAllAudio]);
 
   const requestFinish = useCallback(
     (message?: string) => {
       flowGenerationRef.current += 1;
       const generation = flowGenerationRef.current;
+      detectorShouldRemainActiveRef.current = false;
       clearClock();
-      void trainingAudioCoordinator.release(ownerIdRef.current).then(() => {
+      void releaseAllAudio().then(() => {
         enterFinish(generation, message);
       });
     },
-    [clearClock, enterFinish],
+    [clearClock, enterFinish, releaseAllAudio],
   );
 
   useEffect(() => {
     playbackRef.current = playback;
   }, [playback]);
+
+  useEffect(() => {
+    listeningModeRef.current = listeningMode;
+  }, [listeningMode]);
 
   useEffect(() => {
     const playbackSubscription = addPlaybackFinishListener((event) => {
@@ -356,8 +454,16 @@ export function PerformanceGuidanceProvider({
           if (flowGenerationRef.current !== generation) {
             return;
           }
-          if (listeningEnabled) {
+          const mode = listeningModeRef.current;
+          if (mode.kind === 'basic-pitch') {
             void startRecognition(generation);
+          } else if (mode.kind === 'piano-attack') {
+            const startedAtMs = stateRef.current.listeningStartedAtMs;
+            if (startedAtMs === null) {
+              dispatch({ type: 'pending', errorMessage: 'Listening timing was unavailable.' });
+              return;
+            }
+            dispatch({ type: 'listening', startedAtMs });
           } else {
             dispatch({ type: 'complete-cycle', completedCycles: totalCycleCount });
             enterFinish(generation);
@@ -378,7 +484,7 @@ export function PerformanceGuidanceProvider({
       playbackSubscription.remove();
       detectionSubscription.remove();
     };
-  }, [clearClock, dispatch, enterFinish, listeningEnabled, startRecognition, totalCycleCount]);
+  }, [clearClock, dispatch, enterFinish, startRecognition, totalCycleCount]);
 
   useEffect(() => {
     const previousConfiguration = previousConfigurationRef.current;
@@ -397,13 +503,21 @@ export function PerformanceGuidanceProvider({
     playbackIdRef.current = null;
     recognitionIdRef.current = null;
     completionInProgressRef.current = false;
-    dispatch({ type: 'prepare' });
-    void trainingAudioCoordinator.release(ownerIdRef.current).then(() => {
-      if (flowGenerationRef.current === generation) {
-        void startDemo(generation, true);
-      }
-    });
-  }, [clearClock, clearFinishTimer, configuration, dispatch, startDemo]);
+    dispatch({ type: 'prepare', flowId: generation });
+    void trainingAudioCoordinator
+      .release(ownerIdRef.current)
+      .then(ensureAttackDetector)
+      .then(() => {
+        if (flowGenerationRef.current === generation) {
+          void startDemo(generation, true);
+        }
+      })
+      .catch((error) => {
+        if (flowGenerationRef.current === generation) {
+          dispatch({ type: 'pending', errorMessage: messageFor(error, 'Audio restart failed.') });
+        }
+      });
+  }, [clearClock, clearFinishTimer, configuration, dispatch, ensureAttackDetector, startDemo]);
 
   useEffect(() => {
     if (startPhase === 'prepare' && !didAutoStartRef.current) {
@@ -415,11 +529,12 @@ export function PerformanceGuidanceProvider({
   useEffect(
     () => () => {
       flowGenerationRef.current += 1;
+      detectorShouldRemainActiveRef.current = false;
       clearClock();
       clearFinishTimer();
-      void trainingAudioCoordinator.release(ownerIdRef.current);
+      void releaseAllAudio();
     },
-    [clearClock, clearFinishTimer],
+    [clearClock, clearFinishTimer, releaseAllAudio],
   );
 
   const value = useMemo<PerformanceGuidanceContextValue>(
@@ -429,7 +544,7 @@ export function PerformanceGuidanceProvider({
       cycleCount: totalCycleCount,
       finishText: finishMessageOverride ?? finishText,
       isDisabled,
-      listeningEnabled,
+      listeningMode,
       requestFinish,
       requestSkip,
       reset,
@@ -440,7 +555,7 @@ export function PerformanceGuidanceProvider({
       finishMessageOverride,
       finishText,
       isDisabled,
-      listeningEnabled,
+      listeningMode,
       requestFinish,
       requestSkip,
       reset,
@@ -466,7 +581,11 @@ export function usePerformanceGuidance(): PerformanceGuidanceContextValue {
 }
 
 function messageFor(error: unknown, fallback: string): string {
-  if (error instanceof SoundFontPlayerError || error instanceof BasicPitchError) {
+  if (
+    error instanceof SoundFontPlayerError ||
+    error instanceof BasicPitchError ||
+    error instanceof PianoAttackDetectorError
+  ) {
     if (__DEV__ && error.nativeMessage) {
       return `${error.message} ${error.nativeMessage}`;
     }

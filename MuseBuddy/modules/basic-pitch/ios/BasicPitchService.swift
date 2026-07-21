@@ -185,7 +185,11 @@ final class BasicPitchService: @unchecked Sendable {
 
     let session = AVAudioSession.sharedInstance()
     do {
-      try session.setCategory(.record, mode: .measurement, options: [.allowBluetoothHFP])
+      try session.setCategory(
+        .playAndRecord,
+        mode: .measurement,
+        options: [.defaultToSpeaker, .allowBluetoothHFP, .mixWithOthers]
+      )
       try session.setActive(true)
     } catch {
       throw BasicPitchError.audioStartFailed(error.localizedDescription)

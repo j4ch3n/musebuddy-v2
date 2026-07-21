@@ -102,6 +102,7 @@ async function callNative<T>(operation: () => Promise<T>): Promise<T> {
 
 function normalizeOptions(options: SoundFontPlaybackOptions): Required<SoundFontPlaybackOptions> {
   return {
+    keepAudioSessionActive: options.keepAudioSessionActive ?? false,
     leadIn: options.leadIn ?? false,
     repetitions: Math.max(1, options.repetitions ?? 1),
   };

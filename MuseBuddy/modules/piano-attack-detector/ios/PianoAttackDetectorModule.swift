@@ -1,5 +1,6 @@
 import Accelerate
 import AVFoundation
+import Darwin
 import ExpoModulesCore
 import Foundation
 import UIKit
@@ -35,7 +36,7 @@ public final class PianoAttackDetectorModule: Module {
       self.detector.isListening
     }
 
-    AsyncFunction("startListening") { (options: [String: Double]) async throws -> Void in
+    AsyncFunction("startListening") { (options: [String: Double]) async throws in
       do {
         try await self.detector.startListening(options: options)
       } catch let error as PianoAttackDetectorError {
@@ -43,7 +44,7 @@ public final class PianoAttackDetectorModule: Module {
       }
     }
 
-    AsyncFunction("stopListening") { () async throws -> Void in
+    AsyncFunction("stopListening") { () async throws in
       do {
         try await self.detector.stopListeningAsync()
       } catch let error as PianoAttackDetectorError {
@@ -55,7 +56,7 @@ public final class PianoAttackDetectorModule: Module {
       self.detector.artifactFiles()
     }
 
-    AsyncFunction("shareArtifact") { (kind: String) async throws -> Void in
+    AsyncFunction("shareArtifact") { (kind: String) async throws in
       do {
         try await self.detector.shareArtifact(kind: kind)
       } catch let error as PianoAttackDetectorError {
@@ -76,34 +77,34 @@ private enum PianoAttackDetectorError: Error {
   var code: String {
     switch self {
     case .microphonePermissionDenied:
-      return "ERR_MICROPHONE_PERMISSION_DENIED"
+      "ERR_MICROPHONE_PERMISSION_DENIED"
     case .alreadyListening:
-      return "ERR_ATTACK_DETECTOR_ALREADY_LISTENING"
+      "ERR_ATTACK_DETECTOR_ALREADY_LISTENING"
     case .notListening:
-      return "ERR_ATTACK_DETECTOR_NOT_LISTENING"
+      "ERR_ATTACK_DETECTOR_NOT_LISTENING"
     case .audioStartFailed:
-      return "ERR_ATTACK_DETECTOR_AUDIO_START_FAILED"
+      "ERR_ATTACK_DETECTOR_AUDIO_START_FAILED"
     case .artifactUnavailable:
-      return "ERR_ATTACK_DETECTOR_ARTIFACT_UNAVAILABLE"
+      "ERR_ATTACK_DETECTOR_ARTIFACT_UNAVAILABLE"
     case .shareFailed:
-      return "ERR_ATTACK_DETECTOR_SHARE_FAILED"
+      "ERR_ATTACK_DETECTOR_SHARE_FAILED"
     }
   }
 
   var message: String {
     switch self {
     case .microphonePermissionDenied:
-      return "Microphone permission was denied."
+      "Microphone permission was denied."
     case .alreadyListening:
-      return "The piano attack detector is already listening."
+      "The piano attack detector is already listening."
     case .notListening:
-      return "The piano attack detector is not listening."
-    case .audioStartFailed(let detail):
-      return "The piano attack detector could not start audio input: \(detail)"
-    case .artifactUnavailable(let detail):
-      return "The piano attack detector artifact is unavailable: \(detail)"
-    case .shareFailed(let detail):
-      return "The piano attack detector could not share the artifact: \(detail)"
+      "The piano attack detector is not listening."
+    case let .audioStartFailed(detail):
+      "The piano attack detector could not start audio input: \(detail)"
+    case let .artifactUnavailable(detail):
+      "The piano attack detector artifact is unavailable: \(detail)"
+    case let .shareFailed(detail):
+      "The piano attack detector could not share the artifact: \(detail)"
     }
   }
 }
@@ -131,6 +132,7 @@ private enum PianoDetectionEventType: String {
 }
 
 private struct PianoDetectionEvent {
+  let sampleIndex: Int64
   let timeMs: Int64
   let emittedAtMs: Int64
   let dB: Float
@@ -227,6 +229,7 @@ private struct PianoAttackConfiguration {
 
 private final class RealtimePianoAttackDetector {
   private struct PendingAttack {
+    var sampleIndex: Int64
     var timeMs: Int64
     var score: Float
     var threshold: Float
@@ -267,12 +270,12 @@ private final class RealtimePianoAttackDetector {
 
   init(config: PianoAttackConfiguration) {
     self.config = config
-    frameLength = max(16, Int(round(config.sampleRate * config.frameMs / 1000.0)))
-    hopLength = max(1, Int(round(config.sampleRate * config.hopMs / 1000.0)))
+    frameLength = max(16, Int(round(config.sampleRate * config.frameMs / 1_000.0)))
+    hopLength = max(1, Int(round(config.sampleRate * config.hopMs / 1_000.0)))
     nFFT = Self.nextPowerOfTwo(frameLength)
     log2n = vDSP_Length(log2(Float(nFFT)))
-    maxScoreHistoryCount = max(8, Int(config.scoreWindowSec / (config.hopMs / 1000.0)))
-    maxRmsHistoryCount = max(8, Int(config.noiseWindowSec / (config.hopMs / 1000.0)))
+    maxScoreHistoryCount = max(8, Int(config.scoreWindowSec / (config.hopMs / 1_000.0)))
+    maxRmsHistoryCount = max(8, Int(config.noiseWindowSec / (config.hopMs / 1_000.0)))
     warmupFrames = max(1, Int(ceil(config.warmupMs / config.hopMs)))
     confirmFrames = max(1, Int(ceil(config.confirmMs / config.hopMs)))
     releaseHoldFrames = max(1, Int(ceil(config.releaseHoldMs / config.hopMs)))
@@ -332,7 +335,7 @@ private final class RealtimePianoAttackDetector {
     var events: [PianoDetectionEvent] = []
 
     while sampleBuffer.count >= frameLength {
-      let frame = Array(sampleBuffer[0..<frameLength])
+      let frame = Array(sampleBuffer[0 ..< frameLength])
       events.append(contentsOf: processFrame(frame, frameStartSample: frameStartSample))
       sampleBuffer.removeFirst(min(hopLength, sampleBuffer.count))
       frameStartSample += Int64(hopLength)
@@ -343,10 +346,10 @@ private final class RealtimePianoAttackDetector {
 
   private func processFrame(_ frame: [Float], frameStartSample: Int64) -> [PianoDetectionEvent] {
     var events: [PianoDetectionEvent] = []
-    let timeMs = Int64((Double(frameStartSample) / Double(config.sampleRate)) * 1000.0)
+    let timeMs = Int64((Double(frameStartSample) / Double(config.sampleRate)) * 1_000.0)
     latestFrameTimeMs = timeMs
     let emittedAtMs = Int64(
-      (Double(frameStartSample + Int64(frameLength)) / Double(config.sampleRate)) * 1000.0
+      (Double(frameStartSample + Int64(frameLength)) / Double(config.sampleRate)) * 1_000.0
     )
 
     let features = computeFrameFeatures(frame)
@@ -370,6 +373,7 @@ private final class RealtimePianoAttackDetector {
       let pendingScore = pendingAttack?.score ?? 0.0
       if pendingAttack == nil || score > pendingScore {
         pendingAttack = PendingAttack(
+          sampleIndex: frameStartSample,
           timeMs: timeMs,
           score: score,
           threshold: threshold,
@@ -388,6 +392,7 @@ private final class RealtimePianoAttackDetector {
       } else if pending.ageFrames >= confirmFrames {
         events.append(
           PianoDetectionEvent(
+            sampleIndex: pending.sampleIndex,
             timeMs: pending.timeMs,
             emittedAtMs: emittedAtMs,
             dB: pending.rmsDb,
@@ -431,6 +436,7 @@ private final class RealtimePianoAttackDetector {
           } else {
             events.append(
               PianoDetectionEvent(
+                sampleIndex: frameStartSample,
                 timeMs: timeMs,
                 emittedAtMs: emittedAtMs,
                 dB: rmsDb,
@@ -468,15 +474,15 @@ private final class RealtimePianoAttackDetector {
     let power = powerSpectrum(frame)
     var logMel = [Float](repeating: 0, count: config.nMels)
 
-    for melIndex in 0..<config.nMels {
+    for melIndex in 0 ..< config.nMels {
       var melPower: Float = 0
       let filter = melFilterbank[melIndex]
 
-      for binIndex in 0..<filter.count {
+      for binIndex in 0 ..< filter.count {
         melPower += filter[binIndex] * power[binIndex]
       }
 
-      logMel[melIndex] = log1pf(1000.0 * max(melPower, 1e-12))
+      logMel[melIndex] = log1pf(1_000.0 * max(melPower, 1e-12))
     }
 
     guard previousLogMels.count >= config.lag, let laggedLogMel = previousLogMels.first else {
@@ -486,13 +492,13 @@ private final class RealtimePianoAttackDetector {
     let reference = maxFilter(laggedLogMel, size: config.maxFilterSize)
     var positiveDiff = [Float](repeating: 0, count: config.nMels)
 
-    for index in 0..<config.nMels {
+    for index in 0 ..< config.nMels {
       positiveDiff[index] = max(0.0, logMel[index] - reference[index])
     }
 
     let melFlux = mean(positiveDiff)
     var highFrequencyFluxSum: Float = 0
-    for index in 0..<config.nMels {
+    for index in 0 ..< config.nMels {
       highFrequencyFluxSum += positiveDiff[index] * highFrequencyWeights[index]
     }
     let highFrequencyFlux = highFrequencyFluxSum / Float(max(config.nMels, 1))
@@ -508,7 +514,7 @@ private final class RealtimePianoAttackDetector {
     }
 
     var input = [Float](repeating: 0, count: nFFT)
-    for index in 0..<frameLength {
+    for index in 0 ..< frameLength {
       input[index] = frame[index] * window[index]
     }
 
@@ -535,7 +541,7 @@ private final class RealtimePianoAttackDetector {
         power[nFFT / 2] = imagPointer[0] * imagPointer[0]
 
         if nFFT / 2 > 1 {
-          for binIndex in 1..<(nFFT / 2) {
+          for binIndex in 1 ..< (nFFT / 2) {
             power[binIndex] = magnitudes[binIndex]
           }
         }
@@ -594,12 +600,12 @@ private final class RealtimePianoAttackDetector {
     let radius = max(1, size / 2)
     var filtered = values
 
-    for index in 0..<values.count {
+    for index in 0 ..< values.count {
       let start = max(0, index - radius)
       let end = min(values.count - 1, index + radius)
       var maxValue = values[index]
 
-      for filterIndex in start...end {
+      for filterIndex in start ... end {
         maxValue = max(maxValue, values[filterIndex])
       }
 
@@ -666,18 +672,18 @@ private final class RealtimePianoAttackDetector {
   }
 
   private static func hzToMel(_ hz: Float) -> Float {
-    2595.0 * log10f(1.0 + hz / 700.0)
+    2_595.0 * log10f(1.0 + hz / 700.0)
   }
 
   private static func melToHz(_ mel: Float) -> Float {
-    700.0 * (powf(10.0, mel / 2595.0) - 1.0)
+    700.0 * (powf(10.0, mel / 2_595.0) - 1.0)
   }
 
   private static func melCenterFrequencies(nMels: Int, fMin: Float, fMax: Float) -> [Float] {
     let minMel = hzToMel(fMin)
     let maxMel = hzToMel(fMax)
 
-    return (0..<nMels).map { index in
+    return (0 ..< nMels).map { index in
       let ratio = Float(index + 1) / Float(nMels + 1)
       let mel = minMel + ratio * (maxMel - minMel)
       return melToHz(mel)
@@ -694,27 +700,27 @@ private final class RealtimePianoAttackDetector {
     let nFreqs = nFFT / 2 + 1
     let minMel = hzToMel(fMin)
     let maxMel = hzToMel(fMax)
-    let melPoints = (0..<(nMels + 2)).map { index in
+    let melPoints = (0 ..< (nMels + 2)).map { index in
       let ratio = Float(index) / Float(nMels + 1)
       return minMel + ratio * (maxMel - minMel)
     }
     let hzPoints = melPoints.map { melToHz($0) }
-    let binFreqs = (0..<nFreqs).map { binIndex in
+    let binFreqs = (0 ..< nFreqs).map { binIndex in
       Float(binIndex) * sampleRate / Float(nFFT)
     }
     var filters = Array(repeating: Array(repeating: Float(0), count: nFreqs), count: nMels)
 
-    for melIndex in 0..<nMels {
+    for melIndex in 0 ..< nMels {
       let left = hzPoints[melIndex]
       let center = hzPoints[melIndex + 1]
       let right = hzPoints[melIndex + 2]
 
-      for binIndex in 0..<nFreqs {
+      for binIndex in 0 ..< nFreqs {
         let frequency = binFreqs[binIndex]
 
-        if frequency >= left && frequency <= center {
+        if frequency >= left, frequency <= center {
           filters[melIndex][binIndex] = (frequency - left) / max(center - left, 1e-6)
-        } else if frequency > center && frequency <= right {
+        } else if frequency > center, frequency <= right {
           filters[melIndex][binIndex] = (right - frequency) / max(right - center, 1e-6)
         }
       }
@@ -725,12 +731,20 @@ private final class RealtimePianoAttackDetector {
 }
 
 private final class PianoAttackDetectorService: @unchecked Sendable {
+  private struct CaptureTimelineSegment {
+    let absoluteStartTimeMs: Double
+    let startSampleIndex: Int64
+  }
+
   private let audioEngine = AVAudioEngine()
   private let queue = DispatchQueue(label: "com.musebuddy.piano-attack-detector")
-  private let bufferSize: AVAudioFrameCount = 1024
+  private let bufferSize: AVAudioFrameCount = 1_024
   private let audioFileName = "piano-attack-recording.wav"
   private let logFileName = "piano-attack-events.jsonl"
   private var detector: RealtimePianoAttackDetector?
+  private var captureHostEpochOffsetMs: Double = 0
+  private var captureTimeline: [CaptureTimelineSegment] = []
+  private var capturedSampleCount: Int64 = 0
   private var listening = false
   private var lastAmbientLevelDb: Int?
   private var nextEventId = 0
@@ -739,9 +753,11 @@ private final class PianoAttackDetectorService: @unchecked Sendable {
   private var audioFileURL: URL {
     artifactDirectoryURL.appendingPathComponent(audioFileName)
   }
+
   private var logFileURL: URL {
     artifactDirectoryURL.appendingPathComponent(logFileName)
   }
+
   private var artifactDirectoryURL: URL {
     FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
       .appendingPathComponent("PianoAttackDetector", isDirectory: true)
@@ -848,7 +864,11 @@ private final class PianoAttackDetectorService: @unchecked Sendable {
 
     let session = AVAudioSession.sharedInstance()
     do {
-      try session.setCategory(.record, mode: .measurement, options: [.allowBluetoothHFP])
+      try session.setCategory(
+        .playAndRecord,
+        mode: .measurement,
+        options: [.defaultToSpeaker, .allowBluetoothHFP, .mixWithOthers]
+      )
       try session.setActive(true)
     } catch {
       throw PianoAttackDetectorError.audioStartFailed(error.localizedDescription)
@@ -868,15 +888,23 @@ private final class PianoAttackDetectorService: @unchecked Sendable {
     )
 
     inputNode.removeTap(onBus: 0)
-    inputNode.installTap(onBus: 0, bufferSize: bufferSize, format: format) { [weak self] buffer, _ in
+    inputNode.installTap(onBus: 0, bufferSize: bufferSize, format: format) { [weak self] buffer, when in
       guard let samples = buffer.monoFloatArray() else {
         return
       }
-      self?.process(samples: samples)
+      guard let self else {
+        return
+      }
+      process(
+        samples: samples,
+        bufferStartedAtMs: absoluteCaptureTimeMs(for: when, buffer: buffer)
+      )
     }
 
     do {
       audioEngine.prepare()
+      captureHostEpochOffsetMs = Self.currentTimeMs()
+        - AVAudioTime.seconds(forHostTime: mach_absolute_time()) * 1_000
       try audioEngine.start()
       listening = true
     } catch {
@@ -904,14 +932,24 @@ private final class PianoAttackDetectorService: @unchecked Sendable {
     nextEventId = 0
     detector = nil
     recordedSamples.removeAll(keepingCapacity: true)
+    captureHostEpochOffsetMs = 0
+    captureTimeline.removeAll(keepingCapacity: true)
+    capturedSampleCount = 0
   }
 
-  private func process(samples: [Float]) {
+  private func process(samples: [Float], bufferStartedAtMs: Double) {
     queue.async {
       guard self.listening, let detector = self.detector else {
         return
       }
 
+      self.captureTimeline.append(
+        CaptureTimelineSegment(
+          absoluteStartTimeMs: bufferStartedAtMs,
+          startSampleIndex: self.capturedSampleCount
+        )
+      )
+      self.capturedSampleCount += Int64(samples.count)
       self.recordedSamples.append(contentsOf: samples)
       let events = detector.process(samples: samples)
       self.emitAmbientLevelChangeIfNeeded(
@@ -941,6 +979,7 @@ private final class PianoAttackDetectorService: @unchecked Sendable {
     let ambientDb = Double(event.noiseDb)
 
     return [
+      "absoluteTimeMs": absoluteTimeMs(forSampleIndex: event.sampleIndex),
       "id": id,
       "type": event.type.rawValue,
       "timestampMs": Double(event.timeMs),
@@ -955,6 +994,32 @@ private final class PianoAttackDetectorService: @unchecked Sendable {
       "score": Double(event.score),
       "threshold": Double(event.threshold),
     ]
+  }
+
+  private func absoluteCaptureTimeMs(for time: AVAudioTime, buffer: AVAudioPCMBuffer) -> Double {
+    if time.isHostTimeValid, captureHostEpochOffsetMs != 0 {
+      return captureHostEpochOffsetMs + AVAudioTime.seconds(forHostTime: time.hostTime) * 1_000
+    }
+
+    let sampleRate = buffer.format.sampleRate
+    let bufferDurationMs = sampleRate > 0
+      ? Double(buffer.frameLength) / sampleRate * 1_000
+      : 0
+    return Self.currentTimeMs() - bufferDurationMs
+  }
+
+  private func absoluteTimeMs(forSampleIndex sampleIndex: Int64) -> Double {
+    guard let segment = captureTimeline.last(where: { $0.startSampleIndex <= sampleIndex }) else {
+      return Self.currentTimeMs()
+    }
+
+    let sampleOffset = sampleIndex - segment.startSampleIndex
+    return segment.absoluteStartTimeMs
+      + Double(sampleOffset) / Double(recordingSampleRate) * 1_000
+  }
+
+  private static func currentTimeMs() -> Double {
+    Date().timeIntervalSince1970 * 1_000
   }
 
   private func emitAmbientLevelChangeIfNeeded(levelDb: Double, timestampMs: Double) {
@@ -1015,8 +1080,8 @@ private final class PianoAttackDetectorService: @unchecked Sendable {
 
   private func appendLogLine(_ payload: [String: Any]) {
     guard JSONSerialization.isValidJSONObject(payload),
-      let data = try? JSONSerialization.data(withJSONObject: payload),
-      let handle = try? FileHandle(forWritingTo: logFileURL)
+          let data = try? JSONSerialization.data(withJSONObject: payload),
+          let handle = try? FileHandle(forWritingTo: logFileURL)
     else {
       return
     }
@@ -1135,15 +1200,15 @@ private extension AVAudioPCMBuffer {
     }
 
     var mono = [Float](repeating: 0, count: frameCount)
-    for channel in 0..<channelCount {
+    for channel in 0 ..< channelCount {
       let pointer = floatChannelData[channel]
-      for frame in 0..<frameCount {
+      for frame in 0 ..< frameCount {
         mono[frame] += pointer[frame]
       }
     }
 
     let scale = Float(1.0 / Double(channelCount))
-    for frame in 0..<frameCount {
+    for frame in 0 ..< frameCount {
       mono[frame] *= scale
     }
 

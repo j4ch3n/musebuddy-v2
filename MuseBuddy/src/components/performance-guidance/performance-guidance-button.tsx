@@ -26,7 +26,7 @@ export function PerformanceGuidanceButton() {
     errorMessage,
     finishText,
     isDisabled,
-    listeningEnabled,
+    listeningMode,
     phase,
     requestSkip,
     reset,
@@ -47,7 +47,7 @@ export function PerformanceGuidanceButton() {
           countdownValue,
           cycleCount,
           finishText,
-          listeningEnabled,
+          hasListeningPhase: listeningMode.kind !== 'none',
           phase,
         });
 
@@ -236,14 +236,14 @@ function getMainLabel({
   countdownValue,
   cycleCount,
   finishText,
-  listeningEnabled,
+  hasListeningPhase,
   phase,
 }: {
   completedCycles: number;
   countdownValue: number;
   cycleCount: number;
   finishText: string;
-  listeningEnabled: boolean;
+  hasListeningPhase: boolean;
   phase: string;
 }) {
   switch (phase) {
@@ -252,7 +252,7 @@ function getMainLabel({
     case 'demo':
       return `Demo ${completedCycles + 1}/${cycleCount}`;
     case 'listening':
-      return listeningEnabled ? 'Your turn' : 'Demo';
+      return hasListeningPhase ? 'Your turn' : 'Demo';
     case 'finish':
       return finishText;
     default:

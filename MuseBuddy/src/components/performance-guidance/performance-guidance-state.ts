@@ -13,13 +13,16 @@ export type GuidanceState = {
   countdownValue: number;
   currentStepIndex: number | null;
   latestDetection: DetectionResult | null;
+  listeningStartedAtMs: number | null;
   errorMessage: string;
+  flowId: number;
 };
 
 export type GuidanceAction =
-  | { type: 'prepare' }
+  | { type: 'prepare'; flowId?: number }
   | { type: 'demo' }
-  | { type: 'listening' }
+  | { type: 'schedule-listening'; startedAtMs: number }
+  | { type: 'listening'; startedAtMs?: number }
   | { type: 'finish' }
   | { type: 'detection'; detection: DetectionResult }
   | { type: 'complete-cycle'; completedCycles: number }
@@ -30,7 +33,7 @@ export type GuidanceAction =
       phase: 'prepare' | 'demo';
       completedCycles: number;
     }
-  | { type: 'pending'; errorMessage?: string }
+  | { type: 'pending'; errorMessage?: string; flowId?: number }
   | { type: 'clear-input' };
 
 export function createGuidanceState(phase: PerformanceGuidanceStartPhase): GuidanceState {
@@ -40,20 +43,36 @@ export function createGuidanceState(phase: PerformanceGuidanceStartPhase): Guida
     countdownValue: 4,
     currentStepIndex: null,
     latestDetection: null,
+    listeningStartedAtMs: null,
     errorMessage: '',
+    flowId: 0,
   };
 }
 
 export function guidanceReducer(state: GuidanceState, action: GuidanceAction): GuidanceState {
   switch (action.type) {
     case 'prepare':
-      return { ...createGuidanceState('prepare') };
+      return { ...createGuidanceState('prepare'), flowId: action.flowId ?? state.flowId };
     case 'demo':
-      return { ...state, phase: 'demo', currentStepIndex: null };
+      return { ...state, phase: 'demo', currentStepIndex: null, listeningStartedAtMs: null };
+    case 'schedule-listening':
+      return { ...state, listeningStartedAtMs: action.startedAtMs };
     case 'listening':
-      return { ...state, phase: 'listening', currentStepIndex: null, latestDetection: null };
+      return {
+        ...state,
+        phase: 'listening',
+        currentStepIndex: null,
+        latestDetection: null,
+        listeningStartedAtMs: action.startedAtMs ?? null,
+      };
     case 'finish':
-      return { ...state, phase: 'finish', currentStepIndex: null, latestDetection: null };
+      return {
+        ...state,
+        phase: 'finish',
+        currentStepIndex: null,
+        latestDetection: null,
+        listeningStartedAtMs: null,
+      };
     case 'detection':
       return { ...state, latestDetection: action.detection };
     case 'complete-cycle':
@@ -62,6 +81,7 @@ export function guidanceReducer(state: GuidanceState, action: GuidanceAction): G
         completedCycles: action.completedCycles,
         currentStepIndex: null,
         latestDetection: null,
+        listeningStartedAtMs: null,
       };
     case 'clock':
       return {
@@ -72,7 +92,11 @@ export function guidanceReducer(state: GuidanceState, action: GuidanceAction): G
         phase: action.phase,
       };
     case 'pending':
-      return { ...createGuidanceState('pending'), errorMessage: action.errorMessage ?? '' };
+      return {
+        ...createGuidanceState('pending'),
+        errorMessage: action.errorMessage ?? '',
+        flowId: action.flowId ?? state.flowId + 1,
+      };
     case 'clear-input':
       return { ...state, latestDetection: null, errorMessage: '' };
   }

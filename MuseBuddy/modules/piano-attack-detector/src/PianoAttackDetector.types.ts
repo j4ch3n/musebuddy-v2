@@ -59,6 +59,8 @@ export type PianoAmbientLevelChangeEvent = {
 };
 
 export type PianoAttackEvent = {
+  /** Absolute epoch time of the captured onset, derived from the audio input clock. */
+  absoluteTimeMs: number;
   id: number;
   type: 'attack' | 'release';
   timestampMs: number;

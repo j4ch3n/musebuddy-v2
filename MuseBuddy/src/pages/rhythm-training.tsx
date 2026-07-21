@@ -1,13 +1,18 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useRouter } from 'expo-router';
-import { View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import {
   PerformanceGuidanceButton,
   PerformanceGuidanceProvider,
   usePerformanceGuidance,
 } from '@/components/performance-guidance';
-import { RhythmViewer, type RhythmPattern } from '@/components/rhythm-trainer';
+import {
+  RhythmViewer,
+  useRhythmListenProgress,
+  type RhythmPattern,
+} from '@/components/rhythm-trainer';
+import { museBuddyColors } from '@/constants/design-tokens';
 import { useTrainingSession } from '@/contexts/training-session-context';
 import { buildRhythmSoundFontPlaybackConfiguration } from '@/music-theory/sound-font-playback';
 
@@ -20,6 +25,9 @@ export function RhythmTrainingPage() {
   const router = useRouter();
   const { learningConfig, session } = useTrainingSession();
   const pattern = session?.rhythm.pattern ?? EMPTY_RHYTHM_PATTERN;
+  const stepDurationMs = 0.25 * (60_000 / learningConfig.bpm);
+  const allowedOffsetMs = stepDurationMs / 2;
+  const listeningDurationMs = pattern.length * stepDurationMs;
   const playbackConfiguration = useMemo(
     () =>
       pattern.length > 0
@@ -45,6 +53,7 @@ export function RhythmTrainingPage() {
       demoListenCycleCount={3}
       finishText="this rhythm is fun!"
       key={`rhythm-${pattern.join('')}`}
+      listeningMode={{ kind: 'piano-attack', allowedOffsetMs }}
       onFinish={() => {
         router.push('/pattern-training');
       }}
@@ -57,30 +66,78 @@ export function RhythmTrainingPage() {
       }}
       startPhase="prepare"
     >
-      <RhythmTrainingContent pattern={pattern} />
+      <RhythmTrainingContent
+        allowedOffsetMs={allowedOffsetMs}
+        listeningDurationMs={listeningDurationMs}
+        pattern={pattern}
+        stepDurationMs={stepDurationMs}
+      />
     </PerformanceGuidanceProvider>
   );
 }
 
-function RhythmTrainingContent({ pattern }: { pattern: RhythmPattern }) {
-  const { completeListening, currentStepIndex, latestDetection, phase } = usePerformanceGuidance();
-
-  useEffect(() => {
-    if (phase === 'listening' && latestDetection?.notes.length) {
-      void completeListening();
-    }
-  }, [completeListening, latestDetection, phase]);
+function RhythmTrainingContent({
+  allowedOffsetMs,
+  listeningDurationMs,
+  pattern,
+  stepDurationMs,
+}: {
+  allowedOffsetMs: number;
+  listeningDurationMs: number;
+  pattern: RhythmPattern;
+  stepDurationMs: number;
+}) {
+  const {
+    completeListening,
+    currentStepIndex: demoStepIndex,
+    flowId,
+    listeningStartedAtMs,
+    phase,
+  } = usePerformanceGuidance();
+  const {
+    attackDots,
+    combo,
+    currentStepIndex: listeningStepIndex,
+  } = useRhythmListenProgress({
+    allowedOffsetMs,
+    flowId,
+    listeningDurationMs,
+    listeningStartedAtMs,
+    onComplete: completeListening,
+    pattern,
+    phase,
+    stepDurationMs,
+  });
+  const currentStepIndex = phase === 'listening' ? listeningStepIndex : demoStepIndex;
+  const showCombo = phase === 'demo' || phase === 'listening' || phase === 'finish';
 
   return (
     <TrainingScreenShell
       currentStep="rhythm"
       footer={
         <View style={{ gap: 14 }}>
+          {showCombo ? <Text style={styles.combo}>COMBO ×{combo}</Text> : null}
           <PerformanceGuidanceButton />
         </View>
       }
     >
-      <RhythmViewer currentStepIndex={currentStepIndex} pattern={pattern} />
+      <RhythmViewer
+        attackDots={attackDots}
+        currentStepIndex={currentStepIndex}
+        pattern={pattern}
+        stepDurationMs={stepDurationMs}
+      />
     </TrainingScreenShell>
   );
 }
+
+const styles = StyleSheet.create({
+  combo: {
+    color: museBuddyColors.ink,
+    fontSize: 18,
+    fontVariant: ['tabular-nums'],
+    fontWeight: '900',
+    lineHeight: 22,
+    textAlign: 'center',
+  },
+});

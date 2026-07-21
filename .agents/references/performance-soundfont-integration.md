@@ -1,61 +1,64 @@
 # Performance Guidance And SoundFont Integration
 
-This reference defines the JS/native handshake between performance guidance, the
-SoundFont module, and Basic Pitch. Native details live in `sound-font-player.md`; UI/page
-details live in `performance-guidance.md`.
+This reference defines the JS/native handshake between performance guidance, SoundFont,
+Basic Pitch, and piano attack detection. Native details live in `sound-font-player.md`.
 
 ## Responsibility Split
 
-- Native SoundFont playback creates, loads, runs, and fully disposes one fresh audio graph
-  per request. It owns the audible lead-in and finite repetitions.
-- Native Basic Pitch owns microphone capture and tags each detection with a recognition
-  ID.
-- The provider owns flow generations, UI phase/progress, timing from `startedAtMs`, event
-  filtering, demo/listen progression, and navigation timers.
-- The shared coordinator serializes native playback and recognition so they never overlap,
-  and protects newer owners from stale cleanup.
+- SoundFont creates and fully disposes one fresh output graph per request. It owns the audible
+  lead-in and finite repetitions.
+- Basic Pitch owns chord microphone capture and recognition IDs.
+- Piano attack detection owns rhythm's continuous input engine and absolute attack times.
+- The provider owns flow generations, UI phase/progress, SoundFont-clock timing, event
+  filtering, and navigation timers.
+- The training-audio coordinator serializes SoundFont and Basic Pitch. Rhythm intentionally
+  overlaps its separately owned attack detector with SoundFont output.
 
 ## Playback Requests
 
-Session goal calls:
+All callers explicitly pass one repetition policy and a session-lifetime flag:
 
 ```ts
-playPiano(configuration, { leadIn: true, repetitions: 2 });
+// Session goal
+{ keepAudioSessionActive: false, leadIn: true, repetitions: 2 }
+
+// Chord demo
+{ keepAudioSessionActive: false, leadIn, repetitions: 1 }
+
+// Rhythm demo
+{ keepAudioSessionActive: true, leadIn, repetitions: 1 }
 ```
 
-Chord learning calls `playPiano`; rhythm training calls `playGroove`. Their first round and
-BPM restarts use `{ leadIn: true, repetitions: 1 }`. Rounds two and three use
-`{ leadIn: false, repetitions: 1 }`.
+First rounds and BPM restarts use a lead-in; rounds two and three do not. A play promise
+resolves only after native creates the graph, loads SoundFonts, confirms output rendering,
+starts sequencing, and returns absolute `startedAtMs`.
 
-While a play promise is pending, the UI remains in `prepare` at `4`. The promise resolves
-only after native has created the graph, loaded the requested SoundFont plus optional
-lead-in SoundFont, confirmed output rendering, and started sequencing. The returned
-`startedAtMs` anchors countdown, demo labels, and rhythm highlighting.
+## Finish Handoffs
 
-## Playback Finish And Recognition Handoff
+Natural SoundFont finish stops sequencing, silences samplers, stops/resets the output engine,
+and releases its graph. It deactivates the process-wide session only when the exact request
+stored `keepAudioSessionActive: false`, then emits its playback ID.
 
-Native natural finish first stops sequencing, silences and releases samplers, stops the
-engine, and deactivates its audio session. It then emits `onPlaybackFinish({ playbackId })`.
-The provider ignores nonmatching IDs, acknowledges the matching playback as idle in the
-coordinator, and only then starts recognition:
+Chord guidance acknowledges the matching finish in the coordinator and only then starts
+Basic Pitch. Listening begins after Basic Pitch returns its recognition ID, and completion
+cancels that exact ID before the next demo.
 
-```ts
-startRecognition({ detectionIntervalMs: 200, rollingWindowMs: 2000 });
-```
+Rhythm starts its detector before SoundFont. Once playback starts, the provider publishes the
+future absolute listening boundary while keeping the UI in `demo`. JS retains raw detector
+attacks whose capture times can belong to that listening window; demo attacks outside the
+first hit's allowance are ignored. On finish, SoundFont releases only its output graph and its
+matching native event authoritatively changes the UI to `listening`. Matching uses capture
+time rather than event receipt time, so attacks delivered around the handoff are not lost.
+The detector continues uninterrupted.
 
-The UI enters `listening` after this promise returns `{ recognitionId }`. Detection events
-must match that ID. A completed listening round awaits
-`cancelRecognition(recognitionId)` before any next SoundFont request.
-
-Session goal skips this handoff and enters `finish` directly.
+Session goal skips any recognition handoff and enters finish directly.
 
 ## Cancellation And Restarts
 
-SoundFont cancellation always carries the exact playback ID. Recognition cancellation
-always carries the exact recognition ID. BPM changes, reset, skip, navigation, and unmount
-invalidate the flow generation before awaiting cleanup. Results and events from older
-generations are ignored. Provider owner IDs ensure cleanup from an old route cannot stop
-audio already owned by a newer route.
+SoundFont stop and Basic Pitch cancel always carry exact IDs. BPM changes, reset, skip,
+navigation, and unmount invalidate the flow before cleanup. Rhythm reset releases only
+SoundFont output; skip/unmount/final completion release SoundFont before the detector. Results
+and events from stale generations are ignored.
 
 There are no prepare, resume, restart, repeat, is-playing, or playback-bar APIs. Every demo
-uses a fresh native graph, including rounds without a lead-in.
+uses a fresh native output graph.

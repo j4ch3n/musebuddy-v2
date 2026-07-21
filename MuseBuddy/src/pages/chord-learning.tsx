@@ -192,7 +192,7 @@ export function ChordLearningPage() {
         configuration: playbackConfiguration,
         kind: 'piano',
       }}
-      listeningEnabled
+      listeningMode={{ kind: 'basic-pitch' }}
       startPhase="prepare"
     >
       {content}
