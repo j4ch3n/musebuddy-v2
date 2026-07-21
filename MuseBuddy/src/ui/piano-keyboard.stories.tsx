@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-native';
 
-import { PianoKeyboard, type PianoKeyboardKeyName } from './piano-keyboard';
+import { pianoPitchClasses, type PianoPitchClass } from '@schema/music-theory-schema';
+
+import { PianoKeyboard } from './piano-keyboard';
 
 type ChordPreset =
   | 'C major'
@@ -15,22 +17,22 @@ type ChordPreset =
 
 type PianoKeyboardStoryArgs = {
   chordPreset: ChordPreset;
-  root: PianoKeyboardKeyName;
-  keys: PianoKeyboardKeyName[];
+  root: PianoPitchClass;
+  keys: PianoPitchClass[];
 };
 
 const chordPresets = {
-  'C major': { root: 'C', keys: ['E', 'G'] },
-  'A minor': { root: 'A', keys: ['C', 'E'] },
-  G7: { root: 'G', keys: ['B', 'D', 'F'] },
-  Cmaj7: { root: 'C', keys: ['E', 'G', 'B'] },
-  Csus4: { root: 'C', keys: ['F', 'G'] },
-  Cadd9: { root: 'C', keys: ['D', 'E', 'G'] },
-  'C(no3)': { root: 'C', keys: ['G'] },
-  'F# diminished': { root: 'F#', keys: ['A', 'C'] },
+  'C major': { root: 0, keys: [4, 7] },
+  'A minor': { root: 9, keys: [0, 4] },
+  G7: { root: 7, keys: [11, 2, 5] },
+  Cmaj7: { root: 0, keys: [4, 7, 11] },
+  Csus4: { root: 0, keys: [5, 7] },
+  Cadd9: { root: 0, keys: [2, 4, 7] },
+  'C(no3)': { root: 0, keys: [7] },
+  'F# diminished': { root: 6, keys: [9, 0] },
 } satisfies Record<
   Exclude<ChordPreset, 'Manual'>,
-  { root: PianoKeyboardKeyName; keys: PianoKeyboardKeyName[] }
+  { root: PianoPitchClass; keys: PianoPitchClass[] }
 >;
 
 const chordPresetOptions: ChordPreset[] = [
@@ -45,33 +47,13 @@ const chordPresetOptions: ChordPreset[] = [
   'Manual',
 ];
 
-const noteOptions: PianoKeyboardKeyName[] = [
-  'C',
-  'C#',
-  'Db',
-  'D',
-  'D#',
-  'Eb',
-  'E',
-  'F',
-  'F#',
-  'Gb',
-  'G',
-  'G#',
-  'Ab',
-  'A',
-  'A#',
-  'Bb',
-  'B',
-];
-
 const meta = {
   title: 'UI/PianoKeyboard',
   component: PianoKeyboard,
   args: {
     chordPreset: 'C major',
-    root: 'C',
-    keys: ['E', 'G'],
+    root: 0,
+    keys: [4, 7],
   },
   argTypes: {
     chordPreset: {
@@ -80,7 +62,7 @@ const meta = {
     },
     root: {
       control: 'select',
-      options: noteOptions,
+      options: pianoPitchClasses,
     },
     keys: {
       control: 'object',

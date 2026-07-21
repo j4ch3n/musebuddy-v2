@@ -1,29 +1,18 @@
-import {
-  normalizePianoKeyboardKey,
-  type CanonicalPianoKeyboardKeyName,
-  type PianoKeyboardKeyName,
-} from '@schema/music-theory-schema';
-
-export { normalizePianoKeyboardKey };
-export type { CanonicalPianoKeyboardKeyName, PianoKeyboardKeyName };
+import type { PianoPitchClass } from '@schema/music-theory-schema';
 
 export type PianoKeyboardMarker = {
-  key: CanonicalPianoKeyboardKeyName;
   isRoot: boolean;
+  pitchClass: PianoPitchClass;
 };
 
 export function getPianoKeyboardMarkers(
-  root: PianoKeyboardKeyName,
-  keys: readonly PianoKeyboardKeyName[] = [],
+  root: PianoPitchClass,
+  keys: readonly PianoPitchClass[] = [],
 ): PianoKeyboardMarker[] {
-  const rootKey = normalizePianoKeyboardKey(root);
-  const selectedKeys = new Set<CanonicalPianoKeyboardKeyName>([
-    rootKey,
-    ...keys.map((key) => normalizePianoKeyboardKey(key)),
-  ]);
+  const selectedPitchClasses = new Set<PianoPitchClass>([root, ...keys]);
 
-  return [...selectedKeys].map((key) => ({
-    key,
-    isRoot: key === rootKey,
+  return [...selectedPitchClasses].map((pitchClass) => ({
+    isRoot: pitchClass === root,
+    pitchClass,
   }));
 }

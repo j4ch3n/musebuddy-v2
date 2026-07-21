@@ -1,13 +1,13 @@
 import * as Note from '@tonaljs/note';
 
-import type { MusicNoteLetter, PianoKeyboardKeyName } from '@schema/music-theory-schema';
+import type { MusicNoteLetter, PianoPitchClass } from '@schema/music-theory-schema';
 
 export type MusicDisplayNote = {
   accidental: string;
-  keyboardKey: PianoKeyboardKeyName;
   letter: MusicNoteLetter;
   midi: number;
   octave: number;
+  pitchClass: PianoPitchClass;
   text: string;
   vexflowKey: string;
 };
@@ -20,20 +20,21 @@ export function midiToDisplayNote(midi: number, textOverride?: string): MusicDis
   }
 
   const pitchClass = Note.pitchClass(noteName);
-  const keyboardKey = midiToKeyboardKey(midi);
   const parsedNote = parsePitchClass(textOverride ?? pitchClass);
-  const octave = Note.octave(noteName);
+  const octave = textOverride
+    ? 4 + (midi - pitchClassToMidi(textOverride, 4)) / 12
+    : Note.octave(noteName);
 
-  if (octave === undefined) {
+  if (octave === undefined || !Number.isInteger(octave)) {
     throw new Error(`Unsupported MIDI octave: ${midi}.`);
   }
 
   return {
     accidental: parsedNote.accidental,
-    keyboardKey,
     letter: parsedNote.letter,
     midi,
     octave,
+    pitchClass: midiToPitchClass(midi),
     text: textOverride ?? pitchClass,
     vexflowKey: `${parsedNote.letter.toLowerCase()}/${octave}`,
   };
@@ -65,12 +66,10 @@ export function parsePitchClass(pitchClass: string): {
   };
 }
 
-export function midiToKeyboardKey(midi: number): PianoKeyboardKeyName {
-  const pitchClass = Note.pitchClass(Note.fromMidiSharps(midi));
-
-  if (!pitchClass) {
+export function midiToPitchClass(midi: number): PianoPitchClass {
+  if (!Number.isInteger(midi)) {
     throw new Error(`Unsupported MIDI pitch: ${midi}.`);
   }
 
-  return pitchClass as PianoKeyboardKeyName;
+  return (((midi % 12) + 12) % 12) as PianoPitchClass;
 }

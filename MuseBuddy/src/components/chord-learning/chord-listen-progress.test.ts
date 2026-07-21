@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { pitchClassToMidi, type ChordDisplay } from '@/music-theory';
+import type { PianoPitchClass } from '@schema/music-theory-schema';
 
 import { advanceChordListenProgress, findBestChordListenMatchIndex } from './chord-listen-progress';
 
@@ -107,12 +108,14 @@ function display(...pitchClasses: string[]): Pick<ChordDisplay, 'notes'> {
   return {
     notes: pitchClasses.map((pitchClass, index) => ({
       accidental: '',
-      interval: index === 0 ? '1' : '3',
+      degree: index === 0 ? ('1' as const) : ('3' as const),
+      explanation: 'test explanation',
+      importance: 'essential',
       isRoot: index === 0,
-      keyboardKey: 'C',
       letter: 'C',
       midi: pitchClassToMidi(pitchClass, 4),
       octave: 4,
+      pitchClass: (pitchClassToMidi(pitchClass, 4) % 12) as PianoPitchClass,
       text: pitchClass,
       vexflowKey: 'c/4',
     })),

@@ -108,7 +108,6 @@ function toTrainingSession(rows: readonly DbArrangementRow[]) {
       displayTokens: row.chord_display_tokens,
       idName: row.chord,
       normalizedSymbol: row.chord_normalized_symbol,
-      qualityBaseFormula: row.chord_quality_base_formula,
       root: row.chord_root,
       tones: row.chord_tones,
     })),

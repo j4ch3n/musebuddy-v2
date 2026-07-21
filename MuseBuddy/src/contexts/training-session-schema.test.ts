@@ -19,12 +19,36 @@ const validSession = {
       ],
       idName: 'a-add9',
       normalizedSymbol: 'Aadd9',
-      qualityBaseFormula: ['1', '3', '5'],
       root: 'A',
       tones: [
-        { explanation: 'is the root. It names and anchors the chord.' },
-        { explanation: 'is the third. It gives the chord its major color.' },
-        { explanation: 'is the fifth. It makes the chord feel stable.' },
+        {
+          degree: '1',
+          explanation: 'is the root. It names and anchors the chord.',
+          importance: 'essential',
+          pitch: 'A',
+          pitchClass: 9,
+        },
+        {
+          degree: '3',
+          explanation: 'is the third. It gives the chord its major color.',
+          importance: 'essential',
+          pitch: 'C#',
+          pitchClass: 1,
+        },
+        {
+          degree: '5',
+          explanation: 'is the fifth. It makes the chord feel stable.',
+          importance: 'supporting',
+          pitch: 'E',
+          pitchClass: 4,
+        },
+        {
+          degree: '9',
+          explanation: 'is the ninth. It adds color.',
+          importance: 'color',
+          pitch: 'B',
+          pitchClass: 11,
+        },
       ],
     },
   ],
@@ -142,13 +166,54 @@ describe('trainingSessionSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('rejects unsupported chord formula degrees', () => {
+  it.each([
+    ['a negative value', -1],
+    ['a value above 11', 12],
+    ['a non-integer value', 1.5],
+  ])('rejects a tone pitch class with %s', (_, pitchClass) => {
     const result = trainingSessionSchema.safeParse({
       ...validSession,
       chords: [
         {
           ...validSession.chords[0],
-          qualityBaseFormula: ['1', '3', '15'],
+          tones: [
+            { ...validSession.chords[0].tones[0], pitchClass },
+            ...validSession.chords[0].tones.slice(1),
+          ],
+        },
+      ],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it.each(['', 'H', 'C###', 'flat C'])('rejects malformed tone pitch %j', (pitch) => {
+    const result = trainingSessionSchema.safeParse({
+      ...validSession,
+      chords: [
+        {
+          ...validSession.chords[0],
+          tones: [
+            { ...validSession.chords[0].tones[0], pitch },
+            ...validSession.chords[0].tones.slice(1),
+          ],
+        },
+      ],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects unsupported tone importance', () => {
+    const result = trainingSessionSchema.safeParse({
+      ...validSession,
+      chords: [
+        {
+          ...validSession.chords[0],
+          tones: [
+            ...validSession.chords[0].tones.slice(0, 3),
+            { ...validSession.chords[0].tones[3], importance: 'decorative' },
+          ],
         },
       ],
     });

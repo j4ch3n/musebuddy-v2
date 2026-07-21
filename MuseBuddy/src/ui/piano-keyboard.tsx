@@ -2,68 +2,67 @@ import { StyleSheet, View } from 'react-native';
 import Svg, { Circle, G, Rect, Text as SvgText } from 'react-native-svg';
 
 import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
-import {
-  naturalPianoKeyboardKeyNames,
-  sharpPianoKeyboardKeyNames,
-} from '@schema/music-theory-schema';
+import type { PianoPitchClass } from '@schema/music-theory-schema';
 
-import {
-  getPianoKeyboardMarkers,
-  normalizePianoKeyboardKey,
-  type CanonicalPianoKeyboardKeyName,
-  type PianoKeyboardKeyName,
-} from './piano-keyboard-utils';
+import { getPianoKeyboardMarkers } from './piano-keyboard-utils';
 
-export type { CanonicalPianoKeyboardKeyName, PianoKeyboardKeyName } from './piano-keyboard-utils';
-export { getPianoKeyboardMarkers, normalizePianoKeyboardKey } from './piano-keyboard-utils';
+export type { PianoKeyboardMarker } from './piano-keyboard-utils';
+export { getPianoKeyboardMarkers } from './piano-keyboard-utils';
 
 export type PianoKeyboardProps = {
-  root: PianoKeyboardKeyName;
-  keys?: readonly PianoKeyboardKeyName[];
+  root: PianoPitchClass;
+  keys?: readonly PianoPitchClass[];
   width?: number;
   rootColor?: string;
   keyColor?: string;
-  markerLabels?: Partial<Record<CanonicalPianoKeyboardKeyName, string>>;
+  markerLabels?: Partial<Record<PianoPitchClass, string>>;
   accessibilityLabel?: string;
 };
 
 const whiteKeyPositions = {
-  C: 10,
-  D: 50,
-  E: 90,
-  F: 130,
-  G: 170,
-  A: 210,
-  B: 250,
-} satisfies Record<(typeof naturalPianoKeyboardKeyNames)[number], number>;
+  0: 10,
+  2: 50,
+  4: 90,
+  5: 130,
+  7: 170,
+  9: 210,
+  11: 250,
+} as const;
 
 const blackKeyPositions = {
-  'C#': 54,
-  'D#': 94,
-  'F#': 174,
-  'G#': 214,
-  'A#': 254,
-} satisfies Record<(typeof sharpPianoKeyboardKeyNames)[number], number>;
+  1: 54,
+  3: 94,
+  6: 174,
+  8: 214,
+  10: 254,
+} as const;
 
 const blackKeyRectPositions = {
-  'C#': 42,
-  'D#': 82,
-  'F#': 162,
-  'G#': 202,
-  'A#': 242,
-} satisfies Record<(typeof sharpPianoKeyboardKeyNames)[number], number>;
+  1: 42,
+  3: 82,
+  6: 162,
+  8: 202,
+  10: 242,
+} as const;
 
-function getMarkerPosition(key: CanonicalPianoKeyboardKeyName) {
-  if (key in whiteKeyPositions) {
+const whiteKeyPitchClasses = Object.keys(whiteKeyPositions).map(
+  Number,
+) as (keyof typeof whiteKeyPositions)[];
+const blackKeyPitchClasses = Object.keys(blackKeyPositions).map(
+  Number,
+) as (keyof typeof blackKeyPositions)[];
+
+function getMarkerPosition(pitchClass: PianoPitchClass) {
+  if (pitchClass in whiteKeyPositions) {
     return {
-      cx: whiteKeyPositions[key as keyof typeof whiteKeyPositions] + 20,
+      cx: whiteKeyPositions[pitchClass as keyof typeof whiteKeyPositions] + 20,
       cy: 114,
       r: 12,
     };
   }
 
   return {
-    cx: blackKeyPositions[key as keyof typeof blackKeyPositions],
+    cx: blackKeyPositions[pitchClass as keyof typeof blackKeyPositions],
     cy: 72,
     r: 10,
   };
@@ -79,8 +78,12 @@ export function PianoKeyboard({
   width,
 }: PianoKeyboardProps) {
   const markers = getPianoKeyboardMarkers(root, keys);
-  const rootKey = normalizePianoKeyboardKey(root);
-  const markerLabel = markers.map(({ key, isRoot }) => `${key}${isRoot ? ' root' : ''}`).join(', ');
+  const markerLabel = markers
+    .map(
+      ({ isRoot, pitchClass }) =>
+        `${markerLabels?.[pitchClass] ?? `pitch class ${pitchClass}`}${isRoot ? ' root' : ''}`,
+    )
+    .join(', ');
 
   return (
     <View
@@ -92,42 +95,42 @@ export function PianoKeyboard({
     >
       <Svg height="100%" viewBox="0 0 320 170" width="100%">
         <G>
-          {naturalPianoKeyboardKeyNames.map((key) => (
+          {whiteKeyPitchClasses.map((pitchClass) => (
             <Rect
               fill={museBuddyColors.ink}
               height={122}
-              key={`white-shadow-${key}`}
+              key={`white-shadow-${pitchClass}`}
               rx={museBuddyRadii.small}
               width={40}
-              x={whiteKeyPositions[key]}
+              x={whiteKeyPositions[pitchClass]}
               y={29}
             />
           ))}
-          {sharpPianoKeyboardKeyNames.map((key) => (
+          {blackKeyPitchClasses.map((pitchClass) => (
             <Rect
               fill={museBuddyColors.ink}
               height={76}
-              key={`black-shadow-${key}`}
+              key={`black-shadow-${pitchClass}`}
               rx={museBuddyRadii.small}
               width={24}
-              x={blackKeyRectPositions[key]}
+              x={blackKeyRectPositions[pitchClass]}
               y={29}
             />
           ))}
         </G>
 
         <G>
-          {naturalPianoKeyboardKeyNames.map((key) => (
+          {whiteKeyPitchClasses.map((pitchClass) => (
             <Rect
               fill={museBuddyColors.surface}
               height={122}
-              key={key}
+              key={pitchClass}
               rx={museBuddyRadii.small}
               stroke={museBuddyColors.ink}
               strokeLinejoin="round"
               strokeWidth={museBuddyBorders.extraBold}
               width={40}
-              x={whiteKeyPositions[key]}
+              x={whiteKeyPositions[pitchClass]}
               y={20}
             />
           ))}
@@ -153,29 +156,29 @@ export function PianoKeyboard({
         />
 
         <G>
-          {sharpPianoKeyboardKeyNames.map((key) => (
+          {blackKeyPitchClasses.map((pitchClass) => (
             <Rect
               fill={museBuddyColors.ink}
               height={76}
-              key={key}
+              key={pitchClass}
               rx={museBuddyRadii.small}
               stroke={museBuddyColors.ink}
               strokeLinejoin="round"
               strokeWidth={museBuddyBorders.extraBold}
               width={24}
-              x={blackKeyRectPositions[key]}
+              x={blackKeyRectPositions[pitchClass]}
               y={20}
             />
           ))}
         </G>
 
         <G>
-          {markers.map(({ key, isRoot }) => {
-            const { cx, cy, r } = getMarkerPosition(key);
-            const label = markerLabels?.[key];
+          {markers.map(({ isRoot, pitchClass }) => {
+            const { cx, cy, r } = getMarkerPosition(pitchClass);
+            const label = markerLabels?.[pitchClass];
 
             return (
-              <G key={`marker-${key}-${rootKey}`}>
+              <G key={`marker-${pitchClass}-${root}`}>
                 <Circle
                   cx={cx}
                   cy={cy}

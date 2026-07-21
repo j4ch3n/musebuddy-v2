@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { TrainingSessionKeyArrangement } from '@/contexts/training-session-schema';
 import type { ChordDisplay } from '@/music-theory/chord-display';
+import type { PianoPitchClass } from '@schema/music-theory-schema';
 
 import {
   buildChordPreviewSoundFontPlaybackConfiguration,
@@ -50,12 +51,14 @@ function chordDisplay(idName: string, midis: readonly number[]): ChordDisplay {
     normalizedSymbol: idName,
     notes: midis.map((midi, index) => ({
       accidental: '',
-      interval: index === 0 ? '1' : '3',
+      degree: index === 0 ? ('1' as const) : ('3' as const),
+      explanation: 'test explanation',
+      importance: 'essential',
       isRoot: index === 0,
-      keyboardKey: 'C',
       letter: 'C',
       midi,
       octave: 4,
+      pitchClass: (midi % 12) as PianoPitchClass,
       text: 'C',
       vexflowKey: 'c/4',
     })),
@@ -120,7 +123,7 @@ describe('buildSoundFontPlaybackConfiguration', () => {
 });
 
 describe('buildChordPreviewSoundFontPlaybackConfiguration', () => {
-  it('plays one chord as four even quarter-note hits with alternating strong/weak velocities and a sub-octave root', () => {
+  it('plays one chord as four even quarter-note hits with alternating velocities and a C2 root', () => {
     const configuration = buildChordPreviewSoundFontPlaybackConfiguration(
       chordDisplay('C', [60, 64, 67]),
       88,
@@ -136,7 +139,7 @@ describe('buildChordPreviewSoundFontPlaybackConfiguration', () => {
       { midi: 60, velocity },
       { midi: 64, velocity },
       { midi: 67, velocity },
-      { midi: 48, velocity },
+      { midi: 36, velocity },
     ];
     const holdStep = Array.from({ length: 4 }, () => ({ midi: -50, velocity: null }));
 
@@ -166,11 +169,13 @@ describe('buildChordSummarySoundFontPlaybackConfiguration', () => {
       { midi: 60, velocity: 96 },
       { midi: 64, velocity: 96 },
       { midi: 67, velocity: 96 },
+      { midi: 36, velocity: 96 },
     ]);
     expect(configuration.parts[1]?.[12]).toEqual([
       { midi: 65, velocity: 96 },
       { midi: 69, velocity: 96 },
       { midi: 72, velocity: 96 },
+      { midi: 41, velocity: 96 },
     ]);
   });
 });

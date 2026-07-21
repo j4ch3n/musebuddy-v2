@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { museBuddyColors } from '@/constants/design-tokens';
 import type { ChordDisplay } from '@/music-theory';
 import { FlashCard, PianoKeyboard } from '@/ui';
-import { normalizePianoKeyboardKey, type CanonicalPianoKeyboardKeyName } from '@/ui/piano-keyboard';
+import type { PianoPitchClass } from '@schema/music-theory-schema';
 
 import ChordSheet from './chord-sheet.dom';
 
@@ -16,12 +16,12 @@ type ChordKeyboardCardProps = {
 export function ChordKeyboardCard({ display, isFlipped, onFlipChange }: ChordKeyboardCardProps) {
   const rootNote = display.notes.find((note) => note.isRoot) ?? display.notes[0];
   const selectedKeys = display.notes
-    .filter((note) => note.keyboardKey !== rootNote.keyboardKey)
-    .map((note) => note.keyboardKey);
+    .filter((note) => note.pitchClass !== rootNote.pitchClass)
+    .map((note) => note.pitchClass);
   const noteNames = display.notes.map((note) => note.text).join(' - ');
-  const markerLabels = display.notes.reduce<Partial<Record<CanonicalPianoKeyboardKeyName, string>>>(
+  const markerLabels = display.notes.reduce<Partial<Record<PianoPitchClass, string>>>(
     (labels, note) => {
-      labels[normalizePianoKeyboardKey(note.keyboardKey)] = note.text;
+      labels[note.pitchClass] = note.text;
       return labels;
     },
     {},
@@ -38,7 +38,7 @@ export function ChordKeyboardCard({ display, isFlipped, onFlipChange }: ChordKey
           keyColor={museBuddyColors.accentBlue}
           keys={selectedKeys}
           markerLabels={markerLabels}
-          root={rootNote.keyboardKey}
+          root={rootNote.pitchClass}
           rootColor={museBuddyColors.accentRed}
         />
       }
@@ -59,7 +59,7 @@ export function ChordKeyboardCard({ display, isFlipped, onFlipChange }: ChordKey
           <View style={styles.explanations}>
             {display.notes.map((note) =>
               note.explanation ? (
-                <Text key={`${note.interval}-${note.text}`} style={styles.explanation}>
+                <Text key={`${note.degree}-${note.text}`} style={styles.explanation}>
                   <Text style={styles.noteName}>{note.text}</Text>
                   {` ${note.explanation}`}
                 </Text>

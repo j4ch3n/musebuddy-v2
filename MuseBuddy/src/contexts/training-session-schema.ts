@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { chordPitchSchema, pianoPitchClassSchema } from '@schema/music-theory-schema';
+
 const displayTokenTypeSchema = z.enum([
   'root',
   'quality',
@@ -14,10 +16,6 @@ const displayTokenTypeSchema = z.enum([
 export const chordDisplayTokenSchema = z.object({
   type: displayTokenTypeSchema,
   value: z.string(),
-});
-
-export const chordToneSchema = z.object({
-  explanation: z.string().min(1),
 });
 
 export const chordDegreeSchema = z.enum([
@@ -45,6 +43,16 @@ export const chordDegreeSchema = z.enum([
   'b13',
   'bb7',
 ]);
+
+export const chordToneImportanceSchema = z.enum(['essential', 'supporting', 'color', 'optional']);
+
+export const chordToneSchema = z.object({
+  degree: chordDegreeSchema,
+  explanation: z.string().min(1),
+  importance: chordToneImportanceSchema,
+  pitch: chordPitchSchema,
+  pitchClass: pianoPitchClassSchema,
+});
 
 export const rhythmStepSchema = z.union([z.literal('s'), z.literal('w'), z.literal('h'), z.null()]);
 
@@ -97,19 +105,16 @@ export const rhythmSchema = z.object({
   pattern: z.array(rhythmStepSchema).length(32),
 });
 
+export const trainingSessionChordSchema = z.object({
+  displayTokens: z.array(chordDisplayTokenSchema).min(1),
+  idName: z.string().min(1),
+  normalizedSymbol: z.string().min(1),
+  root: chordPitchSchema,
+  tones: z.array(chordToneSchema).min(1),
+});
+
 export const trainingSessionSchema = z.object({
-  chords: z
-    .array(
-      z.object({
-        displayTokens: z.array(chordDisplayTokenSchema).min(1),
-        idName: z.string().min(1),
-        normalizedSymbol: z.string().min(1),
-        qualityBaseFormula: z.array(chordDegreeSchema).min(1),
-        root: z.string().min(1),
-        tones: z.array(chordToneSchema).min(1),
-      }),
-    )
-    .min(1),
+  chords: z.array(trainingSessionChordSchema).min(1),
   keyArrangement: keyArrangementSchema,
 });
 
@@ -121,3 +126,4 @@ export type TrainingSessionRhythmPattern = TrainingSessionRhythm['pattern'];
 export type ChordDisplayTokenValue = z.infer<typeof chordDisplayTokenSchema>;
 export type ChordDegree = z.infer<typeof chordDegreeSchema>;
 export type ChordTone = z.infer<typeof chordToneSchema>;
+export type ChordToneImportance = z.infer<typeof chordToneImportanceSchema>;

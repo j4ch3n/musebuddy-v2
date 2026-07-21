@@ -14,10 +14,6 @@ export const chordDisplayTokenSchema = z.object({
   value: z.string(),
 });
 
-export const chordToneSchema = z.object({
-  explanation: z.string().min(1),
-});
-
 export const chordDegreeSchema = z.enum([
   "#11",
   "#2",
@@ -44,6 +40,31 @@ export const chordDegreeSchema = z.enum([
   "bb7",
 ]);
 
+export const chordPitchSchema = z.string().regex(/^[A-G](?:#{1,2}|b{1,2})?$/);
+
+export const pianoPitchClassSchema = z.union([
+  z.literal(0),
+  z.literal(1),
+  z.literal(2),
+  z.literal(3),
+  z.literal(4),
+  z.literal(5),
+  z.literal(6),
+  z.literal(7),
+  z.literal(8),
+  z.literal(9),
+  z.literal(10),
+  z.literal(11),
+]);
+
+export const chordToneSchema = z.object({
+  degree: chordDegreeSchema,
+  explanation: z.string().min(1),
+  importance: z.enum(["essential", "supporting", "color", "optional"]),
+  pitch: chordPitchSchema,
+  pitchClass: pianoPitchClassSchema,
+});
+
 export const dbArrangementRowSchema = z.object({
   arrangement: z.array(z.array(z.number().int().nullable())).length(32),
   bar_index: z.number().int().nonnegative(),
@@ -51,8 +72,7 @@ export const dbArrangementRowSchema = z.object({
   chord: z.string().min(1),
   chord_display_tokens: z.array(chordDisplayTokenSchema).min(1),
   chord_normalized_symbol: z.string().min(1),
-  chord_quality_base_formula: z.array(chordDegreeSchema).min(1),
-  chord_root: z.string().min(1),
+  chord_root: chordPitchSchema,
   chord_tones: z.array(chordToneSchema).min(1),
   song_id: z.string().min(1),
   velocity: z.array(z.array(z.number().int().min(0).max(127).nullable()))

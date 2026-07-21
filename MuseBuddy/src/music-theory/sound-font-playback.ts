@@ -78,16 +78,12 @@ export function buildChordPreviewSoundFontPlaybackConfiguration(
   return {
     bpm,
     parts: [
-      buildChordPart(
-        display,
-        [
-          { durationSteps: 4, startStep: 0, velocity: CHORD_NOTE_STRONG_VELOCITY },
-          { durationSteps: 4, startStep: 4, velocity: CHORD_NOTE_WEAK_VELOCITY },
-          { durationSteps: 4, startStep: 8, velocity: CHORD_NOTE_STRONG_VELOCITY },
-          { durationSteps: 4, startStep: 12, velocity: CHORD_NOTE_WEAK_VELOCITY },
-        ],
-        { includeRootSubOctave: true },
-      ),
+      buildChordPart(display, [
+        { durationSteps: 4, startStep: 0, velocity: CHORD_NOTE_STRONG_VELOCITY },
+        { durationSteps: 4, startStep: 4, velocity: CHORD_NOTE_WEAK_VELOCITY },
+        { durationSteps: 4, startStep: 8, velocity: CHORD_NOTE_STRONG_VELOCITY },
+        { durationSteps: 4, startStep: 12, velocity: CHORD_NOTE_WEAK_VELOCITY },
+      ]),
     ],
   };
 }
@@ -151,16 +147,12 @@ type ChordAttack = {
 function buildChordPart(
   display: ChordDisplay,
   attacks: readonly ChordAttack[],
-  options: { includeRootSubOctave?: boolean } = {},
 ): SoundFontPlaybackStep[] {
   const chordMidis = display.notes.map((note) => note.midi);
+  const rootNote = display.notes.find((note) => note.isRoot) ?? display.notes[0];
 
-  if (options.includeRootSubOctave) {
-    const rootNote = display.notes.find((note) => note.isRoot) ?? display.notes[0];
-
-    if (rootNote) {
-      chordMidis.push(rootNote.midi - 12);
-    }
+  if (rootNote) {
+    chordMidis.push(36 + rootNote.pitchClass);
   }
 
   const stepModes = Array.from({ length: 16 }, () => 'rest' as 'hold' | 'note' | 'rest');

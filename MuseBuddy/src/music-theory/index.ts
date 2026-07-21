@@ -1,6 +1,6 @@
 export {
   midiToDisplayNote,
-  midiToKeyboardKey,
+  midiToPitchClass,
   parsePitchClass,
   pitchClassToMidi,
   type MusicDisplayNote,

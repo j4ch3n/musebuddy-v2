@@ -1,38 +1,50 @@
 import { describe, expect, it } from 'vitest';
 
-import { midiToDisplayNote, midiToKeyboardKey, parsePitchClass } from './midi-note';
+import { midiToDisplayNote, midiToPitchClass, parsePitchClass } from './midi-note';
 
 describe('midi note utilities', () => {
   it('converts MIDI pitches into display notes and VexFlow keys', () => {
     expect(midiToDisplayNote(60)).toMatchObject({
       accidental: '',
-      keyboardKey: 'C',
       letter: 'C',
       midi: 60,
       octave: 4,
+      pitchClass: 0,
       text: 'C',
       vexflowKey: 'c/4',
     });
   });
 
-  it('uses sharp pitch classes for canonical keyboard keys', () => {
+  it('derives numeric pitch classes from MIDI', () => {
     expect(midiToDisplayNote(70)).toMatchObject({
       accidental: '#',
-      keyboardKey: 'A#',
       letter: 'A',
+      pitchClass: 10,
       text: 'A#',
       vexflowKey: 'a/4',
     });
-    expect(midiToKeyboardKey(70)).toBe('A#');
+    expect(midiToPitchClass(70)).toBe(10);
   });
 
   it('parses flat pitch classes for display overrides', () => {
     expect(parsePitchClass('Bb')).toEqual({ accidental: 'b', letter: 'B' });
     expect(midiToDisplayNote(70, 'Bb')).toMatchObject({
       accidental: 'b',
-      keyboardKey: 'A#',
       letter: 'B',
+      pitchClass: 10,
       text: 'Bb',
+    });
+  });
+
+  it('preserves double-accidental notation octaves for an assigned MIDI pitch', () => {
+    expect(midiToDisplayNote(74, 'C##')).toMatchObject({
+      accidental: '##',
+      letter: 'C',
+      midi: 74,
+      octave: 5,
+      pitchClass: 2,
+      text: 'C##',
+      vexflowKey: 'c/5',
     });
   });
 });

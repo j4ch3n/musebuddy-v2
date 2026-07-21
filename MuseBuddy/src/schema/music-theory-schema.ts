@@ -6,6 +6,24 @@ export const musicNoteLetterSchema = z.enum(musicNoteLetters);
 export const musicAccidentals = ['', '#', 'b'] as const;
 export const musicAccidentalSchema = z.enum(musicAccidentals);
 
+export const chordPitchSchema = z.string().regex(/^[A-G](?:#{1,2}|b{1,2})?$/);
+
+export const pianoPitchClasses = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] as const;
+export const pianoPitchClassSchema = z.union([
+  z.literal(0),
+  z.literal(1),
+  z.literal(2),
+  z.literal(3),
+  z.literal(4),
+  z.literal(5),
+  z.literal(6),
+  z.literal(7),
+  z.literal(8),
+  z.literal(9),
+  z.literal(10),
+  z.literal(11),
+]);
+
 export const chordIntervalSchema = z.enum([
   '1',
   'b2',
@@ -34,38 +52,12 @@ export const chordRootSchema = z.object({
   letter: musicNoteLetterSchema,
 });
 
-export const naturalPianoKeyboardKeyNames = ['C', 'D', 'E', 'F', 'G', 'A', 'B'] as const;
-export const sharpPianoKeyboardKeyNames = ['C#', 'D#', 'F#', 'G#', 'A#'] as const;
-
-export const canonicalPianoKeyboardKeyNames = [
-  'C',
-  'C#',
-  'D',
-  'D#',
-  'E',
-  'F',
-  'F#',
-  'G',
-  'G#',
-  'A',
-  'A#',
-  'B',
-] as const;
-
-export const flatPianoKeyboardKeyNames = ['Db', 'Eb', 'Gb', 'Ab', 'Bb'] as const;
-
-export const pianoKeyboardKeyNameSchema = z.enum([
-  ...canonicalPianoKeyboardKeyNames,
-  ...flatPianoKeyboardKeyNames,
-]);
-
 export type MusicNoteLetter = z.infer<typeof musicNoteLetterSchema>;
 export type MusicAccidental = z.infer<typeof musicAccidentalSchema>;
+export type PianoPitchClass = z.infer<typeof pianoPitchClassSchema>;
 export type ChordInterval = z.infer<typeof chordIntervalSchema>;
 export type ChordQuality = z.infer<typeof chordQualitySchema>;
 export type ChordRoot = z.infer<typeof chordRootSchema>;
-export type CanonicalPianoKeyboardKeyName = (typeof canonicalPianoKeyboardKeyNames)[number];
-export type PianoKeyboardKeyName = z.infer<typeof pianoKeyboardKeyNameSchema>;
 
 export const naturalNoteSemitones = {
   C: 0,
@@ -77,7 +69,7 @@ export const naturalNoteSemitones = {
   B: 11,
 } satisfies Record<MusicNoteLetter, number>;
 
-export const diatonicNoteLetters = naturalPianoKeyboardKeyNames;
+export const diatonicNoteLetters = ['C', 'D', 'E', 'F', 'G', 'A', 'B'] as const;
 
 export const chordIntervalMetadata = {
   '1': { degree: 1, semitones: 0 },
@@ -99,22 +91,3 @@ export const chordIntervalMetadata = {
   '11': { degree: 4, semitones: 17 },
   '13': { degree: 6, semitones: 21 },
 } satisfies Record<ChordInterval, { degree: number; semitones: number }>;
-
-export function normalizePianoKeyboardKey(
-  key: PianoKeyboardKeyName,
-): CanonicalPianoKeyboardKeyName {
-  switch (key) {
-    case 'Db':
-      return 'C#';
-    case 'Eb':
-      return 'D#';
-    case 'Gb':
-      return 'F#';
-    case 'Ab':
-      return 'G#';
-    case 'Bb':
-      return 'A#';
-    default:
-      return key;
-  }
-}
