@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Piano Pattern VexFlow Demo</title>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <p class="eyebrow">MusicXML → VexFlow JSON → VexFlow</p>
+          <h1>Piano pattern engraving</h1>
+        </div>
+        <label>
+          Pattern
+          <select id="pattern">
+            <option value="no4">no4</option>
+            <option value="no15">no15</option>
+          </select>
+        </label>
+      </header>
+      <p id="status" role="status">Loading score…</p>
+      <section class="score-frame" aria-label="Rendered piano score">
+        <div id="score"></div>
+      </section>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

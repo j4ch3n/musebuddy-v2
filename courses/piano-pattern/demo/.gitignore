@@ -1,0 +1,11 @@
+# Dependencies
+node_modules/
+
+# Vite and TypeScript generated files
+dist/
+.vite/
+*.tsbuildinfo
+
+# Local logs
+*.log
+pnpm-debug.log*
