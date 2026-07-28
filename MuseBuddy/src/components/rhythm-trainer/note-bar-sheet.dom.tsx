@@ -5,6 +5,7 @@ import { Dot, Factory, StaveNote, TimeSignature } from 'vexflow';
 
 import { museBuddyColors } from '@/constants/design-tokens';
 
+import { RHYTHM_SHEET_HEIGHT_PX } from './constants';
 import { RHYTHM_NOTE_KEY, type NoteBarVexflowEvent } from './note-bar-vexflow';
 
 type NoteBarSheetProps = {
@@ -14,7 +15,6 @@ type NoteBarSheetProps = {
 };
 
 const STAVE_WIDTH = 328;
-const STAVE_HEIGHT = 120;
 const SINGLE_LINE_NOTE_POSITION = 5;
 
 export default function NoteBarSheet({ currentStepIndex, events }: NoteBarSheetProps) {
@@ -34,7 +34,7 @@ export default function NoteBarSheet({ currentStepIndex, events }: NoteBarSheetP
       renderer: {
         elementId,
         width: STAVE_WIDTH,
-        height: STAVE_HEIGHT,
+        height: RHYTHM_SHEET_HEIGHT_PX,
       },
     });
     const context = factory.getContext();
@@ -46,7 +46,7 @@ export default function NoteBarSheet({ currentStepIndex, events }: NoteBarSheetP
       },
       width: STAVE_WIDTH - 16,
       x: 8,
-      y: 8,
+      y: 4,
     });
     const timeSignature = new TimeSignature('4/4', 10);
     timeSignature.topLine = -1;
@@ -119,7 +119,7 @@ export default function NoteBarSheet({ currentStepIndex, events }: NoteBarSheetP
         alignItems: 'center',
         background: museBuddyColors.white,
         display: 'flex',
-        height: STAVE_HEIGHT,
+        height: RHYTHM_SHEET_HEIGHT_PX,
         justifyContent: 'center',
         overflow: 'hidden',
         width: '100%',

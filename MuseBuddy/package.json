@@ -10,6 +10,7 @@
     "@react-native-vector-icons/fontawesome5": "^13.1.2",
     "@react-native-vector-icons/ionicons": "^13.1.2",
     "@react-native-vector-icons/lucide": "^13.1.2",
+    "@react-native-vector-icons/material-design-icons": "^13.1.2",
     "@supabase/supabase-js": "^2.110.0",
     "@tamagui/config": "^2.4.0",
     "@tonaljs/note": "^4.12.1",

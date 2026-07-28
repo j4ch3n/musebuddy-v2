@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 
+import { RHYTHM_SHEET_HEIGHT_PX, RHYTHM_SHEET_WRAPPER_HEIGHT_PX } from './constants';
 import NoteBarSheet from './note-bar-sheet.dom';
 import { convertRhythmBarToVexflowEvents } from './note-bar-vexflow';
 import type { RhythmStep } from './types';
@@ -33,13 +34,13 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: museBuddyColors.white,
     borderRadius: museBuddyRadii.medium,
-    height: 124,
+    height: RHYTHM_SHEET_WRAPPER_HEIGHT_PX,
     justifyContent: 'center',
     overflow: 'hidden',
   },
   sheet: {
     backgroundColor: 'transparent',
-    height: 120,
+    height: RHYTHM_SHEET_HEIGHT_PX,
     width: '100%',
   },
 });

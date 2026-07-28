@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -17,17 +17,20 @@ import { useTrainingSession } from '@/contexts/training-session-context';
 import { buildRhythmSoundFontPlaybackConfiguration } from '@/music-theory/sound-font-playback';
 
 import { PlaceholderPanel } from './placeholder-panel';
+import { getNextRhythmTrainingHref, type RhythmStaff } from './rhythm-training-flow';
 import { TrainingScreenShell } from './training-screen-shell';
-
-type RhythmStaff = 'bass' | 'treble';
 
 const EMPTY_RHYTHM_PATTERN: RhythmPattern = [];
 
-export function RhythmTrainingPage() {
+type RhythmTrainingPageProps = {
+  staff: RhythmStaff;
+};
+
+export function RhythmTrainingPage({ staff }: RhythmTrainingPageProps) {
   const router = useRouter();
   const { learningConfig, session } = useTrainingSession();
-  const [staff, setStaff] = useState<RhythmStaff>('treble');
   const pattern = session?.rhythms[staff].pattern ?? EMPTY_RHYTHM_PATTERN;
+  const currentStep = staff === 'bass' ? 'rhythm-bass' : 'rhythm-treble';
   const stepDurationMs = 0.25 * (60_000 / learningConfig.bpm);
   const allowedOffsetMs = stepDurationMs / 2;
   const listeningDurationMs = pattern.length * stepDurationMs;
@@ -41,7 +44,7 @@ export function RhythmTrainingPage() {
 
   if (pattern.length === 0) {
     return (
-      <TrainingScreenShell currentStep="rhythm" footer={null}>
+      <TrainingScreenShell currentStep={currentStep} footer={null}>
         <PlaceholderPanel
           accent="blue"
           body="Training material is not loaded yet."
@@ -58,14 +61,10 @@ export function RhythmTrainingPage() {
       key={`rhythm-${staff}-${pattern.join('')}`}
       listeningMode={{ kind: 'piano-attack', allowedOffsetMs }}
       onFinish={() => {
-        if (staff === 'treble') {
-          setStaff('bass');
-          return;
-        }
-        router.push('/pattern-training');
+        router.push(getNextRhythmTrainingHref(staff));
       }}
       onSkip={() => {
-        router.push('/pattern-training');
+        router.push(getNextRhythmTrainingHref(staff));
       }}
       playback={{
         configuration: playbackConfiguration,
@@ -123,7 +122,7 @@ function RhythmTrainingContent({
 
   return (
     <TrainingScreenShell
-      currentStep="rhythm"
+      currentStep={staff === 'bass' ? 'rhythm-bass' : 'rhythm-treble'}
       footer={
         <View style={{ gap: 14 }}>
           {showCombo ? <Text style={styles.combo}>COMBO ×{combo}</Text> : null}

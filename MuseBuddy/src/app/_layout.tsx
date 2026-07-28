@@ -44,7 +44,8 @@ export default function RootLayout() {
             />
             <Stack.Screen name="session-goal" options={{ gestureEnabled: false }} />
             <Stack.Screen name="chord-learning" options={{ gestureEnabled: false }} />
-            <Stack.Screen name="rhythm-training" options={{ gestureEnabled: false }} />
+            <Stack.Screen name="rhythm-training-bass" options={{ gestureEnabled: false }} />
+            <Stack.Screen name="rhythm-training-treble" options={{ gestureEnabled: false }} />
             <Stack.Screen name="pattern-training" options={{ gestureEnabled: false }} />
             <Stack.Screen name="basic-pitch-debug" />
           </Stack>

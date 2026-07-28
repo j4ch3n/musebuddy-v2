@@ -14,6 +14,7 @@ import {
   buildChordSummarySoundFontPlaybackConfiguration,
   type ChordDisplay,
 } from '@/music-theory';
+import { rhythmTrainingHrefs } from '@/pages/rhythm-training-flow';
 import { Carousel, type CarouselProps } from '@/ui';
 
 import { PlaceholderPanel } from './placeholder-panel';
@@ -179,14 +180,14 @@ export function ChordLearningPage() {
       key={getSlideKey(currentSlide)}
       onFinish={() => {
         if (currentSlide.type === 'summary') {
-          router.push('/rhythm-training');
+          router.push(rhythmTrainingHrefs.bass);
           return;
         }
 
         setCurrentSlideIndex((index) => Math.min(index + 1, slides.length - 1));
       }}
       onSkip={() => {
-        router.push('/rhythm-training');
+        router.push(rhythmTrainingHrefs.bass);
       }}
       playback={{
         configuration: playbackConfiguration,

@@ -1,14 +1,21 @@
 import FontAwesome5 from '@react-native-vector-icons/fontawesome5';
 import Lucide from '@react-native-vector-icons/lucide';
+import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 import { type Href, useRouter } from 'expo-router';
 import { Pressable, StyleSheet } from 'react-native';
 import { View, XStack } from 'tamagui';
 
 import { museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 
-export type DailyProgressNavigatorStep = 'goal' | 'chord' | 'rhythm' | 'pattern';
+export type DailyProgressNavigatorStep =
+  | 'goal'
+  | 'chord'
+  | 'rhythm-bass'
+  | 'rhythm-treble'
+  | 'pattern';
 
-type TrainingStepIconName = 'music' | 'drum';
+type TrainingStepIconName = 'music';
+type RhythmClefIconName = 'music-clef-bass' | 'music-clef-treble';
 
 type DailyProgressNavigatorProps = {
   currentStep: DailyProgressNavigatorStep;
@@ -27,6 +34,10 @@ type DailyProgressNavigatorItem = {
   | {
       iconFamily: 'lucide';
       iconName: 'piano';
+    }
+  | {
+      clefIconName: RhythmClefIconName;
+      iconFamily: 'rhythm';
     }
 );
 
@@ -49,11 +60,19 @@ const dailyProgressSteps: DailyProgressNavigatorItem[] = [
   },
   {
     accent: 'green',
-    href: '/rhythm-training',
-    iconFamily: 'fontAwesome5',
-    iconName: 'drum',
-    id: 'rhythm',
-    label: 'Rhythm',
+    clefIconName: 'music-clef-bass',
+    href: '/rhythm-training-bass',
+    iconFamily: 'rhythm',
+    id: 'rhythm-bass',
+    label: 'Bass rhythm',
+  },
+  {
+    accent: 'green',
+    clefIconName: 'music-clef-treble',
+    href: '/rhythm-training-treble',
+    iconFamily: 'rhythm',
+    id: 'rhythm-treble',
+    label: 'Treble rhythm',
   },
   {
     accent: 'purple',
@@ -70,7 +89,7 @@ export function DailyProgressNavigator({ currentStep }: DailyProgressNavigatorPr
   const currentStepIndex = dailyProgressSteps.findIndex((step) => step.id === currentStep);
 
   return (
-    <XStack accessibilityRole="tablist" flex={1} gap={6}>
+    <XStack accessibilityRole="tablist" flex={1} gap={4}>
       {dailyProgressSteps.map((step, index) => {
         const isActive = step.id === currentStep;
         const isComplete = index < currentStepIndex;
@@ -92,7 +111,16 @@ export function DailyProgressNavigator({ currentStep }: DailyProgressNavigatorPr
               isComplete && styles.stepItemComplete,
             ]}
           >
-            {step.iconFamily === 'lucide' ? (
+            {step.iconFamily === 'rhythm' ? (
+              <View style={styles.rhythmIconPair}>
+                <FontAwesome5 color={museBuddyColors.ink} iconStyle="solid" name="drum" size={14} />
+                <MaterialDesignIcons
+                  color={museBuddyColors.ink}
+                  name={step.clefIconName}
+                  size={14}
+                />
+              </View>
+            ) : step.iconFamily === 'lucide' ? (
               <Lucide color={museBuddyColors.ink} name={step.iconName} size={20} />
             ) : (
               <FontAwesome5
@@ -126,6 +154,11 @@ const accentStyles = StyleSheet.create({
 });
 
 const styles = StyleSheet.create({
+  rhythmIconPair: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 1,
+  },
   stepItem: {
     alignItems: 'center',
     backgroundColor: museBuddyColors.surface,
@@ -135,7 +168,7 @@ const styles = StyleSheet.create({
     minHeight: 42,
     overflow: 'hidden',
     paddingBottom: 7,
-    paddingHorizontal: 4,
+    paddingHorizontal: 1,
     paddingTop: 7,
   },
   stepItemActive: {
