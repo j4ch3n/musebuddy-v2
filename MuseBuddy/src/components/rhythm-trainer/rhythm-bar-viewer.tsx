@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 
-import { ATTACK_DOT_DIAMETER_PX, ATTACK_DOT_RADIUS_PX, STEP_GRID_GAP_PX } from './constants';
+import { ATTACK_DOT_DIAMETER_PX, ATTACK_DOT_RADIUS_PX } from './constants';
 import { getRhythmAttackDotPosition } from './rhythm-attack-geometry';
 import type { RhythmAttackDot, RhythmStep } from './types';
+
+const BEAT_NUMBERS = [1, 2, 3, 4] as const;
 
 type RhythmBarViewerProps = {
   attackDots?: readonly RhythmAttackDot[];
@@ -41,24 +43,61 @@ export function RhythmBarViewer({
       style={styles.container}
     >
       <View
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        style={styles.beatLabels}
+      >
+        {BEAT_NUMBERS.map((beatNumber) => (
+          <Text key={beatNumber} style={styles.beatLabel}>
+            {beatNumber}
+          </Text>
+        ))}
+      </View>
+      <View
         onLayout={(event) => {
           setGridWidth(event.nativeEvent.layout.width);
         }}
-        style={styles.stepGrid}
+        style={styles.lane}
       >
-        {steps.map((step, stepIndex) => (
-          <StepPart
-            key={stepIndex}
-            isCurrent={currentStepIndex === stepIndex}
-            step={step}
-            stepIndex={stepIndex}
-          />
-        ))}
+        <View
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          pointerEvents="none"
+          style={styles.beatBands}
+        >
+          {BEAT_NUMBERS.map((beatNumber, beatIndex) => (
+            <View
+              key={beatNumber}
+              style={[styles.beatBand, beatIndex % 2 === 0 && styles.beatBandAlternate]}
+            />
+          ))}
+        </View>
+        <View
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          pointerEvents="none"
+          style={styles.baseline}
+        />
+        <View style={styles.stepGrid}>
+          {steps.map((step, stepIndex) => (
+            <StepPart
+              key={stepIndex}
+              isCurrent={currentStepIndex === stepIndex}
+              step={step}
+              stepIndex={stepIndex}
+            />
+          ))}
+        </View>
       </View>
       <View
         accessibilityLabel="Detected piano attacks"
         style={[styles.markerRow, { width: gridWidth }]}
       >
+        <View
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={styles.markerTrack}
+        />
         {positionedDots.map((dot) => (
           <View
             key={dot.id}
@@ -85,10 +124,8 @@ function StepPart({ isCurrent, step, stepIndex }: StepPartProps) {
     step === null ? 'rest' : step === 's' ? 'strong beat' : step === 'w' ? 'weak beat' : 'hold';
 
   return (
-    <View
-      accessibilityLabel={`Step ${stepIndex + 1}: ${label}`}
-      style={[styles.stepPart, isCurrent && styles.stepPartCurrent]}
-    >
+    <View accessibilityLabel={`Step ${stepIndex + 1}: ${label}`} style={styles.stepPart}>
+      {isCurrent ? <View pointerEvents="none" style={styles.stepPartCurrent} /> : null}
       <View
         style={[
           styles.stepBar,
@@ -104,26 +141,76 @@ function StepPart({ isCurrent, step, stepIndex }: StepPartProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: museBuddyColors.white,
-    borderRadius: museBuddyRadii.small,
-    minHeight: 98,
-    padding: 12,
+    minHeight: 96,
+    paddingVertical: 2,
+  },
+  beatLabels: {
+    flexDirection: 'row',
+    marginBottom: 4,
+  },
+  beatLabel: {
+    color: museBuddyColors.ink,
+    flex: 1,
+    fontSize: 11,
+    fontVariant: ['tabular-nums'],
+    fontWeight: '900',
+    lineHeight: 14,
+    opacity: 0.72,
+    textAlign: 'center',
+  },
+  lane: {
+    borderCurve: 'continuous',
+    borderRadius: museBuddyRadii.medium,
+    height: 58,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  beatBands: {
+    bottom: 0,
+    flexDirection: 'row',
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
+  beatBand: {
+    backgroundColor: museBuddyColors.surface,
+    flex: 1,
+  },
+  beatBandAlternate: {
+    backgroundColor: museBuddyColors.surfaceMuted,
+  },
+  baseline: {
+    backgroundColor: museBuddyColors.ink,
+    bottom: 4,
+    height: 2,
+    left: 0,
+    opacity: 0.2,
+    position: 'absolute',
+    right: 0,
   },
   stepGrid: {
     alignItems: 'flex-end',
     flexDirection: 'row',
-    gap: STEP_GRID_GAP_PX,
-    height: 54,
+    height: '100%',
   },
   markerRow: {
     height: ATTACK_DOT_DIAMETER_PX,
-    marginTop: 4,
+    marginTop: 6,
     position: 'relative',
+  },
+  markerTrack: {
+    backgroundColor: museBuddyColors.surfaceMuted,
+    height: 2,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: ATTACK_DOT_RADIUS_PX - 1,
   },
   attackDot: {
     borderColor: museBuddyColors.ink,
     borderRadius: ATTACK_DOT_RADIUS_PX,
-    borderWidth: 1,
+    borderWidth: 2,
     height: ATTACK_DOT_DIAMETER_PX,
     position: 'absolute',
     top: 0,
@@ -134,49 +221,47 @@ const styles = StyleSheet.create({
   },
   stepPart: {
     alignItems: 'center',
-    backgroundColor: museBuddyColors.white,
-    borderColor: museBuddyColors.ink,
-    borderCurve: 'continuous',
-    borderRadius: museBuddyRadii.small,
-    borderWidth: 2,
     flex: 1,
-    height: 54,
+    height: '100%',
     justifyContent: 'flex-end',
     minWidth: 0,
-    overflow: 'hidden',
-    paddingBottom: 4,
+    paddingBottom: 5,
+    position: 'relative',
   },
   stepPartCurrent: {
     backgroundColor: museBuddyColors.active,
-    borderWidth: 3,
+    bottom: 0,
+    left: 0,
+    opacity: 0.48,
+    position: 'absolute',
+    right: 0,
+    top: 0,
   },
   stepBar: {
-    borderColor: museBuddyColors.ink,
-    borderRadius: 4,
-    borderWidth: 2,
-    width: '64%',
+    borderCurve: 'continuous',
+    borderRadius: 3,
+    width: '70%',
     zIndex: 1,
   },
   strongStepBar: {
-    backgroundColor: museBuddyColors.primary,
-    height: 40,
+    backgroundColor: museBuddyColors.accentPurple,
+    height: 44,
   },
   unmatchedAttackDot: {
     backgroundColor: museBuddyColors.accentRed,
   },
   weakStepBar: {
     backgroundColor: museBuddyColors.accentBlue,
-    height: 26,
+    height: 30,
   },
   holdStepBar: {
     backgroundColor: museBuddyColors.accentGreen,
-    height: 14,
-    opacity: 0.72,
+    height: 12,
+    opacity: 0.78,
   },
   restStepBar: {
-    backgroundColor: 'transparent',
-    borderColor: museBuddyColors.ink,
-    height: 8,
-    opacity: 0.35,
+    backgroundColor: museBuddyColors.ink,
+    height: 4,
+    opacity: 0.28,
   },
 });

@@ -1,9 +1,4 @@
-import {
-  ATTACK_DOT_DIAMETER_PX,
-  ATTACK_DOT_RADIUS_PX,
-  STEP_GRID_GAP_PX,
-  STEPS_PER_BAR,
-} from './constants';
+import { ATTACK_DOT_DIAMETER_PX, ATTACK_DOT_RADIUS_PX, STEPS_PER_BAR } from './constants';
 
 export type RhythmAttackDotPosition = {
   barIndex: number;
@@ -20,9 +15,8 @@ export function getRhythmAttackDotPosition({
   gridWidth: number;
   stepDurationMs: number;
 }): RhythmAttackDotPosition {
-  const cellWidth = (gridWidth - STEP_GRID_GAP_PX * (STEPS_PER_BAR - 1)) / STEPS_PER_BAR;
-  const stepPitch = cellWidth + STEP_GRID_GAP_PX;
-  const centerForStep = (stepIndex: number) => cellWidth / 2 + stepIndex * stepPitch;
+  const cellWidth = gridWidth / STEPS_PER_BAR;
+  const centerForStep = (stepIndex: number) => cellWidth / 2 + stepIndex * cellWidth;
   const barDurationMs = STEPS_PER_BAR * stepDurationMs;
   const barIndex = Math.floor(attackOffsetMs / barDurationMs);
   const localOffsetMs = attackOffsetMs - barIndex * barDurationMs;
@@ -31,7 +25,7 @@ export function getRhythmAttackDotPosition({
   const fraction = continuousStep - lowerStep;
   const targetCenterX =
     lowerStep < STEPS_PER_BAR - 1
-      ? centerForStep(lowerStep) + fraction * stepPitch
+      ? centerForStep(lowerStep) + fraction * cellWidth
       : centerForStep(STEPS_PER_BAR - 1) +
         fraction * (gridWidth - centerForStep(STEPS_PER_BAR - 1));
   const left = clamp(targetCenterX - ATTACK_DOT_RADIUS_PX, 0, gridWidth - ATTACK_DOT_DIAMETER_PX);

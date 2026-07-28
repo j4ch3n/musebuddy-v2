@@ -1,5 +1,4 @@
 export const STEPS_PER_BAR = 32;
-export const STEP_GRID_GAP_PX = 2;
 export const ATTACK_DOT_DIAMETER_PX = 10;
 export const ATTACK_DOT_RADIUS_PX = ATTACK_DOT_DIAMETER_PX / 2;
 export const MAX_BAR_COUNT = 8;

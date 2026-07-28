@@ -52,14 +52,15 @@ type Story = StoryObj<typeof meta>;
 
 export const Idle: Story = {};
 
-export const ActiveMiddleBar: Story = {
+export const ActiveThirdBeat: Story = {
   args: {
     currentStepIndex: 21,
   },
 };
 
-export const OneBar: Story = {
+export const TwoBars: Story = {
   args: {
-    pattern: samplePattern.slice(0, 16),
+    currentStepIndex: 45,
+    pattern: [...samplePattern, ...samplePattern],
   },
 };

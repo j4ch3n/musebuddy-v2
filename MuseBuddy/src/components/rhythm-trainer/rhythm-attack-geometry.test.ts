@@ -14,8 +14,8 @@ describe('rhythm attack dot geometry', () => {
     });
 
     expect(position.barIndex).toBe(0);
-    expect(position.targetCenterX).toBe(56.40625);
-    expect(position.left).toBe(51.40625);
+    expect(position.targetCenterX).toBe(57.0625);
+    expect(position.left).toBe(52.0625);
     expect(position.left).toBe(position.targetCenterX - 5);
   });
 
@@ -26,8 +26,20 @@ describe('rhythm attack dot geometry', () => {
       stepDurationMs,
     });
 
-    expect(position.targetCenterX).toBe(61.625);
-    expect(position.left).toBe(56.625);
+    expect(position.targetCenterX).toBe(62.25);
+    expect(position.left).toBe(57.25);
+  });
+
+  it('starts a new lane at the center of its first step', () => {
+    const position = getRhythmAttackDotPosition({
+      attackOffsetMs: 3_200,
+      gridWidth,
+      stepDurationMs,
+    });
+
+    expect(position.barIndex).toBe(1);
+    expect(position.targetCenterX).toBe(5.1875);
+    expect(position.left).toBe(0.1875);
   });
 
   it('resolves the second card and clamps the final half-step inside the grid', () => {
