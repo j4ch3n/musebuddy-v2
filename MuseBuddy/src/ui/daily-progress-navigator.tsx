@@ -6,9 +6,9 @@ import { View, XStack } from 'tamagui';
 
 import { museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 
-export type DailyProgressNavigatorStep = 'goal' | 'chord' | 'rhythm' | 'pattern' | 'jam';
+export type DailyProgressNavigatorStep = 'goal' | 'chord' | 'rhythm' | 'pattern';
 
-type TrainingStepIconName = 'music' | 'drum' | 'magic';
+type TrainingStepIconName = 'music' | 'drum';
 
 type DailyProgressNavigatorProps = {
   currentStep: DailyProgressNavigatorStep;
@@ -62,14 +62,6 @@ const dailyProgressSteps: DailyProgressNavigatorItem[] = [
     iconName: 'shapes',
     id: 'pattern',
     label: 'Pattern',
-  },
-  {
-    accent: 'purple',
-    href: '/jam-session',
-    iconFamily: 'fontAwesome5',
-    iconName: 'magic',
-    id: 'jam',
-    label: 'Jam',
   },
 ];
 

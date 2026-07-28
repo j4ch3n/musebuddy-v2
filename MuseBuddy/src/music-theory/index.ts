@@ -24,6 +24,8 @@ export {
 export {
   buildChordPreviewSoundFontPlaybackConfiguration,
   buildChordSummarySoundFontPlaybackConfiguration,
+  buildPatternSoundFontPlaybackConfiguration,
+  buildRhythmSoundFontPlaybackConfiguration,
 } from './sound-font-playback';
-export { deriveRhythmFromKeyArrangement } from './rhythm-arrangement';
+export { deriveRhythmFromPatternBeats } from './rhythm-arrangement';
 export { BPM_OPTIONS, DEFAULT_BPM } from './tempo';

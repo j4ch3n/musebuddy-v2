@@ -30,11 +30,11 @@ export async function fetchDailyTrainingSession(): Promise<TrainingSession> {
   const supabase = getSupabaseClient();
 
   logger.info('Daily training edge function request started.', {
-    functionName: 'daily-training-session',
+    functionName: 'daily-piano-pattern',
     supabaseUrl,
   });
 
-  const { data, error } = await supabase.functions.invoke('daily-training-session');
+  const { data, error } = await supabase.functions.invoke('daily-piano-pattern');
 
   if (error) {
     logger.error('Daily training edge function request failed.', {

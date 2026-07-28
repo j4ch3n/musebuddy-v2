@@ -1,47 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
-import type { TrainingSessionKeyArrangement } from '@/contexts/training-session-schema';
+import { createTrainingSession } from '@/contexts/training-session-test-fixture';
 import type { ChordDisplay } from '@/music-theory/chord-display';
 import type { PianoPitchClass } from '@schema/music-theory-schema';
 
 import {
   buildChordPreviewSoundFontPlaybackConfiguration,
   buildChordSummarySoundFontPlaybackConfiguration,
+  buildPatternSoundFontPlaybackConfiguration,
   buildRhythmSoundFontPlaybackConfiguration,
-  buildSoundFontPlaybackConfiguration,
 } from './sound-font-playback';
-
-type SourceSlot = TrainingSessionKeyArrangement['rows'][number]['slots'][number];
-type SourceCell = SourceSlot[number];
-
-function emptyCell(): SourceCell {
-  return { midi: null, velocity: null };
-}
-
-function emptySlots(): SourceSlot[] {
-  return Array.from({ length: 32 }, () => [emptyCell()]);
-}
-
-function keyArrangement(slots: Record<number, SourceSlot>): TrainingSessionKeyArrangement {
-  const rowSlots = emptySlots();
-
-  Object.entries(slots).forEach(([slotIndex, slot]) => {
-    rowSlots[Number(slotIndex)] = slot;
-  });
-
-  return {
-    rows: [
-      {
-        beatIndex: 0,
-        slots: rowSlots,
-      },
-      {
-        beatIndex: 1,
-        slots: emptySlots(),
-      },
-    ],
-  };
-}
 
 function chordDisplay(idName: string, midis: readonly number[]): ChordDisplay {
   return {
@@ -100,24 +68,42 @@ describe('buildRhythmSoundFontPlaybackConfiguration', () => {
   });
 });
 
-describe('buildSoundFontPlaybackConfiguration', () => {
-  it('uses selected BPM and preserves raw arrangement MIDI, hold, and velocity values', () => {
-    const configuration = buildSoundFontPlaybackConfiguration(
-      keyArrangement({
-        0: [{ midi: 60, velocity: 40 }],
-        2: [{ midi: -50, velocity: null }],
-        4: [{ midi: 64, velocity: 90 }],
-      }),
-      60,
-    );
+describe('buildPatternSoundFontPlaybackConfiguration', () => {
+  it('plays every beat and combines matching treble and bass timing', () => {
+    const session = createTrainingSession(4);
+    const firstBeat = session.notes.beats[0];
+    if (!firstBeat) {
+      throw new Error('Fixture is missing its first beat.');
+    }
+    firstBeat.staves.treble.arrangement[0] = [60];
+    firstBeat.staves.treble.velocity[0] = [40];
+    firstBeat.staves.treble.arrangement[2] = [-50];
+    firstBeat.staves.bass.arrangement[0] = [48];
+    firstBeat.staves.bass.velocity[0] = [70];
+    firstBeat.staves.bass.arrangement[4] = [52];
+    firstBeat.staves.bass.velocity[4] = [90];
+
+    const configuration = buildPatternSoundFontPlaybackConfiguration(session.notes.beats, 60);
 
     expect(configuration.bpm).toBe(60);
-    expect(configuration.parts).toHaveLength(2);
+    expect(configuration.parts).toHaveLength(8);
     expect(configuration.parts[0]?.slice(0, 4)).toEqual([
-      [{ midi: 60, velocity: 40 }],
-      [{ midi: -50, velocity: null }],
-      [{ midi: 64, velocity: 90 }],
-      [{ midi: null, velocity: null }],
+      [
+        { midi: 60, velocity: 40 },
+        { midi: 48, velocity: 70 },
+      ],
+      [
+        { midi: -50, velocity: null },
+        { midi: null, velocity: null },
+      ],
+      [
+        { midi: null, velocity: null },
+        { midi: 52, velocity: 90 },
+      ],
+      [
+        { midi: null, velocity: null },
+        { midi: null, velocity: null },
+      ],
     ]);
   });
 });

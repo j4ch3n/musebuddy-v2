@@ -1,13 +1,13 @@
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 
-import { ChoreographyViewer } from '@/components/choreography-viewer';
+import { PianoPatternScore } from '@/components/piano-pattern-score';
 import {
   PerformanceGuidanceButton,
   PerformanceGuidanceProvider,
 } from '@/components/performance-guidance';
 import { useTrainingSession } from '@/contexts/training-session-context';
-import { buildSoundFontPlaybackConfiguration } from '@/music-theory/sound-font-playback';
+import { buildPatternSoundFontPlaybackConfiguration } from '@/music-theory/sound-font-playback';
 import { Button } from '@/ui';
 
 import { PlaceholderPanel } from './placeholder-panel';
@@ -19,7 +19,7 @@ export function SessionGoalPage() {
   const playbackConfiguration = useMemo(
     () =>
       session
-        ? buildSoundFontPlaybackConfiguration(session.keyArrangement, learningConfig.bpm)
+        ? buildPatternSoundFontPlaybackConfiguration(session.notes, learningConfig.bpm)
         : null,
     [learningConfig.bpm, session],
   );
@@ -27,7 +27,7 @@ export function SessionGoalPage() {
   const content = (
     <TrainingScreenShell currentStep="goal" footer={session ? <PerformanceGuidanceButton /> : null}>
       {session ? (
-        <ChoreographyViewer keyArrangement={session.keyArrangement} />
+        <PianoPatternScore score={session.score} />
       ) : (
         <PlaceholderPanel
           accent="purple"

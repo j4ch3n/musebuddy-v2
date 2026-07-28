@@ -25,3 +25,4 @@ dev = [
 "chord_dictionary/upload.py" = ["E402"]
 "companion/pop909_common.py" = ["E402"]
 "piano-pattern/musicxml_to_json.py" = ["E402"]
+"piano-pattern/upload.py" = ["E402"]

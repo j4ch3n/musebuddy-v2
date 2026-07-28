@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -12,19 +12,22 @@ import {
   useRhythmListenProgress,
   type RhythmPattern,
 } from '@/components/rhythm-trainer';
-import { museBuddyColors } from '@/constants/design-tokens';
+import { museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 import { useTrainingSession } from '@/contexts/training-session-context';
 import { buildRhythmSoundFontPlaybackConfiguration } from '@/music-theory/sound-font-playback';
 
 import { PlaceholderPanel } from './placeholder-panel';
 import { TrainingScreenShell } from './training-screen-shell';
 
+type RhythmStaff = 'bass' | 'treble';
+
 const EMPTY_RHYTHM_PATTERN: RhythmPattern = [];
 
 export function RhythmTrainingPage() {
   const router = useRouter();
   const { learningConfig, session } = useTrainingSession();
-  const pattern = session?.rhythm.pattern ?? EMPTY_RHYTHM_PATTERN;
+  const [staff, setStaff] = useState<RhythmStaff>('treble');
+  const pattern = session?.rhythms[staff].pattern ?? EMPTY_RHYTHM_PATTERN;
   const stepDurationMs = 0.25 * (60_000 / learningConfig.bpm);
   const allowedOffsetMs = stepDurationMs / 2;
   const listeningDurationMs = pattern.length * stepDurationMs;
@@ -51,10 +54,14 @@ export function RhythmTrainingPage() {
   return (
     <PerformanceGuidanceProvider
       demoListenCycleCount={3}
-      finishText="this rhythm is fun!"
-      key={`rhythm-${pattern.join('')}`}
+      finishText={`${staff === 'treble' ? 'Treble' : 'Bass'} rhythm is fun!`}
+      key={`rhythm-${staff}-${pattern.join('')}`}
       listeningMode={{ kind: 'piano-attack', allowedOffsetMs }}
       onFinish={() => {
+        if (staff === 'treble') {
+          setStaff('bass');
+          return;
+        }
         router.push('/pattern-training');
       }}
       onSkip={() => {
@@ -70,6 +77,7 @@ export function RhythmTrainingPage() {
         allowedOffsetMs={allowedOffsetMs}
         listeningDurationMs={listeningDurationMs}
         pattern={pattern}
+        staff={staff}
         stepDurationMs={stepDurationMs}
       />
     </PerformanceGuidanceProvider>
@@ -80,11 +88,13 @@ function RhythmTrainingContent({
   allowedOffsetMs,
   listeningDurationMs,
   pattern,
+  staff,
   stepDurationMs,
 }: {
   allowedOffsetMs: number;
   listeningDurationMs: number;
   pattern: RhythmPattern;
+  staff: RhythmStaff;
   stepDurationMs: number;
 }) {
   const {
@@ -121,6 +131,9 @@ function RhythmTrainingContent({
         </View>
       }
     >
+      <Text accessibilityRole="header" style={styles.staffLabel}>
+        {staff === 'treble' ? 'Treble · right hand' : 'Bass · left hand'}
+      </Text>
       <RhythmViewer
         attackDots={attackDots}
         currentStepIndex={currentStepIndex}
@@ -139,5 +152,18 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     lineHeight: 22,
     textAlign: 'center',
+  },
+  staffLabel: {
+    alignSelf: 'flex-start',
+    backgroundColor: museBuddyColors.accentGreen,
+    borderColor: museBuddyColors.ink,
+    borderRadius: museBuddyRadii.round,
+    borderWidth: 3,
+    color: museBuddyColors.ink,
+    fontSize: 15,
+    fontWeight: '900',
+    overflow: 'hidden',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
   },
 });

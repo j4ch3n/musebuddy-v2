@@ -9,11 +9,13 @@ import {
 import type { RhythmStep } from './types';
 
 describe('rhythm pattern helpers', () => {
-  it('accepts only one or two sixteen-step bars', () => {
+  it('accepts one through eight sixteen-step rows', () => {
     expect(isValidRhythmPatternLength(16)).toBe(true);
     expect(isValidRhythmPatternLength(32)).toBe(true);
+    expect(isValidRhythmPatternLength(48)).toBe(true);
+    expect(isValidRhythmPatternLength(128)).toBe(true);
     expect(isValidRhythmPatternLength(8)).toBe(false);
-    expect(isValidRhythmPatternLength(48)).toBe(false);
+    expect(isValidRhythmPatternLength(144)).toBe(false);
   });
 
   it('splits a two-bar pattern into two sixteen-step rows', () => {
@@ -65,7 +67,7 @@ describe('rhythm pattern helpers', () => {
 
   it('rejects unsupported random pattern lengths', () => {
     expect(() => generateRandomRhythmPattern(24)).toThrow(
-      'Expected random rhythm length of 16 or 32, received 24.',
+      'Expected a non-empty multiple of 16 up to 128 random rhythm steps, received 24.',
     );
   });
 });

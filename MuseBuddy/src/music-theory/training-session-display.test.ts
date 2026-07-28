@@ -1,78 +1,26 @@
 import { describe, expect, it } from 'vitest';
 
-import type { TrainingSession } from '@/contexts/training-session-schema';
+import { createTrainingSession } from '@/contexts/training-session-test-fixture';
 
 import { prepareTrainingSessionDisplay } from './training-session-display';
 
-const emptySlots = () =>
-  Array.from({ length: 32 }, () => [
-    {
-      midi: null,
-      velocity: null,
-    },
-  ]);
-
-const trainingSession: TrainingSession = {
-  chords: [
-    {
-      displayTokens: [{ type: 'root', value: 'C' }],
-      idName: 'c-major',
-      normalizedSymbol: 'C',
-      root: 'C',
-      tones: [
-        {
-          degree: '1',
-          explanation: 'is the root. It names and anchors the chord.',
-          importance: 'essential',
-          pitch: 'C',
-          pitchClass: 0,
-        },
-        {
-          degree: '3',
-          explanation: 'is the third. It gives the chord its major color.',
-          importance: 'essential',
-          pitch: 'E',
-          pitchClass: 4,
-        },
-        {
-          degree: '5',
-          explanation: 'is the fifth. It makes the chord feel stable.',
-          importance: 'supporting',
-          pitch: 'G',
-          pitchClass: 7,
-        },
-      ],
-    },
-  ],
-  keyArrangement: {
-    rows: [
-      {
-        beatIndex: 0,
-        slots: [
-          [
-            {
-              midi: 60,
-              velocity: 80,
-            },
-          ],
-          ...emptySlots().slice(1),
-        ],
-      },
-      {
-        beatIndex: 1,
-        slots: emptySlots(),
-      },
-    ],
-  },
-};
-
 describe('prepareTrainingSessionDisplay', () => {
-  it('derives display data and rhythm while retaining the raw key arrangement', () => {
+  it('prepares chord, score, and independent full-pattern rhythms', () => {
+    const trainingSession = createTrainingSession(4);
+    const firstBeat = trainingSession.notes.beats[0];
+    if (!firstBeat) {
+      throw new Error('Fixture is missing its first beat.');
+    }
+    firstBeat.staves.treble.arrangement[0] = [60];
+    firstBeat.staves.treble.velocity[0] = [80];
+
     const preparedSession = prepareTrainingSessionDisplay(trainingSession);
 
-    expect(preparedSession.keyArrangement).toBe(trainingSession.keyArrangement);
+    expect(preparedSession.notes).toBe(trainingSession.notes.beats);
+    expect(preparedSession.score).toBe(trainingSession.score);
     expect(preparedSession.chordDisplays[0]?.symbol).toBe('C');
-    expect(preparedSession.rhythm.pattern).toHaveLength(32);
-    expect(preparedSession.rhythm.pattern[0]).toBe('w');
+    expect(preparedSession.rhythms.treble.pattern).toHaveLength(128);
+    expect(preparedSession.rhythms.treble.pattern[0]).toBe('w');
+    expect(preparedSession.rhythms.bass.pattern.every((step) => step === null)).toBe(true);
   });
 });

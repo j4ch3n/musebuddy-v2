@@ -3,6 +3,9 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
+from click.testing import CliRunner
+
+from main import main
 from musicxml_to_json import (
     OUTPUT_DIR,
     build_pattern_document,
@@ -124,6 +127,17 @@ class MusicXmlToJsonTests(unittest.TestCase):
             notes_output_path_for(input_path),
             OUTPUT_DIR / "no4.notes.json",
         )
+
+    def test_cli_writes_fixed_notes_output_path(self) -> None:
+        runner = CliRunner()
+        result = runner.invoke(
+            main,
+            [str(DATA_DIR / "no4.mxl"), "--mode", "notes"],
+        )
+        self.assertEqual(result.exit_code, 0, result.output)
+        expected_path = OUTPUT_DIR / "no4.notes.json"
+        self.assertTrue(expected_path.is_file())
+        self.assertIn(str(expected_path), result.output)
 
 
 if __name__ == "__main__":

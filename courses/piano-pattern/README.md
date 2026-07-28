@@ -44,6 +44,20 @@ pnpm dev
 Choose `no4` or `no15` in the page to render the corresponding
 `*.scores.json` file.
 
+## Database Upload
+
+The uploader recursively finds paired `*.notes.json` and `*.scores.json`
+files. It validates every pair before opening a database connection:
+
+```sh
+uv run python piano-pattern/upload.py --dry-run
+uv run python piano-pattern/upload.py --remote-db local
+```
+
+Use `--remote-db prod` for the environment in `courses/.env.prod`, or pass
+`--database-url` explicitly. Re-uploading replaces the logical note rows for
+each scanned pattern and upserts its metadata and score in one transaction.
+
 ## Supported MusicXML
 
 JSON conversion intentionally supports a narrow input shape:

@@ -1,4 +1,7 @@
-import type { TrainingSessionKeyArrangement } from '@/contexts/training-session-schema';
+import type {
+  TrainingSessionPatternBeat,
+  TrainingSessionPatternStave,
+} from '@/contexts/training-session-schema';
 
 import { splitRhythmPatternBars } from '@/components/rhythm-trainer/rhythm-pattern';
 import type { RhythmPattern } from '@/components/rhythm-trainer/types';
@@ -33,13 +36,13 @@ const REST_CELL: SoundFontPlaybackCell = {
   velocity: null,
 };
 
-export function buildSoundFontPlaybackConfiguration(
-  keyArrangement: TrainingSessionKeyArrangement,
+export function buildPatternSoundFontPlaybackConfiguration(
+  beats: readonly TrainingSessionPatternBeat[],
   bpm: number = DEFAULT_BPM,
 ): SoundFontPlaybackConfiguration {
   return {
     bpm,
-    parts: buildPartsFromKeyArrangement(keyArrangement),
+    parts: buildPartsFromPatternBeats(beats),
   };
 }
 
@@ -105,37 +108,63 @@ export function buildChordSummarySoundFontPlaybackConfiguration(
   };
 }
 
-function buildPartsFromKeyArrangement(
-  keyArrangement: TrainingSessionKeyArrangement,
+function buildPartsFromPatternBeats(
+  beats: readonly TrainingSessionPatternBeat[],
 ): SoundFontPlaybackStep[][] {
-  return [...keyArrangement.rows]
-    .sort((left, right) => left.beatIndex - right.beatIndex)
-    .map((row) =>
-      Array.from({ length: row.slots.length / 2 }, (_, stepIndex) => {
-        const firstSlot = row.slots[stepIndex * 2] ?? [];
-        const secondSlot = row.slots[stepIndex * 2 + 1] ?? [];
+  const orderedBeats = [...beats].sort(
+    (left, right) => left.bar_index - right.bar_index || left.beat_index - right.beat_index,
+  );
+  const trebleLaneCount = maxLaneCount(orderedBeats.map((beat) => beat.staves.treble));
+  const bassLaneCount = maxLaneCount(orderedBeats.map((beat) => beat.staves.bass));
 
-        return mergeSourceSlotsIntoPlaybackStep(firstSlot, secondSlot);
-      }),
-    );
+  return orderedBeats.map((beat) =>
+    Array.from({ length: beat.staves.treble.arrangement.length / 2 }, (_, stepIndex) => [
+      ...mergeStaveSourceSlots(beat.staves.treble, stepIndex, trebleLaneCount),
+      ...mergeStaveSourceSlots(beat.staves.bass, stepIndex, bassLaneCount),
+    ]),
+  );
 }
 
-function mergeSourceSlotsIntoPlaybackStep(
-  firstSlot: SoundFontPlaybackStep,
-  secondSlot: SoundFontPlaybackStep,
+function maxLaneCount(staves: readonly TrainingSessionPatternStave[]) {
+  return Math.max(...staves.flatMap((stave) => stave.arrangement.map((slot) => slot.length)));
+}
+
+function mergeStaveSourceSlots(
+  stave: TrainingSessionPatternStave,
+  stepIndex: number,
+  laneCount: number,
 ): SoundFontPlaybackStep {
-  const laneCount = Math.max(firstSlot.length, secondSlot.length);
+  const firstSlotIndex = stepIndex * 2;
+  const secondSlotIndex = firstSlotIndex + 1;
+  const firstArrangement = stave.arrangement[firstSlotIndex] ?? [];
+  const secondArrangement = stave.arrangement[secondSlotIndex] ?? [];
+  const firstVelocity = stave.velocity[firstSlotIndex] ?? [];
+  const secondVelocity = stave.velocity[secondSlotIndex] ?? [];
 
-  return Array.from({ length: laneCount }, (_, laneIndex) => {
-    const firstCell = firstSlot[laneIndex] ?? REST_CELL;
-    const secondCell = secondSlot[laneIndex] ?? REST_CELL;
+  return Array.from({ length: laneCount }, (_, laneIndex) =>
+    mergeSourceCells(
+      cellAt(firstArrangement, firstVelocity, laneIndex),
+      cellAt(secondArrangement, secondVelocity, laneIndex),
+    ),
+  );
+}
 
-    if (firstCell.midi !== null) {
-      return firstCell;
-    }
+function cellAt(
+  arrangement: readonly (number | null)[],
+  velocity: readonly (number | null)[],
+  laneIndex: number,
+): SoundFontPlaybackCell {
+  return {
+    midi: arrangement[laneIndex] ?? null,
+    velocity: velocity[laneIndex] ?? null,
+  };
+}
 
-    return secondCell;
-  });
+function mergeSourceCells(
+  firstCell: SoundFontPlaybackCell,
+  secondCell: SoundFontPlaybackCell,
+): SoundFontPlaybackCell {
+  return firstCell.midi !== null ? firstCell : secondCell;
 }
 
 type ChordAttack = {

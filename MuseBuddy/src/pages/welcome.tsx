@@ -27,7 +27,7 @@ export function WelcomePage() {
     >
       <PlaceholderPanel
         accent="purple"
-        body="Warm up with today's chord shape, lock in the rhythm, then use both ideas in a short jam."
+        body="Preview today's pattern, learn its chords, train each hand's rhythm, then review the full score."
         title="Practice path"
       />
     </TrainingScreenShell>

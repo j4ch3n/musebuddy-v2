@@ -17,3 +17,6 @@ port = 54323
 
 [functions.daily-training-session]
 verify_jwt = false
+
+[functions.daily-piano-pattern]
+verify_jwt = false

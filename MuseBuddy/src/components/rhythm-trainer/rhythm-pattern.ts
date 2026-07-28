@@ -1,8 +1,8 @@
 import {
+  MAX_BAR_COUNT,
   ONE_BAR_STEP_COUNT,
   RHYTHM_PATTERN_PROBABILITY_CONFIG,
   STEPS_PER_BAR,
-  TWO_BAR_STEP_COUNT,
 } from './constants';
 import type { RhythmAttack, RhythmPattern, RhythmStep } from './types';
 
@@ -14,12 +14,18 @@ export type RhythmEvent = {
 };
 
 export function isValidRhythmPatternLength(length: number) {
-  return length === ONE_BAR_STEP_COUNT || length === TWO_BAR_STEP_COUNT;
+  return (
+    length >= ONE_BAR_STEP_COUNT &&
+    length <= STEPS_PER_BAR * MAX_BAR_COUNT &&
+    length % STEPS_PER_BAR === 0
+  );
 }
 
 export function assertRhythmPattern(pattern: RhythmPattern): asserts pattern is RhythmPattern {
   if (!isValidRhythmPatternLength(pattern.length)) {
-    throw new Error(`Expected 16 or 32 rhythm steps, received ${pattern.length}.`);
+    throw new Error(
+      `Expected a non-empty multiple of 16 up to 128 rhythm steps, received ${pattern.length}.`,
+    );
   }
 }
 
@@ -69,7 +75,9 @@ function isRhythmAttack(step: RhythmStep): step is RhythmAttack {
 
 export function generateRandomRhythmPattern(length: number = ONE_BAR_STEP_COUNT): RhythmStep[] {
   if (!isValidRhythmPatternLength(length)) {
-    throw new Error(`Expected random rhythm length of 16 or 32, received ${length}.`);
+    throw new Error(
+      `Expected a non-empty multiple of 16 up to 128 random rhythm steps, received ${length}.`,
+    );
   }
 
   return Array.from({ length }, (_, stepIndex) => {

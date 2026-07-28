@@ -1,10 +1,10 @@
 import type {
-  TrainingSessionKeyArrangement,
+  PatternStaffName,
+  TrainingSessionPatternBeat,
+  TrainingSessionPatternStave,
   TrainingSessionRhythm,
   TrainingSessionRhythmPattern,
 } from '@/contexts/training-session-schema';
-
-type KeyArrangementCell = TrainingSessionKeyArrangement['rows'][number]['slots'][number][number];
 
 type SourceAttack = {
   midi: number;
@@ -19,17 +19,24 @@ type SourceSlotEvents = {
 const SOURCE_SLOTS_PER_RHYTHM_STEP = 2;
 const HOLD_MIDI = -50;
 
-export function deriveRhythmFromKeyArrangement(
-  keyArrangement: TrainingSessionKeyArrangement,
+export function deriveRhythmFromPatternBeats(
+  beats: readonly TrainingSessionPatternBeat[],
+  staff: PatternStaffName,
 ): TrainingSessionRhythm {
-  const orderedRows = [...keyArrangement.rows].sort(
-    (left, right) => left.beatIndex - right.beatIndex,
-  );
-  const attackVelocities = orderedRows.flatMap((row) =>
-    row.slots.flatMap((slot) =>
-      slot.flatMap((cell) => (isAttackCell(cell) ? [cell.velocity] : [])),
-    ),
-  );
+  const orderedStaves = [...beats]
+    .sort((left, right) => left.bar_index - right.bar_index || left.beat_index - right.beat_index)
+    .map((beat) => beat.staves[staff]);
+  const attackVelocities: number[] = [];
+  orderedStaves.forEach((stave) => {
+    stave.arrangement.forEach((slot, slotIndex) => {
+      slot.forEach((midi, laneIndex) => {
+        const velocity = stave.velocity[slotIndex]?.[laneIndex];
+        if (typeof midi === 'number' && midi > 0 && typeof velocity === 'number') {
+          attackVelocities.push(velocity);
+        }
+      });
+    });
+  });
   const averageAttackVelocity =
     attackVelocities.length === 0
       ? null
@@ -37,31 +44,29 @@ export function deriveRhythmFromKeyArrangement(
 
   return {
     averageAttackVelocity,
-    pattern: deriveRhythmPattern(orderedRows, averageAttackVelocity),
+    pattern: deriveRhythmPattern(orderedStaves, averageAttackVelocity),
   };
 }
 
 function deriveRhythmPattern(
-  rows: TrainingSessionKeyArrangement['rows'],
+  staves: readonly TrainingSessionPatternStave[],
   averageAttackVelocity: number | null,
 ): TrainingSessionRhythmPattern {
-  return rows.flatMap((row) => {
-    const activeLaneMidi = new Map<number, number>();
-    let activeRhythmMidi = new Set<number>();
+  const activeLaneMidi = new Map<number, number>();
+  let activeRhythmMidi = new Set<number>();
 
-    return Array.from(
-      { length: row.slots.length / SOURCE_SLOTS_PER_RHYTHM_STEP },
+  return staves.flatMap((stave) =>
+    Array.from(
+      { length: stave.arrangement.length / SOURCE_SLOTS_PER_RHYTHM_STEP },
       (_, stepIndex) => {
         const sourceStartIndex = stepIndex * SOURCE_SLOTS_PER_RHYTHM_STEP;
-        const sourceSlots = [row.slots[sourceStartIndex], row.slots[sourceStartIndex + 1]];
-        const sourceEvents = sourceSlots.map((slot) =>
-          collectSourceSlotEvents(slot, activeLaneMidi),
+        const sourceEvents = [sourceStartIndex, sourceStartIndex + 1].map((slotIndex) =>
+          collectSourceSlotEvents(stave, slotIndex, activeLaneMidi),
         );
         const attacks = sourceEvents.flatMap((events) => events.attacks);
 
         if (attacks.length > 0 && averageAttackVelocity !== null) {
           activeRhythmMidi = new Set(attacks.map((attack) => attack.midi));
-
           const maxVelocity = Math.max(...attacks.map((attack) => attack.velocity));
           return maxVelocity > averageAttackVelocity ? 's' : 'w';
         }
@@ -77,51 +82,40 @@ function deriveRhythmPattern(
         activeRhythmMidi = new Set();
         return null;
       },
-    );
-  });
+    ),
+  );
 }
 
 function collectSourceSlotEvents(
-  slot: readonly KeyArrangementCell[],
+  stave: TrainingSessionPatternStave,
+  slotIndex: number,
   activeLaneMidi: Map<number, number>,
 ): SourceSlotEvents {
+  const slot = stave.arrangement[slotIndex] ?? [];
+  const velocitySlot = stave.velocity[slotIndex] ?? [];
   const attacks: SourceAttack[] = [];
   const heldMidi: number[] = [];
 
-  slot.forEach((cell, laneIndex) => {
-    if (cell.midi === null) {
+  slot.forEach((midi, laneIndex) => {
+    const velocity = velocitySlot[laneIndex];
+    if (midi === null) {
       activeLaneMidi.delete(laneIndex);
       return;
     }
 
-    if (cell.midi === HOLD_MIDI) {
+    if (midi === HOLD_MIDI) {
       const activeMidi = activeLaneMidi.get(laneIndex);
-
       if (activeMidi !== undefined) {
         heldMidi.push(activeMidi);
       }
-
       return;
     }
 
-    if (isAttackCell(cell)) {
-      activeLaneMidi.set(laneIndex, cell.midi);
-      attacks.push({
-        midi: cell.midi,
-        velocity: cell.velocity,
-      });
+    if (typeof midi === 'number' && midi > 0 && typeof velocity === 'number') {
+      activeLaneMidi.set(laneIndex, midi);
+      attacks.push({ midi, velocity });
     }
   });
 
-  return {
-    attacks,
-    heldMidi,
-  };
-}
-
-function isAttackCell(cell: KeyArrangementCell): cell is KeyArrangementCell & {
-  midi: number;
-  velocity: number;
-} {
-  return typeof cell.midi === 'number' && cell.midi > 0 && typeof cell.velocity === 'number';
+  return { attacks, heldMidi };
 }

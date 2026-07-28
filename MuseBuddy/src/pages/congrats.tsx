@@ -20,7 +20,7 @@ export function CongratsPage() {
           tone="success"
         />
       }
-      subtitle="Today's daily piano improvisation exercise is complete."
+      subtitle="Today's complete piano pattern practice is finished."
       title="Nice work"
     >
       <PlaceholderPanel
