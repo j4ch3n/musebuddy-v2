@@ -15,7 +15,9 @@ vi.mock('@modules/sound-font-player', () => ({
 
 const configuration: SoundFontPlaybackConfiguration = {
   bpm: 100,
-  parts: [Array.from({ length: 16 }, () => [{ midi: 60, velocity: 90 }])],
+  tracks: {
+    treble: [Array.from({ length: 32 }, () => [{ midi: 60, velocity: 90 }])],
+  },
 };
 
 function createApi() {

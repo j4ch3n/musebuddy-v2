@@ -22,14 +22,14 @@ describe('deriveRhythmFromPatternBeats', () => {
     const treble = deriveRhythmFromPatternBeats(session.notes.beats, 'treble');
     const bass = deriveRhythmFromPatternBeats(session.notes.beats, 'bass');
 
-    expect(treble.pattern).toHaveLength(128);
-    expect(bass.pattern).toHaveLength(128);
-    expect(treble.pattern.slice(0, 3)).toEqual(['w', 's', null]);
-    expect(treble.pattern[127]).toBeNull();
-    expect(bass.pattern[127]).toBe('w');
+    expect(treble.pattern).toHaveLength(256);
+    expect(bass.pattern).toHaveLength(256);
+    expect(treble.pattern.slice(0, 4)).toEqual(['w', null, 's', null]);
+    expect(treble.pattern[255]).toBeNull();
+    expect(bass.pattern[254]).toBe('s');
   });
 
-  it('extends holds for the same active pitch across compressed steps', () => {
+  it('preserves every hold slot and treats equality with the average as strong', () => {
     const session = createTrainingSession();
     const stave = session.notes.beats[0]?.staves.treble;
     if (!stave) {
@@ -43,6 +43,6 @@ describe('deriveRhythmFromPatternBeats', () => {
 
     const rhythm = deriveRhythmFromPatternBeats(session.notes.beats, 'treble');
 
-    expect(rhythm.pattern.slice(0, 3)).toEqual(['w', 'h', null]);
+    expect(rhythm.pattern.slice(0, 4)).toEqual(['s', 'h', 'h', 'h']);
   });
 });

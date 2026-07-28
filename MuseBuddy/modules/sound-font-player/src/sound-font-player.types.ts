@@ -5,9 +5,14 @@ export type SoundFontPlaybackCell = {
 
 export type SoundFontPlaybackStep = SoundFontPlaybackCell[];
 
+export type SoundFontPlaybackPart = SoundFontPlaybackStep[];
+
 export type SoundFontPlaybackConfiguration = {
   bpm: number;
-  parts: SoundFontPlaybackStep[][];
+  tracks: {
+    treble: SoundFontPlaybackPart[];
+    bass?: SoundFontPlaybackPart[];
+  };
 };
 
 export type SoundFontPlaybackOptions = {

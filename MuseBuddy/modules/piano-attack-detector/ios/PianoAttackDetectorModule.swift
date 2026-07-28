@@ -159,7 +159,7 @@ private struct PianoAttackConfiguration {
   var absoluteFloorDb: Float = -48.0
   var minSnrDb: Float = 6.0
   var confirmMs: Float = 20.0
-  var minAttackIntervalMs: Float = 70.0
+  var minAttackIntervalMs: Float = 50.0
   var releaseSnrDb: Float = 5.0
   var releaseHoldMs: Float = 120.0
   var releaseDropDb: Float = 24.0

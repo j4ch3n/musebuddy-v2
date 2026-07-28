@@ -105,17 +105,17 @@ export function guidanceReducer(state: GuidanceState, action: GuidanceAction): G
 export function getSoundFontStepCount(
   configuration: SoundFontPlaybackConfiguration | null,
 ): number {
-  return configuration?.parts.reduce((count, part) => count + part.length, 0) ?? 0;
+  return configuration?.tracks.treble.reduce((count, part) => count + part.length, 0) ?? 0;
 }
 
 export function getSoundFontPartCount(
   configuration: SoundFontPlaybackConfiguration | null,
 ): number {
-  return configuration?.parts.length ?? 0;
+  return configuration?.tracks.treble.length ?? 0;
 }
 
 export function getSoundFontDemoDurationMs(configuration: SoundFontPlaybackConfiguration): number {
-  return getSoundFontStepCount(configuration) * 0.25 * (60_000 / configuration.bpm);
+  return getSoundFontStepCount(configuration) * 0.125 * (60_000 / configuration.bpm);
 }
 
 export function getPlaybackClockState({
@@ -152,7 +152,7 @@ export function getPlaybackClockState({
 
   const demoElapsedMs = Math.max(0, elapsedMs - leadInDurationMs);
   const demoDurationMs = getSoundFontDemoDurationMs(configuration);
-  const stepDurationMs = 0.25 * beatDurationMs;
+  const stepDurationMs = 0.125 * beatDurationMs;
   const stepCount = getSoundFontStepCount(configuration);
   const repetitionIndex = Math.min(
     Math.max(0, repetitions - 1),

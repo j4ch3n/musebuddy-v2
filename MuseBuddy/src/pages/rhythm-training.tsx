@@ -31,7 +31,7 @@ export function RhythmTrainingPage({ staff }: RhythmTrainingPageProps) {
   const { learningConfig, session } = useTrainingSession();
   const pattern = session?.rhythms[staff].pattern ?? EMPTY_RHYTHM_PATTERN;
   const currentStep = staff === 'bass' ? 'rhythm-bass' : 'rhythm-treble';
-  const stepDurationMs = 0.25 * (60_000 / learningConfig.bpm);
+  const stepDurationMs = 0.125 * (60_000 / learningConfig.bpm);
   const allowedOffsetMs = stepDurationMs / 2;
   const listeningDurationMs = pattern.length * stepDurationMs;
   const playbackConfiguration = useMemo(

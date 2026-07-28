@@ -170,7 +170,7 @@ export const trainingSessionScoreSchema = z.object({
 
 export const rhythmSchema = z.object({
   averageAttackVelocity: z.number().min(0).max(127).nullable(),
-  pattern: z.array(rhythmStepSchema).min(16).max(128),
+  pattern: z.array(rhythmStepSchema).min(32).max(256),
 });
 
 export const trainingSessionChordSchema = z.object({

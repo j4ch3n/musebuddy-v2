@@ -94,19 +94,28 @@ export default function NoteBarSheet({ currentStepIndex, events }: NoteBarSheetP
     voice.draw(context, stave);
 
     events.forEach((event, eventIndex) => {
-      if (!event.tieToNext) {
-        return;
+      if (event.tieToNext) {
+        factory
+          .StaveTie({
+            firstIndexes: [0],
+            from: notes[eventIndex],
+            lastIndexes: [0],
+            to: notes[eventIndex + 1],
+          })
+          .setContext(context)
+          .draw();
       }
-
-      factory
-        .StaveTie({
-          from: notes[eventIndex],
-          to: notes[eventIndex + 1],
-          firstIndexes: [0],
-          lastIndexes: [0],
-        })
-        .setContext(context)
-        .draw();
+      if (event.tieFromPrevious && eventIndex === 0) {
+        factory
+          .StaveTie({
+            firstIndexes: [0],
+            from: undefined,
+            lastIndexes: [0],
+            to: notes[eventIndex],
+          })
+          .setContext(context)
+          .draw();
+      }
     });
   }, [currentStepIndex, elementId, events]);
 

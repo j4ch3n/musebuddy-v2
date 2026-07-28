@@ -19,8 +19,8 @@ describe('prepareTrainingSessionDisplay', () => {
     expect(preparedSession.notes).toBe(trainingSession.notes.beats);
     expect(preparedSession.score).toBe(trainingSession.score);
     expect(preparedSession.chordDisplays[0]?.symbol).toBe('C');
-    expect(preparedSession.rhythms.treble.pattern).toHaveLength(128);
-    expect(preparedSession.rhythms.treble.pattern[0]).toBe('w');
+    expect(preparedSession.rhythms.treble.pattern).toHaveLength(256);
+    expect(preparedSession.rhythms.treble.pattern[0]).toBe('s');
     expect(preparedSession.rhythms.bass.pattern.every((step) => step === null)).toBe(true);
   });
 });

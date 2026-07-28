@@ -31,8 +31,8 @@ describe('rhythm listen progress', () => {
   it('derives step, bar, and listening durations from BPM', () => {
     expect(getRhythmTiming(120, 32)).toEqual({
       barDurationMs: 2_000,
-      listeningDurationMs: 4_000,
-      stepDurationMs: 125,
+      listeningDurationMs: 2_000,
+      stepDurationMs: 62.5,
     });
   });
 

@@ -14,8 +14,8 @@ describe('rhythm attack dot geometry', () => {
     });
 
     expect(position.barIndex).toBe(0);
-    expect(position.targetCenterX).toBe(113.5);
-    expect(position.left).toBe(108.5);
+    expect(position.targetCenterX).toBe(56.40625);
+    expect(position.left).toBe(51.40625);
     expect(position.left).toBe(position.targetCenterX - 5);
   });
 
@@ -26,13 +26,13 @@ describe('rhythm attack dot geometry', () => {
       stepDurationMs,
     });
 
-    expect(position.targetCenterX).toBe(124);
-    expect(position.left).toBe(119);
+    expect(position.targetCenterX).toBe(61.625);
+    expect(position.left).toBe(56.625);
   });
 
   it('resolves the second card and clamps the final half-step inside the grid', () => {
     const position = getRhythmAttackDotPosition({
-      attackOffsetMs: 3_150,
+      attackOffsetMs: 6_350,
       gridWidth,
       stepDurationMs,
     });

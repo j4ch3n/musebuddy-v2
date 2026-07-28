@@ -2,28 +2,31 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   collectRhythmEvents,
+  expandRhythmEvents,
   generateRandomRhythmPattern,
   isValidRhythmPatternLength,
+  normalizeRhythmPattern,
   splitRhythmPatternBars,
 } from './rhythm-pattern';
 import type { RhythmStep } from './types';
 
 describe('rhythm pattern helpers', () => {
-  it('accepts one through eight sixteen-step rows', () => {
-    expect(isValidRhythmPatternLength(16)).toBe(true);
+  it('accepts one through eight thirty-two-step rows', () => {
+    expect(isValidRhythmPatternLength(16)).toBe(false);
     expect(isValidRhythmPatternLength(32)).toBe(true);
-    expect(isValidRhythmPatternLength(48)).toBe(true);
+    expect(isValidRhythmPatternLength(64)).toBe(true);
     expect(isValidRhythmPatternLength(128)).toBe(true);
+    expect(isValidRhythmPatternLength(256)).toBe(true);
     expect(isValidRhythmPatternLength(8)).toBe(false);
-    expect(isValidRhythmPatternLength(144)).toBe(false);
+    expect(isValidRhythmPatternLength(288)).toBe(false);
   });
 
-  it('splits a two-bar pattern into two sixteen-step rows', () => {
-    const pattern = Array.from<RhythmStep>({ length: 32 }).fill(null);
+  it('splits a two-bar pattern into two thirty-two-step rows', () => {
+    const pattern = Array.from<RhythmStep>({ length: 64 }).fill(null);
 
     expect(splitRhythmPatternBars(pattern)).toHaveLength(2);
-    expect(splitRhythmPatternBars(pattern)[0]).toHaveLength(16);
-    expect(splitRhythmPatternBars(pattern)[1]).toHaveLength(16);
+    expect(splitRhythmPatternBars(pattern)[0]).toHaveLength(32);
+    expect(splitRhythmPatternBars(pattern)[1]).toHaveLength(32);
   });
 
   it('keeps adjacent strong and weak attacks as separate rhythm events', () => {
@@ -52,6 +55,23 @@ describe('rhythm pattern helpers', () => {
     ]);
   });
 
+  it('expands merged events back into the canonical step representation', () => {
+    const events = collectRhythmEvents(['s', 'h', 'h', null, 'w', 'h']);
+
+    expect(expandRhythmEvents(events)).toEqual(['s', 'h', 'h', null, 'w', 'h']);
+  });
+
+  it('normalizes orphan holds while preserving owned holds and adjacent attacks', () => {
+    expect(normalizeRhythmPattern(['h', 's', 'h', 'w', 'h', null])).toEqual([
+      null,
+      's',
+      'h',
+      'w',
+      'h',
+      null,
+    ]);
+  });
+
   it('generates random patterns with supported values and preserved length', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0);
 
@@ -67,7 +87,7 @@ describe('rhythm pattern helpers', () => {
 
   it('rejects unsupported random pattern lengths', () => {
     expect(() => generateRandomRhythmPattern(24)).toThrow(
-      'Expected a non-empty multiple of 16 up to 128 random rhythm steps, received 24.',
+      'Expected a non-empty multiple of 32 up to 256 random rhythm steps, received 24.',
     );
   });
 });

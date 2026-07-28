@@ -62,3 +62,8 @@ and events from stale generations are ignored.
 
 There are no prepare, resume, restart, repeat, is-playing, or playback-bar APIs. Every demo
 uses a fresh native output graph.
+
+Configurations use required `tracks.treble` and optional aligned `tracks.bass`. Pattern piano
+playback schedules both staffs simultaneously through separate piano samplers. Current rhythm
+training sends its selected derived rhythm through treble only, including bass-derived
+exercises; groove playback remains capable of scheduling both staff tracks.

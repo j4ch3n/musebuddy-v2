@@ -7,16 +7,9 @@ import type {
 } from '@/contexts/training-session-schema';
 
 type SourceAttack = {
-  midi: number;
+  laneIndex: number;
   velocity: number;
 };
-
-type SourceSlotEvents = {
-  attacks: SourceAttack[];
-  heldMidi: number[];
-};
-
-const SOURCE_SLOTS_PER_RHYTHM_STEP = 2;
 const HOLD_MIDI = -50;
 
 export function deriveRhythmFromPatternBeats(
@@ -52,70 +45,34 @@ function deriveRhythmPattern(
   staves: readonly TrainingSessionPatternStave[],
   averageAttackVelocity: number | null,
 ): TrainingSessionRhythmPattern {
-  const activeLaneMidi = new Map<number, number>();
-  let activeRhythmMidi = new Set<number>();
-
+  let trackedLanes = new Set<number>();
   return staves.flatMap((stave) =>
-    Array.from(
-      { length: stave.arrangement.length / SOURCE_SLOTS_PER_RHYTHM_STEP },
-      (_, stepIndex) => {
-        const sourceStartIndex = stepIndex * SOURCE_SLOTS_PER_RHYTHM_STEP;
-        const sourceEvents = [sourceStartIndex, sourceStartIndex + 1].map((slotIndex) =>
-          collectSourceSlotEvents(stave, slotIndex, activeLaneMidi),
-        );
-        const attacks = sourceEvents.flatMap((events) => events.attacks);
-
-        if (attacks.length > 0 && averageAttackVelocity !== null) {
-          activeRhythmMidi = new Set(attacks.map((attack) => attack.midi));
-          const maxVelocity = Math.max(...attacks.map((attack) => attack.velocity));
-          return maxVelocity > averageAttackVelocity ? 's' : 'w';
-        }
-
-        const hasActiveHold = sourceEvents.some((events) =>
-          events.heldMidi.some((midi) => activeRhythmMidi.has(midi)),
-        );
-
-        if (hasActiveHold) {
-          return 'h';
-        }
-
-        activeRhythmMidi = new Set();
-        return null;
-      },
-    ),
+    stave.arrangement.map((slot, slotIndex) => {
+      const attacks = collectAttacks(stave, slotIndex);
+      if (attacks.length > 0 && averageAttackVelocity !== null) {
+        trackedLanes = new Set(attacks.map((attack) => attack.laneIndex));
+        const maxVelocity = Math.max(...attacks.map((attack) => attack.velocity));
+        return maxVelocity >= averageAttackVelocity ? 's' : 'w';
+      }
+      const hasActiveHold = [...trackedLanes].some((laneIndex) => slot[laneIndex] === HOLD_MIDI);
+      if (hasActiveHold) {
+        return 'h';
+      }
+      trackedLanes = new Set();
+      return null;
+    }),
   );
 }
 
-function collectSourceSlotEvents(
-  stave: TrainingSessionPatternStave,
-  slotIndex: number,
-  activeLaneMidi: Map<number, number>,
-): SourceSlotEvents {
+function collectAttacks(stave: TrainingSessionPatternStave, slotIndex: number): SourceAttack[] {
   const slot = stave.arrangement[slotIndex] ?? [];
   const velocitySlot = stave.velocity[slotIndex] ?? [];
   const attacks: SourceAttack[] = [];
-  const heldMidi: number[] = [];
-
   slot.forEach((midi, laneIndex) => {
     const velocity = velocitySlot[laneIndex];
-    if (midi === null) {
-      activeLaneMidi.delete(laneIndex);
-      return;
-    }
-
-    if (midi === HOLD_MIDI) {
-      const activeMidi = activeLaneMidi.get(laneIndex);
-      if (activeMidi !== undefined) {
-        heldMidi.push(activeMidi);
-      }
-      return;
-    }
-
     if (typeof midi === 'number' && midi > 0 && typeof velocity === 'number') {
-      activeLaneMidi.set(laneIndex, midi);
-      attacks.push({ midi, velocity });
+      attacks.push({ laneIndex, velocity });
     }
   });
-
-  return { attacks, heldMidi };
+  return attacks;
 }

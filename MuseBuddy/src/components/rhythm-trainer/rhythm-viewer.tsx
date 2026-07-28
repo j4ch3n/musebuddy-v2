@@ -3,7 +3,8 @@ import { StyleSheet, View } from 'react-native';
 import { FlashCard } from '@/ui';
 
 import { NoteBarViewer } from './note-bar-viewer';
-import { splitRhythmPatternBars } from './rhythm-pattern';
+import { convertRhythmPatternToVexflowBars } from './note-bar-vexflow';
+import { normalizeRhythmPattern, splitRhythmPatternBars } from './rhythm-pattern';
 import { RhythmBarViewer } from './rhythm-bar-viewer';
 import type { RhythmAttackDot, RhythmPattern } from './types';
 
@@ -20,7 +21,9 @@ export function RhythmViewer({
   pattern,
   stepDurationMs = 1,
 }: RhythmViewerProps) {
-  const bars = splitRhythmPatternBars(pattern);
+  const normalizedPattern = normalizeRhythmPattern(pattern);
+  const bars = splitRhythmPatternBars(normalizedPattern);
+  const notationBars = convertRhythmPatternToVexflowBars(normalizedPattern);
 
   return (
     <View style={styles.container}>
@@ -45,7 +48,11 @@ export function RhythmViewer({
                   stepDurationMs={stepDurationMs}
                   steps={steps}
                 />
-                <NoteBarViewer currentStepIndex={currentStepInBar} steps={steps} />
+                <NoteBarViewer
+                  currentStepIndex={currentStepInBar}
+                  events={notationBars[barIndex]}
+                  steps={steps}
+                />
               </View>
             }
           />

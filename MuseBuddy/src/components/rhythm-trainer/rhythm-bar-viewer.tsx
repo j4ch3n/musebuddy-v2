@@ -37,7 +37,7 @@ export function RhythmBarViewer({
 
   return (
     <View
-      accessibilityLabel="Rhythm bar with sixteen sixteenth-note steps"
+      accessibilityLabel="Rhythm bar with thirty-two thirty-second-note steps"
       style={styles.container}
     >
       <View

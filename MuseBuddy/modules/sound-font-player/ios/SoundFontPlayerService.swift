@@ -14,8 +14,13 @@ final class SoundFontPlayerService: @unchecked Sendable {
   }
 
   private enum InstrumentRole: Hashable {
-    case groove
+    case bass
     case leadIn
+    case treble
+  }
+
+  private enum InstrumentFamily {
+    case groove
     case piano
   }
 
@@ -45,9 +50,10 @@ final class SoundFontPlayerService: @unchecked Sendable {
     let notes: [ScheduledNote]
   }
 
-  private static let stepsPerPart = 16
+  private static let stepsPerPart = 32
+  private static let minimumPartCount = 1
   private static let maximumPartCount = 8
-  private static let stepDurationBeats = 0.25
+  private static let stepDurationBeats = 0.125
   private static let leadInBeatCount = 4
   private static let leadInDurationBeats = 4.0
   private static let holdMidi = -50
@@ -94,14 +100,14 @@ final class SoundFontPlayerService: @unchecked Sendable {
     configuration: SoundFontPlaybackConfigurationRecord,
     options: SoundFontPlaybackOptionsRecord
   ) async throws -> PlaybackStartResult {
-    try await play(configuration: configuration, options: options, role: .piano)
+    try await play(configuration: configuration, options: options, family: .piano)
   }
 
   func playGroove(
     configuration: SoundFontPlaybackConfigurationRecord,
     options: SoundFontPlaybackOptionsRecord
   ) async throws -> PlaybackStartResult {
-    try await play(configuration: configuration, options: options, role: .groove)
+    try await play(configuration: configuration, options: options, family: .groove)
   }
 
   func stop(playbackId: Int) async {
@@ -124,7 +130,7 @@ final class SoundFontPlayerService: @unchecked Sendable {
   private func play(
     configuration: SoundFontPlaybackConfigurationRecord,
     options: SoundFontPlaybackOptionsRecord,
-    role: InstrumentRole
+    family: InstrumentFamily
   ) async throws -> PlaybackStartResult {
     try await withCheckedThrowingContinuation { continuation in
       workQueue.async {
@@ -133,7 +139,7 @@ final class SoundFontPlayerService: @unchecked Sendable {
             returning: self.startPlayback(
               configuration: configuration,
               options: options,
-              role: role
+              family: family
             )
           )
         } catch {
@@ -146,25 +152,36 @@ final class SoundFontPlayerService: @unchecked Sendable {
   private func startPlayback(
     configuration: SoundFontPlaybackConfigurationRecord,
     options: SoundFontPlaybackOptionsRecord,
-    role: InstrumentRole
+    family: InstrumentFamily
   ) throws -> PlaybackStartResult {
     disposePlayback()
 
     guard configuration.bpm.isFinite, configuration.bpm > 0 else {
       throw SoundFontPlayerError.invalidConfiguration("BPM must be positive.")
     }
-    let material = try Self.validatedMaterial(from: configuration.parts)
-    guard !material.notes.isEmpty else {
+    let materials = try Self.validatedMaterials(from: configuration.tracks)
+    guard materials.values.contains(where: { !$0.notes.isEmpty }) else {
       throw SoundFontPlayerError.emptyConfiguration
     }
 
     let engine = AVAudioEngine()
     var requestSamplers: [InstrumentRole: AVAudioUnitSampler] = [:]
     do {
-      let primarySampler = try makeSampler(for: role, engine: engine)
-      requestSamplers[role] = primarySampler
+      requestSamplers[.treble] = try makeSampler(
+        definition: Self.definition(for: family),
+        engine: engine
+      )
+      if materials[.bass] != nil {
+        requestSamplers[.bass] = try makeSampler(
+          definition: Self.definition(for: family),
+          engine: engine
+        )
+      }
       if options.leadIn {
-        requestSamplers[.leadIn] = try makeSampler(for: .leadIn, engine: engine)
+        requestSamplers[.leadIn] = try makeSampler(
+          definition: Self.leadInInstrument,
+          engine: engine
+        )
       }
 
       try activateAudioSession()
@@ -174,10 +191,10 @@ final class SoundFontPlayerService: @unchecked Sendable {
 
       let nextSequencer = try makeSequencer(
         engine: engine,
-        material: material,
+        materials: materials,
         bpm: configuration.bpm,
         options: options,
-        primaryRole: role,
+        family: family,
         samplers: requestSamplers
       )
       nextSequencer.prepareToPlay()
@@ -202,7 +219,8 @@ final class SoundFontPlayerService: @unchecked Sendable {
       let repetitions = max(1, options.repetitions)
       scheduleFinish(
         playbackId: nextPlaybackId,
-        delay: leadInSeconds + material.lengthBeats * Double(repetitions) * secondsPerBeat
+        delay: leadInSeconds
+          + materials[.treble]!.lengthBeats * Double(repetitions) * secondsPerBeat
       )
 
       return PlaybackStartResult(playbackId: nextPlaybackId, startedAtMs: startedAtMs)
@@ -224,10 +242,9 @@ final class SoundFontPlayerService: @unchecked Sendable {
   }
 
   private func makeSampler(
-    for role: InstrumentRole,
+    definition: InstrumentDefinition,
     engine: AVAudioEngine
   ) throws -> AVAudioUnitSampler {
-    let definition = Self.definition(for: role)
     guard let soundFontURL = findSoundFontURL(resourceName: definition.resourceName) else {
       throw SoundFontPlayerError.resourceMissing
     }
@@ -259,35 +276,36 @@ final class SoundFontPlayerService: @unchecked Sendable {
   // swiftlint:disable:next function_parameter_count
   private func makeSequencer(
     engine: AVAudioEngine,
-    material: PlaybackMaterial,
+    materials: [InstrumentRole: PlaybackMaterial],
     bpm: Double,
     options: SoundFontPlaybackOptionsRecord,
-    primaryRole: InstrumentRole,
+    family: InstrumentFamily,
     samplers: [InstrumentRole: AVAudioUnitSampler]
   ) throws -> AVAudioSequencer {
-    guard let primarySampler = samplers[primaryRole] else {
-      throw SoundFontPlayerError.invalidConfiguration("The requested sampler is unavailable.")
-    }
-
     let nextSequencer = AVAudioSequencer(audioEngine: engine)
     let tempoTrack = nextSequencer.tempoTrack
     tempoTrack.addEvent(AVExtendedTempoEvent(tempo: bpm), at: 0)
     let startBeat = options.leadIn ? Self.leadInDurationBeats : 0
     let repetitions = max(1, options.repetitions)
-    let primaryDefinition = Self.definition(for: primaryRole)
-    let track = nextSequencer.createAndAppendTrack()
-    track.destinationAudioUnit = primarySampler
-
-    for repetition in 0 ..< repetitions {
-      let repetitionStart = startBeat + Double(repetition) * material.lengthBeats
-      for note in material.notes {
-        let event = AVMIDINoteEvent(
-          channel: UInt32(primaryDefinition.midiChannel),
-          key: UInt32(note.midi),
-          velocity: UInt32(note.velocity),
-          duration: note.durationBeats
-        )
-        track.addEvent(event, at: repetitionStart + note.startBeat)
+    let definition = Self.definition(for: family)
+    let timelineLength = materials[.treble]!.lengthBeats
+    for role in [InstrumentRole.treble, .bass] {
+      guard let material = materials[role], let sampler = samplers[role] else {
+        continue
+      }
+      let track = nextSequencer.createAndAppendTrack()
+      track.destinationAudioUnit = sampler
+      for repetition in 0 ..< repetitions {
+        let repetitionStart = startBeat + Double(repetition) * timelineLength
+        for note in material.notes {
+          let event = AVMIDINoteEvent(
+            channel: UInt32(definition.midiChannel),
+            key: UInt32(note.midi),
+            velocity: UInt32(note.velocity),
+            duration: note.durationBeats
+          )
+          track.addEvent(event, at: repetitionStart + note.startBeat)
+        }
       }
     }
 
@@ -406,12 +424,29 @@ final class SoundFontPlayerService: @unchecked Sendable {
     }
   }
 
+  private static func validatedMaterials(
+    from tracks: SoundFontPlaybackTracksRecord
+  ) throws -> [InstrumentRole: PlaybackMaterial] {
+    let treble = try validatedMaterial(from: tracks.treble, trackName: "treble")
+    var result: [InstrumentRole: PlaybackMaterial] = [.treble: treble]
+    if let bassParts = tracks.bass {
+      guard bassParts.count == tracks.treble.count else {
+        throw SoundFontPlayerError.invalidConfiguration(
+          "Bass must contain the same number of parts as treble."
+        )
+      }
+      result[.bass] = try validatedMaterial(from: bassParts, trackName: "bass")
+    }
+    return result
+  }
+
   private static func validatedMaterial(
-    from parts: [[[SoundFontPlaybackCellRecord]]]
+    from parts: [[[SoundFontPlaybackCellRecord]]],
+    trackName: String
   ) throws -> PlaybackMaterial {
-    guard parts.count <= maximumPartCount else {
+    guard (minimumPartCount ... maximumPartCount).contains(parts.count) else {
       throw SoundFontPlayerError.invalidConfiguration(
-        "Playback must contain no more than \(maximumPartCount) parts."
+        "\(trackName.capitalized) must contain 1 to \(maximumPartCount) parts."
       )
     }
     let steps = try parts.enumerated().flatMap { partIndex, part in
@@ -427,16 +462,25 @@ final class SoundFontPlayerService: @unchecked Sendable {
     }
     return PlaybackMaterial(
       lengthBeats: Double(steps.count) * stepDurationBeats,
-      notes: notes(from: steps)
+      notes: decodeScheduledNotes(from: steps)
     )
   }
 
-  private static func notes(
+  private static func decodeScheduledNotes(
     from steps: [[SoundFontPlaybackCellRecord]]
   ) -> [ScheduledNote] {
+    // Native lane equivalent of the JS rhythm timeline decoder. Each MIDI lane is independent:
+    // attacks own following holds, another attack replaces the active note, and a rest or
+    // omitted lane releases it.
     var activeNotes: [Int: ActiveNote] = [:]
     var result: [ScheduledNote] = []
     for (stepIndex, step) in steps.enumerated() {
+      let presentLaneIndexes = Set(step.indices)
+      for laneIndex in Array(activeNotes.keys) where !presentLaneIndexes.contains(laneIndex) {
+        if let activeNote = activeNotes.removeValue(forKey: laneIndex) {
+          result.append(note(from: activeNote, endStepIndex: stepIndex))
+        }
+      }
       for (laneIndex, cell) in step.enumerated() {
         if cell.midi == holdMidi {
           continue
@@ -448,7 +492,7 @@ final class SoundFontPlayerService: @unchecked Sendable {
           activeNotes[laneIndex] = ActiveNote(
             midi: UInt8(midi),
             startStepIndex: stepIndex,
-            velocity: UInt8(max(1, velocity))
+            velocity: UInt8(velocity)
           )
         }
       }
@@ -511,12 +555,10 @@ final class SoundFontPlayerService: @unchecked Sendable {
     }
   }
 
-  private static func definition(for role: InstrumentRole) -> InstrumentDefinition {
-    switch role {
+  private static func definition(for family: InstrumentFamily) -> InstrumentDefinition {
+    switch family {
     case .groove:
       grooveInstrument
-    case .leadIn:
-      leadInInstrument
     case .piano:
       pianoInstrument
     }

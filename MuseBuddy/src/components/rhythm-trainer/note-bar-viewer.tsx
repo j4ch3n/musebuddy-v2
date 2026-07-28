@@ -5,16 +5,22 @@ import { museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 
 import { RHYTHM_SHEET_HEIGHT_PX, RHYTHM_SHEET_WRAPPER_HEIGHT_PX } from './constants';
 import NoteBarSheet from './note-bar-sheet.dom';
-import { convertRhythmBarToVexflowEvents } from './note-bar-vexflow';
+import { convertRhythmBarToVexflowEvents, type NoteBarVexflowEvent } from './note-bar-vexflow';
 import type { RhythmStep } from './types';
 
 type NoteBarViewerProps = {
   currentStepIndex: number | null;
+  events?: readonly NoteBarVexflowEvent[];
   steps: readonly RhythmStep[];
 };
 
-export function NoteBarViewer({ currentStepIndex, steps }: NoteBarViewerProps) {
-  const events = useMemo(() => convertRhythmBarToVexflowEvents(steps), [steps]);
+export function NoteBarViewer({
+  currentStepIndex,
+  events: suppliedEvents,
+  steps,
+}: NoteBarViewerProps) {
+  const derivedEvents = useMemo(() => convertRhythmBarToVexflowEvents(steps), [steps]);
+  const events = suppliedEvents ?? derivedEvents;
 
   return (
     <View accessibilityLabel="Note preview for rhythm bar" style={styles.container}>

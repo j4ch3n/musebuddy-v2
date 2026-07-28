@@ -26,7 +26,7 @@ export type RhythmTiming = {
 };
 
 export function getRhythmTiming(bpm: number, stepCount: number): RhythmTiming {
-  const stepDurationMs = 0.25 * (60_000 / bpm);
+  const stepDurationMs = 0.125 * (60_000 / bpm);
   return {
     barDurationMs: STEPS_PER_BAR * stepDurationMs,
     listeningDurationMs: stepCount * stepDurationMs,

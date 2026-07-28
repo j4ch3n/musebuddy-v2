@@ -21,15 +21,21 @@ stop(playbackId: number): Promise<void>;
 maps stable native errors to `SoundFontPlayerError`.
 
 There are no public instrument IDs. Piano uses `piano-white-grand.sf2`; groove and the
-optional four-beat lead-in use private jazz-percussion samplers. Removed preparation,
+optional four-beat lead-in use private jazz-percussion samplers. Each supplied staff has its
+own sampler. Removed preparation,
 resume/restart, repeat-mode, is-playing, and playback-bar APIs must not be reintroduced.
 
 ## Playback Data
 
-Each part contains exactly 16 steps at 0.25 beats per step. A lane is a rest (`null` MIDI and
+Configurations contain required, non-empty `tracks.treble` and optional `tracks.bass`. Each
+track contains 1–8 parts with exactly 32 steps per part at 0.125 beats per step. Supplied bass
+must be non-empty and have the same part count as treble. A lane is a rest (`null` MIDI and
 velocity), hold (`-50` MIDI and null velocity), or note (`1...127` MIDI and `0...127`
-velocity). Lanes decode independently. Empty/all-rest content, malformed parts, invalid MIDI,
-and invalid BPM are rejected.
+velocity). Staffs and lanes decode independently; an omitted lane ends its active note.
+Empty/all-rest content, malformed parts, invalid MIDI, and invalid BPM are rejected.
+
+Both staffs start at the same beat and repetition boundary. Duration is calculated only from
+the required treble timeline, so simultaneous bass does not extend playback.
 
 ## Shared Audio Session
 
@@ -54,7 +60,7 @@ detector's input graph.
 ## Fresh Graph And Lifetime
 
 Each request first disposes any previous graph according to that previous graph's stored
-lifetime flag, then creates a new engine/sequencer, attaches only required samplers, applies
+lifetime flag, then creates a new engine/sequencer, attaches one sampler per supplied staff, applies
 the common session configuration, starts rendering, schedules finite content, and returns an
 exact playback ID plus absolute `startedAtMs`.
 

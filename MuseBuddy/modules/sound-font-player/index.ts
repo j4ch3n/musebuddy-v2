@@ -8,6 +8,7 @@ export {
 export type {
   SoundFontPlaybackCell,
   SoundFontPlaybackConfiguration,
+  SoundFontPlaybackPart,
   SoundFontPlaybackFinishEvent,
   SoundFontPlaybackOptions,
   SoundFontPlaybackStartResult,

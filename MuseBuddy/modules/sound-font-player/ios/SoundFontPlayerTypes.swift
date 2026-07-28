@@ -62,7 +62,12 @@ struct SoundFontPlaybackCellRecord: Record {
 
 struct SoundFontPlaybackConfigurationRecord: Record {
   @Field var bpm: Double = 100
-  @Field var parts: [[[SoundFontPlaybackCellRecord]]] = []
+  @Field var tracks: SoundFontPlaybackTracksRecord = .init()
+}
+
+struct SoundFontPlaybackTracksRecord: Record {
+  @Field var treble: [[[SoundFontPlaybackCellRecord]]] = []
+  @Field var bass: [[[SoundFontPlaybackCellRecord]]]?
 }
 
 struct SoundFontPlaybackOptionsRecord: Record {

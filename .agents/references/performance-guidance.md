@@ -52,11 +52,14 @@ from `Date.now()`.
 - Session goal supplies `{ kind: 'none' }`.
 - Individual chords and the chord summary supply `{ kind: 'basic-pitch' }` and keep their
   existing matching/completion behavior.
-- Rhythm derives a sixteenth-note step from BPM, uses half a step as its allowed offset, and
+- Rhythm derives a thirty-second-note step (`0.125 × 60,000 / BPM`), uses half a step as its allowed offset, and
   listens for `pattern.length * stepDurationMs`.
 - Rhythm's pure progress helper creates expected hits only for `s` and `w`, derives one-to-one
   nearest matches from raw absolute attacks, and recomputes misses and combo transitions so
   bridge delivery delay cannot change the result.
+- `rhythm-pattern.ts` owns the canonical attack/hold/rest timeline decoder. Notation merges
+  attacks with their owned holds, while groove playback and the grid expand the same timeline
+  back to normalized steps. Orphan holds normalize to rests and adjacent attacks stay separate.
 - Finish and skip navigation remain page-owned.
 
 Changing BPM while active invalidates the flow, releases the exact active SoundFont or Basic

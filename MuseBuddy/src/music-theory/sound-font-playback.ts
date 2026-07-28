@@ -1,9 +1,9 @@
-import type {
-  TrainingSessionPatternBeat,
-  TrainingSessionPatternStave,
-} from '@/contexts/training-session-schema';
+import type { TrainingSessionPatternBeat } from '@/contexts/training-session-schema';
 
-import { splitRhythmPatternBars } from '@/components/rhythm-trainer/rhythm-pattern';
+import {
+  normalizeRhythmPattern,
+  splitRhythmPatternBars,
+} from '@/components/rhythm-trainer/rhythm-pattern';
 import type { RhythmPattern } from '@/components/rhythm-trainer/types';
 import type {
   SoundFontPlaybackCell,
@@ -42,7 +42,7 @@ export function buildPatternSoundFontPlaybackConfiguration(
 ): SoundFontPlaybackConfiguration {
   return {
     bpm,
-    parts: buildPartsFromPatternBeats(beats),
+    tracks: buildTracksFromPatternBeats(beats),
   };
 }
 
@@ -50,27 +50,29 @@ export function buildRhythmSoundFontPlaybackConfiguration(
   pattern: RhythmPattern,
   bpm: number,
 ): SoundFontPlaybackConfiguration {
-  const bars = splitRhythmPatternBars(pattern);
+  const bars = splitRhythmPatternBars(normalizeRhythmPattern(pattern));
 
   return {
     bpm,
-    parts: bars.map((part) =>
-      part.map((step): SoundFontPlaybackStep => {
-        if (step === 's') {
-          return [STRONG_RHYTHM_NOTE];
-        }
+    tracks: {
+      treble: bars.map((part) =>
+        part.map((step): SoundFontPlaybackStep => {
+          if (step === 's') {
+            return [STRONG_RHYTHM_NOTE];
+          }
 
-        if (step === 'w') {
-          return [WEAK_RHYTHM_NOTE];
-        }
+          if (step === 'w') {
+            return [WEAK_RHYTHM_NOTE];
+          }
 
-        if (step === 'h') {
-          return [HOLD_CELL];
-        }
+          if (step === 'h') {
+            return [HOLD_CELL];
+          }
 
-        return [REST_CELL];
-      }),
-    ),
+          return [REST_CELL];
+        }),
+      ),
+    },
   };
 }
 
@@ -80,14 +82,16 @@ export function buildChordPreviewSoundFontPlaybackConfiguration(
 ): SoundFontPlaybackConfiguration {
   return {
     bpm,
-    parts: [
-      buildChordPart(display, [
-        { durationSteps: 4, startStep: 0, velocity: CHORD_NOTE_STRONG_VELOCITY },
-        { durationSteps: 4, startStep: 4, velocity: CHORD_NOTE_WEAK_VELOCITY },
-        { durationSteps: 4, startStep: 8, velocity: CHORD_NOTE_STRONG_VELOCITY },
-        { durationSteps: 4, startStep: 12, velocity: CHORD_NOTE_WEAK_VELOCITY },
-      ]),
-    ],
+    tracks: {
+      treble: [
+        buildChordPart(display, [
+          { durationSteps: 8, startStep: 0, velocity: CHORD_NOTE_STRONG_VELOCITY },
+          { durationSteps: 8, startStep: 8, velocity: CHORD_NOTE_WEAK_VELOCITY },
+          { durationSteps: 8, startStep: 16, velocity: CHORD_NOTE_STRONG_VELOCITY },
+          { durationSteps: 8, startStep: 24, velocity: CHORD_NOTE_WEAK_VELOCITY },
+        ]),
+      ],
+    },
   };
 }
 
@@ -97,74 +101,37 @@ export function buildChordSummarySoundFontPlaybackConfiguration(
 ): SoundFontPlaybackConfiguration {
   return {
     bpm,
-    parts: displays.map((display) =>
-      buildChordPart(display, [
-        { durationSteps: 4, startStep: 0, velocity: 96 },
-        { durationSteps: 4, startStep: 4, velocity: 75 },
-        { durationSteps: 4, startStep: 8, velocity: 80 },
-        { durationSteps: 4, startStep: 12, velocity: 96 },
-      ]),
-    ),
+    tracks: {
+      treble: displays.map((display) =>
+        buildChordPart(display, [
+          { durationSteps: 8, startStep: 0, velocity: 96 },
+          { durationSteps: 8, startStep: 8, velocity: 75 },
+          { durationSteps: 8, startStep: 16, velocity: 80 },
+          { durationSteps: 8, startStep: 24, velocity: 96 },
+        ]),
+      ),
+    },
   };
 }
 
-function buildPartsFromPatternBeats(
+function buildTracksFromPatternBeats(
   beats: readonly TrainingSessionPatternBeat[],
-): SoundFontPlaybackStep[][] {
+): SoundFontPlaybackConfiguration['tracks'] {
   const orderedBeats = [...beats].sort(
     (left, right) => left.bar_index - right.bar_index || left.beat_index - right.beat_index,
   );
-  const trebleLaneCount = maxLaneCount(orderedBeats.map((beat) => beat.staves.treble));
-  const bassLaneCount = maxLaneCount(orderedBeats.map((beat) => beat.staves.bass));
-
-  return orderedBeats.map((beat) =>
-    Array.from({ length: beat.staves.treble.arrangement.length / 2 }, (_, stepIndex) => [
-      ...mergeStaveSourceSlots(beat.staves.treble, stepIndex, trebleLaneCount),
-      ...mergeStaveSourceSlots(beat.staves.bass, stepIndex, bassLaneCount),
-    ]),
-  );
-}
-
-function maxLaneCount(staves: readonly TrainingSessionPatternStave[]) {
-  return Math.max(...staves.flatMap((stave) => stave.arrangement.map((slot) => slot.length)));
-}
-
-function mergeStaveSourceSlots(
-  stave: TrainingSessionPatternStave,
-  stepIndex: number,
-  laneCount: number,
-): SoundFontPlaybackStep {
-  const firstSlotIndex = stepIndex * 2;
-  const secondSlotIndex = firstSlotIndex + 1;
-  const firstArrangement = stave.arrangement[firstSlotIndex] ?? [];
-  const secondArrangement = stave.arrangement[secondSlotIndex] ?? [];
-  const firstVelocity = stave.velocity[firstSlotIndex] ?? [];
-  const secondVelocity = stave.velocity[secondSlotIndex] ?? [];
-
-  return Array.from({ length: laneCount }, (_, laneIndex) =>
-    mergeSourceCells(
-      cellAt(firstArrangement, firstVelocity, laneIndex),
-      cellAt(secondArrangement, secondVelocity, laneIndex),
-    ),
-  );
-}
-
-function cellAt(
-  arrangement: readonly (number | null)[],
-  velocity: readonly (number | null)[],
-  laneIndex: number,
-): SoundFontPlaybackCell {
-  return {
-    midi: arrangement[laneIndex] ?? null,
-    velocity: velocity[laneIndex] ?? null,
-  };
-}
-
-function mergeSourceCells(
-  firstCell: SoundFontPlaybackCell,
-  secondCell: SoundFontPlaybackCell,
-): SoundFontPlaybackCell {
-  return firstCell.midi !== null ? firstCell : secondCell;
+  const buildStaff = (staff: 'bass' | 'treble') =>
+    orderedBeats.map((beat) =>
+      beat.staves[staff].arrangement.map((slot, slotIndex) =>
+        slot.map((midi, laneIndex) => ({
+          midi,
+          velocity: beat.staves[staff].velocity[slotIndex]?.[laneIndex] ?? null,
+        })),
+      ),
+    );
+  const treble = buildStaff('treble');
+  const bass = buildStaff('bass');
+  return { bass, treble };
 }
 
 type ChordAttack = {
@@ -184,8 +151,8 @@ function buildChordPart(
     chordMidis.push(36 + rootNote.pitchClass);
   }
 
-  const stepModes = Array.from({ length: 16 }, () => 'rest' as 'hold' | 'note' | 'rest');
-  const stepVelocities = Array.from({ length: 16 }, () => CHORD_NOTE_VELOCITY);
+  const stepModes = Array.from({ length: 32 }, () => 'rest' as 'hold' | 'note' | 'rest');
+  const stepVelocities = Array.from({ length: 32 }, () => CHORD_NOTE_VELOCITY);
 
   attacks.forEach(({ durationSteps, startStep, velocity }) => {
     if (startStep >= stepModes.length) {

@@ -1,148 +1,53 @@
 import { describe, expect, it } from 'vitest';
 
-import { convertRhythmBarToVexflowEvents, RHYTHM_NOTE_KEY } from './note-bar-vexflow';
+import {
+  convertRhythmBarToVexflowEvents,
+  convertRhythmPatternToVexflowBars,
+} from './note-bar-vexflow';
 import type { RhythmStep } from './types';
 
-type ExpectedEvent = {
-  kind: 'note' | 'rest';
-  duration: string;
-  dots?: 0 | 1;
-  startStep: number;
-  stepCount: number;
-  tieFromPrevious?: boolean;
-  tieToNext?: boolean;
-};
-
-function pattern(source: string): RhythmStep[] {
-  return source.split(/\s+/).map((token) => {
-    if (token === 's' || token === 'w' || token === 'h') {
-      return token;
-    }
-
-    if (token === '-') {
-      return null;
-    }
-
-    throw new Error(`Unsupported pattern token: ${token}`);
-  });
-}
-
-function convert(source: string) {
-  return convertRhythmBarToVexflowEvents(pattern(source)).map(
-    ({ kind, duration, dots, startStep, stepCount, tieFromPrevious, tieToNext, noteKey }) => ({
-      kind,
-      duration,
-      dots,
-      startStep,
-      stepCount,
-      tieFromPrevious,
-      tieToNext,
-      noteKey,
-    }),
-  );
-}
-
-function note(
-  startStep: number,
-  stepCount: number,
-  duration: string,
-  options: Pick<ExpectedEvent, 'dots' | 'tieFromPrevious' | 'tieToNext'> = {},
-) {
-  return {
-    kind: 'note',
-    duration,
-    dots: options.dots ?? 0,
-    startStep,
-    stepCount,
-    tieFromPrevious: options.tieFromPrevious ?? false,
-    tieToNext: options.tieToNext ?? false,
-    noteKey: RHYTHM_NOTE_KEY,
-  };
-}
-
-function rest(startStep: number, stepCount: number, duration: string, dots: 0 | 1 = 0) {
-  return {
-    kind: 'rest',
-    duration,
-    dots,
-    startStep,
-    stepCount,
-    tieFromPrevious: false,
-    tieToNext: false,
-    noteKey: undefined,
-  };
+function bar(...initial: RhythmStep[]): RhythmStep[] {
+  return [...initial, ...Array.from<RhythmStep>({ length: 32 - initial.length }).fill(null)];
 }
 
 describe('convertRhythmBarToVexflowEvents', () => {
-  it('converts all rests into one whole rest', () => {
-    expect(convert('- - - - - - - - - - - - - - - -')).toEqual([rest(0, 16, 'w')]);
-  });
+  it('renders one source step as a thirty-second note', () => {
+    const events = convertRhythmBarToVexflowEvents(bar('s', 'w'));
 
-  it('keeps consecutive strong and weak attacks as separate sixteenth notes', () => {
-    expect(convert('s w w - - - - - - - - - - - - -')).toEqual([
-      note(0, 1, '16'),
-      note(1, 1, '16'),
-      note(2, 1, '16'),
-      rest(3, 12, 'h', 1),
-      rest(15, 1, '16'),
+    expect(events.slice(0, 2)).toMatchObject([
+      { duration: '32', kind: 'note', startStep: 0, stepCount: 1 },
+      { duration: '32', kind: 'note', startStep: 1, stepCount: 1 },
     ]);
   });
 
-  it('uses hold steps to extend attack duration', () => {
-    expect(convert('s h h - - - - - - - - - - - - -')).toEqual([
-      note(0, 3, '8', { dots: 1 }),
-      rest(3, 12, 'h', 1),
-      rest(15, 1, '16'),
+  it('extends exact holds and keeps adjacent attacks separate', () => {
+    const events = convertRhythmBarToVexflowEvents(bar('s', 'h', 'h', 'w'));
+
+    expect(events.slice(0, 2)).toMatchObject([
+      { duration: '16', dots: 1, kind: 'note', startStep: 0, stepCount: 3 },
+      { duration: '32', kind: 'note', startStep: 3, stepCount: 1 },
     ]);
   });
 
-  it('keeps attacks separated by rests as separate note events', () => {
-    expect(convert('s - w - s - w - s - w - s - w -')).toEqual([
-      note(0, 1, '16'),
-      rest(1, 1, '16'),
-      note(2, 1, '16'),
-      rest(3, 1, '16'),
-      note(4, 1, '16'),
-      rest(5, 1, '16'),
-      note(6, 1, '16'),
-      rest(7, 1, '16'),
-      note(8, 1, '16'),
-      rest(9, 1, '16'),
-      note(10, 1, '16'),
-      rest(11, 1, '16'),
-      note(12, 1, '16'),
-      rest(13, 1, '16'),
-      note(14, 1, '16'),
-      rest(15, 1, '16'),
+  it('renders a complete 32-step rest bar as a whole rest', () => {
+    expect(convertRhythmBarToVexflowEvents(bar())).toMatchObject([
+      { duration: 'w', kind: 'rest', startStep: 0, stepCount: 32 },
     ]);
   });
 
-  it('ties sustained attacks that need multiple notation segments', () => {
-    expect(convert('s h h h h h h h h h h h h h h -')).toEqual([
-      note(0, 12, 'h', { dots: 1, tieToNext: true }),
-      note(12, 3, '8', { dots: 1, tieFromPrevious: true }),
-      rest(15, 1, '16'),
-    ]);
-  });
-
-  it('treats hold markers without a preceding attack as rests', () => {
-    expect(convert('h h h h - - - - - - - - - - - -')).toEqual([rest(0, 16, 'w')]);
-  });
-
-  it('rejects bars that are not exactly sixteen slots', () => {
+  it('rejects malformed bar lengths', () => {
     expect(() => convertRhythmBarToVexflowEvents(['s', null])).toThrow(
-      'Expected 16 bar steps, received 2.',
+      'Expected 32 bar steps, received 2.',
     );
   });
 
-  it('covers the whole bar without gaps or overlaps', () => {
-    const events = convertRhythmBarToVexflowEvents(pattern('s w w - s - - w s - w - s w - -'));
+  it('creates partial ties when a held note crosses a card boundary', () => {
+    const pattern = Array.from<RhythmStep>({ length: 64 }).fill(null);
+    pattern.splice(31, 3, 's', 'h', 'h');
 
-    events.forEach((event, index) => {
-      expect(event.startStep).toBe(
-        index === 0 ? 0 : events[index - 1].startStep + events[index - 1].stepCount,
-      );
-    });
-    expect(events.reduce((total, event) => total + event.stepCount, 0)).toBe(16);
+    const bars = convertRhythmPatternToVexflowBars(pattern);
+
+    expect(bars[0]?.at(-1)).toMatchObject({ tieToNext: true });
+    expect(bars[1]?.[0]).toMatchObject({ tieFromPrevious: true });
   });
 });

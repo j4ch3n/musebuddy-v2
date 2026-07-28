@@ -14,8 +14,11 @@ import {
   shouldHandlePlaybackEvent,
 } from './performance-guidance-state';
 
-const part = Array.from({ length: 16 }, () => [{ midi: 60, velocity: 90 }]);
-const configuration: SoundFontPlaybackConfiguration = { bpm: 120, parts: [part, part] };
+const part = Array.from({ length: 32 }, () => [{ midi: 60, velocity: 90 }]);
+const configuration: SoundFontPlaybackConfiguration = {
+  bpm: 120,
+  tracks: { bass: [part, part], treble: [part, part] },
+};
 const detection: DetectionResult = {
   recognitionId: 7,
   detectionId: 1,
@@ -28,9 +31,9 @@ const detection: DetectionResult = {
 };
 
 describe('performance guidance state', () => {
-  it('derives playback length and duration from public parts', () => {
+  it('derives playback length and duration from treble without doubling for bass', () => {
     expect(getSoundFontPartCount(configuration)).toBe(2);
-    expect(getSoundFontStepCount(configuration)).toBe(32);
+    expect(getSoundFontStepCount(configuration)).toBe(64);
     expect(getSoundFontDemoDurationMs(configuration)).toBe(4_000);
   });
 
@@ -62,7 +65,7 @@ describe('performance guidance state', () => {
         repetitions: 1,
         startedAtMs: 10_000,
       }),
-    ).toMatchObject({ currentStepIndex: 3, phase: 'demo' });
+    ).toMatchObject({ currentStepIndex: 6, phase: 'demo' });
   });
 
   it('updates the session-goal repetition label from the same native clock', () => {
