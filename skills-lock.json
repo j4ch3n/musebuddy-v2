@@ -85,6 +85,54 @@
       "skillPath": "plugins/expo/skills/native-data-fetching/SKILL.md",
       "computedHash": "21253dd72e2afa0cc0a6693295f043af3b149fa250c7aedef4d33144e69258ff"
     },
+    "ss-audit": {
+      "source": "bitjaru/styleseed",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/ss-audit/SKILL.md",
+      "computedHash": "6e8a77c731d1752c17a8530dccd5b2ffa5b6d4a1422bd33802a041ab022a5686"
+    },
+    "ss-build": {
+      "source": "bitjaru/styleseed",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/ss-build/SKILL.md",
+      "computedHash": "a01bfd3151d704a5a62266cb4f3441af1ed34d3b47ad0d9d398af8df7f3ba4b7"
+    },
+    "ss-component": {
+      "source": "bitjaru/styleseed",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/ss-component/SKILL.md",
+      "computedHash": "1744f0cad3967e744dc5e1d65429704ddbc5e2e55741f71538ee7e999dee0063"
+    },
+    "ss-feedback": {
+      "source": "bitjaru/styleseed",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/ss-feedback/SKILL.md",
+      "computedHash": "9885be72c858199d014dc60cbba96bc132ae0f9e58705c7955e959268e10e0b0"
+    },
+    "ss-motion": {
+      "source": "bitjaru/styleseed",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/ss-motion/SKILL.md",
+      "computedHash": "990654c3747066d43934b1238a9fe3dbd3903e941c3a5736601769bcdc5e808e"
+    },
+    "ss-pattern": {
+      "source": "bitjaru/styleseed",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/ss-pattern/SKILL.md",
+      "computedHash": "bb8a0cdbeb52badcdbfa343648888bd50a22b90c4098423b131b64e1a5dffff7"
+    },
+    "ss-restyle": {
+      "source": "bitjaru/styleseed",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/ss-restyle/SKILL.md",
+      "computedHash": "3648aa6e4e568877e9968309bd0ceab79634f71e91709c69006c47b1c05a1500"
+    },
+    "styleseed-design-review": {
+      "source": "bitjaru/styleseed",
+      "sourceType": "github",
+      "skillPath": "skills/styleseed-design-review/SKILL.md",
+      "computedHash": "b954d79816d5cf9492c484411d2892192c87ba13e9565cce4789fb19a984f25d"
+    },
     "upgrading-expo": {
       "source": "expo/skills",
       "sourceType": "github",

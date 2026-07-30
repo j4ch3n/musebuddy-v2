@@ -1,4 +1,5 @@
 interface:
   display_name: "MuseBuddy Design System"
-  short_description: "Apply MuseBuddy's bold game-like UI system"
-  default_prompt: "Use $musebuddy-design-system to design or review MuseBuddy UI with the app's bold, vivid, game-like visual system."
+  short_description: "Apply MuseBuddy's botanical game UI system"
+  brand_color: "#DA438C"
+  default_prompt: "Use $musebuddy-design-system to design or review MuseBuddy UI with its nature-led, tactile, game-like visual system."
