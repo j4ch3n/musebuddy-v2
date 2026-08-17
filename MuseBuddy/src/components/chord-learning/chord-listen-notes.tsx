@@ -38,8 +38,8 @@ export function ChordListenNotes({ display }: ChordListenNotesProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: museBuddyColors.surface,
-    borderColor: museBuddyColors.ink,
+    backgroundColor: museBuddyColors.skyWash,
+    borderColor: museBuddyColors.frame,
     borderRadius: museBuddyRadii.medium,
     borderWidth: museBuddyBorders.bold,
     gap: 6,
@@ -47,13 +47,13 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   errorText: {
-    color: museBuddyColors.accentRed,
+    color: museBuddyColors.pine,
     fontFamily: museBuddyTypography.rounded,
     fontSize: 13,
     fontWeight: '800',
   },
   label: {
-    color: museBuddyColors.ink,
+    color: museBuddyColors.pine,
     fontFamily: museBuddyTypography.rounded,
     fontSize: 12,
     fontWeight: '900',
@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     width: 48,
   },
   notes: {
-    color: museBuddyColors.ink,
+    color: museBuddyColors.pine,
     flex: 1,
     fontFamily: museBuddyTypography.rounded,
     fontSize: 16,

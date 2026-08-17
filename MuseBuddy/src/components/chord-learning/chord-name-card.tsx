@@ -1,8 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { museBuddyColors } from '@/constants/design-tokens';
+import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 import type { ChordDisplay } from '@/music-theory';
-import { FlashCard } from '@/ui';
 
 import { ChordName } from './chord-name';
 
@@ -12,25 +11,32 @@ type ChordNameCardProps = {
 
 export function ChordNameCard({ display }: ChordNameCardProps) {
   return (
-    <FlashCard
-      accessibilityLabel="Chord name card"
-      sideA={
-        <View style={styles.content}>
-          <Text style={styles.friendlyName}>{display.friendlyName}</Text>
-          <ChordName display={display} />
-        </View>
-      }
-    />
+    <View accessibilityLabel="Chord name card" accessible style={styles.card}>
+      <View style={styles.content}>
+        <Text style={styles.friendlyName}>{display.friendlyName}</Text>
+        <ChordName display={display} size="compact" />
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  card: {
+    backgroundColor: museBuddyColors.mist,
+    borderColor: museBuddyColors.frame,
+    borderRadius: museBuddyRadii.medium,
+    borderWidth: museBuddyBorders.standard,
+    boxShadow: `6px 7px 0 ${museBuddyColors.frame}`,
+    padding: 10,
+    overflow: 'hidden',
+  },
   content: {
     gap: 12,
+    padding: 6,
   },
   friendlyName: {
     alignSelf: 'flex-start',
-    color: museBuddyColors.primary,
+    color: museBuddyColors.pine,
     fontSize: 20,
     fontWeight: '900',
     lineHeight: 26,

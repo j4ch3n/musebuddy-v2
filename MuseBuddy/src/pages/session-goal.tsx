@@ -30,7 +30,7 @@ export function SessionGoalPage() {
         <PianoPatternScore score={session.score} />
       ) : (
         <PlaceholderPanel
-          accent="purple"
+          accent="wildflower"
           body="Load today's training to set a clear practice target before moving into chord and rhythm work."
           title="Today's goal"
         />

@@ -19,6 +19,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import { museBuddyColors } from '@/constants/design-tokens';
 
 import {
   getBoundedCarouselIndex,
@@ -31,6 +32,7 @@ export type CarouselProps<T> = {
   accessibilityLabel?: string;
   getItemAccessibilityLabel?: (item: T, index: number) => string;
   items: readonly T[];
+  indicatorActiveColor?: string;
   keyExtractor: (item: T, index: number) => string;
   onCurrentIndexChange?: (index: number) => void;
   renderItem: (item: T, index: number) => ReactNode;
@@ -110,6 +112,7 @@ export function Carousel<T>({
   accessibilityLabel = 'Carousel',
   getItemAccessibilityLabel,
   items,
+  indicatorActiveColor = museBuddyColors.wildflower,
   keyExtractor,
   onCurrentIndexChange,
   renderItem,
@@ -328,7 +331,7 @@ export function Carousel<T>({
             : []
         }
         accessibilityHint={
-          swipeEnabled && itemCount > 1 ? 'Swipe up or down to browse items.' : undefined
+          swipeEnabled && itemCount > 1 ? 'Swipe left or right to browse items.' : undefined
         }
         accessibilityLabel={itemLabel ? `${accessibilityLabel}, ${itemLabel}` : accessibilityLabel}
         accessibilityRole="adjustable"
@@ -351,6 +354,22 @@ export function Carousel<T>({
           ))}
         </View>
       </GestureDetector>
+      <View
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        style={styles.indicator}
+      >
+        {items.map((item, index) => (
+          <View
+            key={`indicator-${keyExtractor(item, index)}`}
+            style={[
+              styles.indicatorMark,
+              index === safeCurrentIndex && styles.indicatorMarkActive,
+              index === safeCurrentIndex ? { backgroundColor: indicatorActiveColor } : null,
+            ]}
+          />
+        ))}
+      </View>
     </View>
   );
 }
@@ -365,6 +384,25 @@ const styles = StyleSheet.create({
   item: {
     flexShrink: 0,
     paddingBottom: 8,
+  },
+  indicator: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'center',
+    paddingTop: 8,
+  },
+  indicatorMark: {
+    backgroundColor: museBuddyColors.pine,
+    borderRadius: 2,
+    height: 4,
+    opacity: 0.45,
+    width: 18,
+  },
+  indicatorMarkActive: {
+    backgroundColor: museBuddyColors.wildflower,
+    height: 6,
+    opacity: 1,
   },
   track: {
     flexDirection: 'row',

@@ -11,6 +11,7 @@
     "@react-native-vector-icons/ionicons": "^13.1.2",
     "@react-native-vector-icons/lucide": "^13.1.2",
     "@react-native-vector-icons/material-design-icons": "^13.1.2",
+    "@react-native-vector-icons/material-icons": "^13.1.2",
     "@supabase/supabase-js": "^2.110.0",
     "@tamagui/config": "^2.4.0",
     "@tonaljs/note": "^4.12.1",
@@ -79,6 +80,8 @@
     "diagnose:basic-pitch": "bash ./scripts/diagnose-basic-pitch.sh",
     "diagnose:play-combined-soundfonts": "bash ./scripts/diagnose-play-combined-soundfonts.sh",
     "diagnose:play-soundfont": "pnpm diagnose:play-combined-soundfonts",
+    "tokens:generate": "node scripts/generate-design-tokens.mjs",
+    "tokens:check": "node scripts/generate-design-tokens.mjs --check",
     "lint": "expo lint",
     "lint:swift": "swiftlint lint --config .swiftlint.yml --no-cache",
     "test": "vitest run",
@@ -87,8 +90,8 @@
     "format:swift": "swiftformat modules/basic-pitch/ios modules/piano-attack-detector/ios modules/sound-font-player/ios --config .swiftformat",
     "format:check": "prettier --check .",
     "format:swift:check": "swiftformat modules/basic-pitch/ios modules/piano-attack-detector/ios modules/sound-font-player/ios --config .swiftformat --lint",
-    "precommit": "pnpm format && pnpm format:swift && git update-index --again && pnpm lint && pnpm lint:swift && pnpm typecheck",
-    "check": "pnpm format:check && pnpm format:swift:check && pnpm lint && pnpm lint:swift && pnpm typecheck && pnpm test"
+    "precommit": "pnpm tokens:check && pnpm format && pnpm format:swift && git update-index --again && pnpm lint && pnpm lint:swift && pnpm typecheck",
+    "check": "pnpm tokens:check && pnpm format:check && pnpm format:swift:check && pnpm lint && pnpm lint:swift && pnpm typecheck && pnpm test"
   },
   "private": true
 }

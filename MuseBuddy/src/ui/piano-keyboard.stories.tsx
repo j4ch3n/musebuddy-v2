@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-native';
 
 import { pianoPitchClasses, type PianoPitchClass } from '@schema/music-theory-schema';
 
-import { PianoKeyboard } from './piano-keyboard';
+import { PianoKeyboard, type PianoKeyboardMarkerTone } from './piano-keyboard';
 
 type ChordPreset =
   | 'C major'
@@ -19,6 +19,7 @@ type PianoKeyboardStoryArgs = {
   chordPreset: ChordPreset;
   root: PianoPitchClass;
   keys: PianoPitchClass[];
+  markerTones: Partial<Record<PianoPitchClass, PianoKeyboardMarkerTone>>;
 };
 
 const chordPresets = {
@@ -54,6 +55,10 @@ const meta = {
     chordPreset: 'C major',
     root: 0,
     keys: [4, 7],
+    markerTones: {
+      4: 'essential',
+      7: 'supporting',
+    },
   },
   argTypes: {
     chordPreset: {
@@ -68,14 +73,16 @@ const meta = {
       control: 'object',
     },
   },
-  render: ({ chordPreset, keys, root }: PianoKeyboardStoryArgs) => {
+  render: ({ chordPreset, keys, markerTones, root }: PianoKeyboardStoryArgs) => {
     if (chordPreset === 'Manual') {
-      return <PianoKeyboard keys={keys} root={root} width={320} />;
+      return <PianoKeyboard keys={keys} markerTones={markerTones} root={root} width={320} />;
     }
 
     const preset = chordPresets[chordPreset];
 
-    return <PianoKeyboard keys={preset.keys} root={preset.root} width={320} />;
+    return (
+      <PianoKeyboard keys={preset.keys} markerTones={markerTones} root={preset.root} width={320} />
+    );
   },
 } satisfies Meta<PianoKeyboardStoryArgs>;
 

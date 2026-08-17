@@ -81,7 +81,7 @@ export default function TranscriptionScreen() {
 
             <View style={styles.statusCard}>
               <View style={styles.statusRow}>
-                {isBusy && <ActivityIndicator color={museBuddyColors.accentBlue} />}
+                {isBusy && <ActivityIndicator color={museBuddyColors.sky} />}
                 <Text selectable style={styles.statusText}>
                   {statusText(phase)}
                 </Text>
@@ -199,7 +199,7 @@ function MidiGroupRow({ expanded, group, onToggle }: MidiGroupRowProps) {
             vel {group.peakVelocity}
           </Text>
           <Lucide
-            color={museBuddyColors.ink}
+            color={museBuddyColors.pine}
             name={expanded ? 'chevron-up' : 'chevron-down'}
             size={24}
           />
@@ -253,7 +253,7 @@ function statusText(phase: ReturnType<typeof useTranscription>['phase']): string
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: museBuddyColors.background,
+    backgroundColor: museBuddyColors.mist,
     flex: 1,
   },
   content: {
@@ -271,30 +271,30 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   eyebrow: {
-    color: museBuddyColors.accentPurple,
+    color: museBuddyColors.wildflower,
     fontSize: 12,
     fontWeight: '900',
     letterSpacing: 0.8,
   },
   title: {
-    color: museBuddyColors.ink,
+    color: museBuddyColors.pine,
     fontSize: 36,
     fontWeight: '900',
     lineHeight: 40,
   },
   subtitle: {
-    color: museBuddyColors.ink,
+    color: museBuddyColors.pine,
     fontSize: 16,
     fontWeight: '600',
     lineHeight: 22,
   },
   statusCard: {
     alignItems: 'center',
-    backgroundColor: museBuddyColors.surface,
-    borderColor: museBuddyColors.ink,
+    backgroundColor: museBuddyColors.mist,
+    borderColor: museBuddyColors.frame,
     borderRadius: museBuddyRadii.large,
     borderWidth: museBuddyBorders.bold,
-    boxShadow: `0 6px 0 ${museBuddyColors.ink}`,
+    boxShadow: `0 6px 0 ${museBuddyColors.frame}`,
     gap: 14,
     padding: 18,
   },
@@ -304,29 +304,29 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   statusText: {
-    color: museBuddyColors.ink,
+    color: museBuddyColors.pine,
     fontSize: 19,
     fontWeight: '900',
   },
   timer: {
-    color: museBuddyColors.ink,
+    color: museBuddyColors.pine,
     fontSize: 46,
     fontVariant: ['tabular-nums'],
     fontWeight: '900',
   },
   minimumText: {
-    color: museBuddyColors.accentPurple,
+    color: museBuddyColors.wildflower,
     fontSize: 14,
     fontWeight: '900',
   },
   processingText: {
-    color: museBuddyColors.accentBlue,
+    color: museBuddyColors.sky,
     fontSize: 14,
     fontVariant: ['tabular-nums'],
     fontWeight: '900',
   },
   summaryText: {
-    color: museBuddyColors.ink,
+    color: museBuddyColors.pine,
     fontSize: 14,
     fontVariant: ['tabular-nums'],
     fontWeight: '800',
@@ -335,39 +335,39 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   errorText: {
-    color: museBuddyColors.accentRed,
+    color: museBuddyColors.pine,
     fontSize: 14,
     fontWeight: '800',
     lineHeight: 20,
     textAlign: 'center',
   },
   logHeading: {
-    color: museBuddyColors.ink,
+    color: museBuddyColors.pine,
     fontSize: 20,
     fontWeight: '900',
     paddingTop: 4,
   },
   emptyLog: {
-    backgroundColor: museBuddyColors.surfaceMuted,
-    borderColor: museBuddyColors.ink,
+    backgroundColor: museBuddyColors.mist,
+    borderColor: museBuddyColors.frame,
     borderRadius: museBuddyRadii.medium,
     borderWidth: museBuddyBorders.bold,
     padding: 18,
   },
   emptyText: {
-    color: museBuddyColors.ink,
+    color: museBuddyColors.pine,
     fontSize: 15,
     fontWeight: '600',
     lineHeight: 21,
   },
   pitchCard: {
-    backgroundColor: museBuddyColors.surface,
-    borderColor: museBuddyColors.ink,
-    borderLeftColor: museBuddyColors.accentBlue,
+    backgroundColor: museBuddyColors.mist,
+    borderColor: museBuddyColors.frame,
+    borderLeftColor: museBuddyColors.sky,
     borderLeftWidth: 8,
     borderRadius: museBuddyRadii.medium,
     borderWidth: 3,
-    boxShadow: `0 4px 0 ${museBuddyColors.ink}`,
+    boxShadow: `0 4px 0 ${museBuddyColors.frame}`,
     overflow: 'hidden',
   },
   pitchHeader: {
@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   pitchHeaderPressed: {
-    backgroundColor: museBuddyColors.surfaceMuted,
+    backgroundColor: museBuddyColors.mist,
   },
   pitchIdentity: {
     alignItems: 'center',
@@ -390,8 +390,8 @@ const styles = StyleSheet.create({
   },
   pitchBadge: {
     alignItems: 'center',
-    backgroundColor: museBuddyColors.secondary,
-    borderColor: museBuddyColors.ink,
+    backgroundColor: museBuddyColors.mist,
+    borderColor: museBuddyColors.frame,
     borderRadius: museBuddyRadii.small,
     borderWidth: 3,
     height: 46,
@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
     width: 56,
   },
   pitchBadgeText: {
-    color: museBuddyColors.ink,
+    color: museBuddyColors.pine,
     fontSize: 20,
     fontVariant: ['tabular-nums'],
     fontWeight: '900',
@@ -410,12 +410,12 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   pitchTitle: {
-    color: museBuddyColors.ink,
+    color: museBuddyColors.pine,
     fontSize: 18,
     fontWeight: '900',
   },
   pitchMeta: {
-    color: museBuddyColors.ink,
+    color: museBuddyColors.pine,
     fontSize: 12,
     fontVariant: ['tabular-nums'],
     fontWeight: '800',
@@ -428,28 +428,28 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   pitchStatText: {
-    color: museBuddyColors.ink,
+    color: museBuddyColors.pine,
     fontSize: 12,
     fontVariant: ['tabular-nums'],
     fontWeight: '900',
   },
   eventList: {
-    backgroundColor: museBuddyColors.surfaceMuted,
-    borderTopColor: museBuddyColors.ink,
+    backgroundColor: museBuddyColors.mist,
+    borderTopColor: museBuddyColors.frame,
     borderTopWidth: 3,
     gap: 8,
     padding: 12,
   },
   eventRow: {
-    backgroundColor: museBuddyColors.surface,
-    borderColor: museBuddyColors.ink,
+    backgroundColor: museBuddyColors.mist,
+    borderColor: museBuddyColors.frame,
     borderRadius: museBuddyRadii.small,
     borderWidth: 2,
     gap: 3,
     padding: 10,
   },
   eventTime: {
-    color: museBuddyColors.ink,
+    color: museBuddyColors.pine,
     fontFamily: museBuddyTypography.mono,
     fontSize: 13,
     fontVariant: ['tabular-nums'],
@@ -457,7 +457,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   eventDetail: {
-    color: museBuddyColors.ink,
+    color: museBuddyColors.pine,
     fontFamily: museBuddyTypography.mono,
     fontSize: 12,
     fontVariant: ['tabular-nums'],

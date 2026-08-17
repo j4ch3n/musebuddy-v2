@@ -5,45 +5,46 @@ import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/d
 import { FlashCard } from '@/ui';
 
 type PlaceholderPanelProps = {
-  accent?: 'blue' | 'green' | 'purple';
+  accent?: 'leaf' | 'sky' | 'wildflower';
   body: string;
   title: string;
 };
 
-export function PlaceholderPanel({ accent = 'blue', body, title }: PlaceholderPanelProps) {
+export function PlaceholderPanel({ accent = 'sky', body, title }: PlaceholderPanelProps) {
   return (
     <FlashCard
       sideA={
         <YStack gap={12}>
           <View style={[styles.accentMark, accentStyles[accent]]} />
-          <Text color={museBuddyColors.ink} fontSize={24} fontWeight="900" lineHeight={30}>
+          <Text color={museBuddyColors.pine} fontSize={24} fontWeight="900" lineHeight={30}>
             {title}
           </Text>
-          <Text color={museBuddyColors.ink} fontSize={17} fontWeight="600" lineHeight={25}>
+          <Text color={museBuddyColors.pine} fontSize={17} fontWeight="600" lineHeight={25}>
             {body}
           </Text>
         </YStack>
       }
-      surface="cream"
+      surface="supporting"
+      tone={accent}
     />
   );
 }
 
 const accentStyles = StyleSheet.create({
-  blue: {
-    backgroundColor: museBuddyColors.accentBlue,
+  leaf: {
+    backgroundColor: museBuddyColors.leaf,
   },
-  green: {
-    backgroundColor: museBuddyColors.accentGreen,
+  sky: {
+    backgroundColor: museBuddyColors.sky,
   },
-  purple: {
-    backgroundColor: museBuddyColors.accentPurple,
+  wildflower: {
+    backgroundColor: museBuddyColors.wildflower,
   },
 });
 
 const styles = StyleSheet.create({
   accentMark: {
-    borderColor: museBuddyColors.ink,
+    borderColor: museBuddyColors.frame,
     borderRadius: museBuddyRadii.small,
     borderWidth: museBuddyBorders.bold,
     height: 22,

@@ -4,11 +4,11 @@ import { RhythmViewer } from './rhythm-viewer';
 
 const samplePattern = [
   's',
-  null,
+  'h',
   'w',
   null,
   's',
-  null,
+  'h',
   null,
   'w',
   's',
@@ -16,7 +16,7 @@ const samplePattern = [
   'w',
   null,
   's',
-  null,
+  'h',
   'w',
   null,
   's',

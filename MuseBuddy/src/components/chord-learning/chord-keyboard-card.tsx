@@ -2,10 +2,16 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { museBuddyColors } from '@/constants/design-tokens';
 import type { ChordDisplay } from '@/music-theory';
-import { FlashCard, PianoKeyboard } from '@/ui';
+import { FlashCard, PianoKeyboard, type PianoKeyboardMarkerTone } from '@/ui';
 import type { PianoPitchClass } from '@schema/music-theory-schema';
 
 import ChordSheet from './chord-sheet.dom';
+import {
+  chordToneRoleByImportance,
+  chordToneRoleColors,
+  type ChordToneColorRole,
+} from './chord-color-role';
+import { ChordToneLegend } from './chord-role-legend';
 
 type ChordKeyboardCardProps = {
   display: ChordDisplay;
@@ -26,6 +32,15 @@ export function ChordKeyboardCard({ display, isFlipped, onFlipChange }: ChordKey
     },
     {},
   );
+  const markerTones = display.notes.reduce<
+    Partial<Record<PianoPitchClass, PianoKeyboardMarkerTone>>
+  >((tones, note) => {
+    tones[note.pitchClass] = note.isRoot ? 'root' : chordToneRoleByImportance[note.importance];
+    return tones;
+  }, {});
+  const toneRoles = display.notes.map<ChordToneColorRole>((note) =>
+    note.isRoot ? 'root' : chordToneRoleByImportance[note.importance],
+  );
 
   return (
     <FlashCard
@@ -33,14 +48,16 @@ export function ChordKeyboardCard({ display, isFlipped, onFlipChange }: ChordKey
       isFlipped={isFlipped}
       onFlipChange={onFlipChange}
       sideA={
-        <PianoKeyboard
-          accessibilityLabel={`Piano keyboard highlighting ${noteNames}`}
-          keyColor={museBuddyColors.accentBlue}
-          keys={selectedKeys}
-          markerLabels={markerLabels}
-          root={rootNote.pitchClass}
-          rootColor={museBuddyColors.accentRed}
-        />
+        <View style={styles.keyboardContent}>
+          <PianoKeyboard
+            accessibilityLabel={`Piano keyboard highlighting ${noteNames}`}
+            keys={selectedKeys}
+            markerLabels={markerLabels}
+            markerTones={markerTones}
+            root={rootNote.pitchClass}
+          />
+          <ChordToneLegend roles={toneRoles} />
+        </View>
       }
       sideB={
         <View style={styles.backContent}>
@@ -60,7 +77,19 @@ export function ChordKeyboardCard({ display, isFlipped, onFlipChange }: ChordKey
             {display.notes.map((note) =>
               note.explanation ? (
                 <Text key={`${note.degree}-${note.text}`} style={styles.explanation}>
-                  <Text style={styles.noteName}>{note.text}</Text>
+                  <Text
+                    style={[
+                      styles.noteName,
+                      {
+                        color:
+                          chordToneRoleColors[
+                            note.isRoot ? 'root' : chordToneRoleByImportance[note.importance]
+                          ].fill,
+                      },
+                    ]}
+                  >
+                    {note.text}
+                  </Text>
                   {` ${note.explanation}`}
                 </Text>
               ) : null,
@@ -68,6 +97,7 @@ export function ChordKeyboardCard({ display, isFlipped, onFlipChange }: ChordKey
           </View>
         </View>
       }
+      tone="wildflower"
     />
   );
 }
@@ -79,23 +109,26 @@ const styles = StyleSheet.create({
   explanations: {
     gap: 8,
   },
+  keyboardContent: {
+    gap: 12,
+  },
   explanation: {
-    color: museBuddyColors.ink,
+    color: museBuddyColors.pine,
     fontSize: 16,
     fontWeight: '700',
     lineHeight: 23,
   },
   noteName: {
-    color: museBuddyColors.accentRed,
+    color: museBuddyColors.pine,
     fontWeight: '900',
   },
   sheet: {
-    backgroundColor: 'transparent',
+    backgroundColor: museBuddyColors.mist,
     height: 120,
     width: '100%',
   },
   sheetFrame: {
-    backgroundColor: museBuddyColors.white,
+    backgroundColor: museBuddyColors.mist,
     height: 120,
     justifyContent: 'center',
     overflow: 'hidden',

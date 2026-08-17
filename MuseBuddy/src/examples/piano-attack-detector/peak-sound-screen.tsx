@@ -2,6 +2,8 @@ import { useCallback, useEffect, useReducer } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { museBuddyColors } from '@/constants/design-tokens';
+
 import { usePianoAttackDetector } from './use-piano-attack-detector';
 
 type AttackLogEntry = NonNullable<ReturnType<typeof usePianoAttackDetector>['lastAttack']>;
@@ -179,7 +181,7 @@ function ActionButton({ disabled = false, label, onPress, tone = 'primary' }: Ac
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f4f1e9',
+    backgroundColor: museBuddyColors.mist,
   },
   content: {
     flexGrow: 1,
@@ -193,75 +195,75 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   eyebrow: {
-    color: '#2457d6',
+    color: museBuddyColors.pine,
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 1.4,
   },
   title: {
-    color: '#16191f',
+    color: museBuddyColors.pine,
     fontSize: 44,
     fontWeight: '800',
   },
   subtitle: {
-    color: '#60646c',
+    color: museBuddyColors.pine,
     fontSize: 17,
     lineHeight: 24,
     maxWidth: 440,
   },
   panel: {
-    backgroundColor: '#fffdf8',
-    borderColor: '#ded9cc',
+    backgroundColor: museBuddyColors.mist,
+    borderColor: museBuddyColors.frame,
     borderRadius: 8,
     borderWidth: 1,
     gap: 16,
     padding: 24,
   },
   statusText: {
-    color: '#16191f',
+    color: museBuddyColors.pine,
     fontSize: 22,
     fontWeight: '700',
     textAlign: 'center',
   },
   levelText: {
-    color: '#16191f',
+    color: museBuddyColors.pine,
     fontSize: 32,
     fontWeight: '800',
     textAlign: 'center',
   },
   detailText: {
-    color: '#60646c',
+    color: museBuddyColors.pine,
     fontSize: 15,
     lineHeight: 22,
     textAlign: 'center',
   },
   logPanel: {
     alignSelf: 'stretch',
-    backgroundColor: '#f6f3ec',
-    borderColor: '#e3ded2',
+    backgroundColor: museBuddyColors.mist,
+    borderColor: museBuddyColors.frame,
     borderRadius: 8,
     borderWidth: 1,
     gap: 8,
     padding: 12,
   },
   logTitle: {
-    color: '#16191f',
+    color: museBuddyColors.pine,
     fontSize: 14,
     fontWeight: '700',
   },
   logLine: {
-    color: '#30343b',
+    color: museBuddyColors.pine,
     fontSize: 13,
     fontVariant: ['tabular-nums'],
     lineHeight: 18,
   },
   logEmpty: {
-    color: '#77736b',
+    color: museBuddyColors.pine,
     fontSize: 13,
     lineHeight: 18,
   },
   errorText: {
-    color: '#ad2119',
+    color: museBuddyColors.pine,
     fontSize: 15,
     fontWeight: '600',
     lineHeight: 22,
@@ -274,7 +276,7 @@ const styles = StyleSheet.create({
   },
   button: {
     alignItems: 'center',
-    backgroundColor: '#2457d6',
+    backgroundColor: museBuddyColors.pine,
     borderRadius: 8,
     flex: 1,
     minWidth: 140,
@@ -283,24 +285,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
   },
   secondaryButton: {
-    backgroundColor: '#3f4652',
+    backgroundColor: museBuddyColors.pine,
   },
   stopButton: {
-    backgroundColor: '#ad2119',
+    backgroundColor: museBuddyColors.pine,
   },
   buttonDisabled: {
-    backgroundColor: '#d4d0c7',
+    backgroundColor: museBuddyColors.mist,
   },
   buttonPressed: {
     opacity: 0.82,
   },
   buttonLabel: {
-    color: '#ffffff',
+    color: museBuddyColors.mist,
     fontSize: 16,
     fontWeight: '700',
     textAlign: 'center',
   },
   buttonLabelDisabled: {
-    color: '#77736b',
+    color: museBuddyColors.pine,
   },
 });

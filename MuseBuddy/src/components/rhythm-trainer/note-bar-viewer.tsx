@@ -38,14 +38,14 @@ export function NoteBarViewer({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: museBuddyColors.white,
+    backgroundColor: museBuddyColors.mist,
     borderRadius: museBuddyRadii.medium,
     height: RHYTHM_SHEET_WRAPPER_HEIGHT_PX,
     justifyContent: 'center',
     overflow: 'hidden',
   },
   sheet: {
-    backgroundColor: 'transparent',
+    backgroundColor: museBuddyColors.mist,
     height: RHYTHM_SHEET_HEIGHT_PX,
     width: '100%',
   },

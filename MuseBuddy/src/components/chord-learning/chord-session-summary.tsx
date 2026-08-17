@@ -41,14 +41,19 @@ export function ChordSessionSummary({ displays, isActive }: ChordSessionSummaryP
                   style={styles.chordRow}
                 >
                   <View accessibilityElementsHidden style={styles.checkSpacer} />
-                  <ChordName display={display} size="large" style={styles.chordName} />
+                  <ChordName
+                    colorized={false}
+                    display={display}
+                    size="large"
+                    style={styles.chordName}
+                  />
                   <View
                     accessibilityElementsHidden
                     importantForAccessibility="no-hide-descendants"
                     style={[styles.checkSlot, isComplete ? styles.checkSlotComplete : null]}
                   >
                     {isComplete ? (
-                      <Lucide color={museBuddyColors.ink} name="check" size={24} />
+                      <Lucide color={museBuddyColors.pine} name="check" size={24} />
                     ) : null}
                   </View>
                 </View>
@@ -56,6 +61,7 @@ export function ChordSessionSummary({ displays, isActive }: ChordSessionSummaryP
             })}
           </View>
         }
+        tone="leaf"
       />
       {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
     </View>
@@ -65,8 +71,8 @@ export function ChordSessionSummary({ displays, isActive }: ChordSessionSummaryP
 const styles = StyleSheet.create({
   checkSlot: {
     alignItems: 'center',
-    backgroundColor: museBuddyColors.surfaceMuted,
-    borderColor: museBuddyColors.ink,
+    backgroundColor: museBuddyColors.mist,
+    borderColor: museBuddyColors.frame,
     borderRadius: museBuddyRadii.medium,
     borderWidth: museBuddyBorders.bold,
     height: 40,
@@ -74,7 +80,7 @@ const styles = StyleSheet.create({
     width: 40,
   },
   checkSlotComplete: {
-    backgroundColor: museBuddyColors.accentGreen,
+    backgroundColor: museBuddyColors.leaf,
   },
   checkSpacer: {
     width: 40,
@@ -95,7 +101,7 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
   },
   errorText: {
-    color: museBuddyColors.accentRed,
+    color: museBuddyColors.pine,
     fontFamily: museBuddyTypography.rounded,
     fontSize: 13,
     fontWeight: '800',

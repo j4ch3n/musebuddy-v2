@@ -1,15 +1,11 @@
 import { useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { YStack } from 'tamagui';
 
-import {
-  museBuddyBorders,
-  museBuddyColors,
-  museBuddyRadii,
-  museBuddyShadows,
-} from '@/constants/design-tokens';
+import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 
-type FlashCardSurface = 'cream' | 'white';
+type FlashCardSurface = 'hero' | 'supporting';
+export type FlashCardTone = 'leaf' | 'neutral' | 'sky' | 'sun' | 'violet' | 'wildflower';
 
 type FlashCardProps = {
   accessibilityLabel?: string;
@@ -21,6 +17,7 @@ type FlashCardProps = {
   sideA: ReactNode;
   sideB?: ReactNode;
   surface?: FlashCardSurface;
+  tone?: FlashCardTone;
 };
 
 export function FlashCard({
@@ -32,12 +29,14 @@ export function FlashCard({
   padded = true,
   sideA,
   sideB,
-  surface = 'white',
+  surface = 'hero',
+  tone = 'neutral',
 }: FlashCardProps) {
   const [uncontrolledIsFlipped, setUncontrolledIsFlipped] = useState(false);
   const isFlipped = controlledIsFlipped ?? uncontrolledIsFlipped;
-  const backgroundStyle = surface === 'cream' ? styles.creamSurface : styles.whiteSurface;
+  const backgroundStyle = surface === 'supporting' ? styles.supportingSurface : styles.heroSurface;
   const activeSide = isFlipped && sideB ? sideB : sideA;
+  const toneStyle = toneStyles[tone];
 
   return (
     <YStack
@@ -45,9 +44,18 @@ export function FlashCard({
       accessibilityRole={onPress ? 'button' : undefined}
       onPress={onPress}
       pressStyle={onPress && isPressedStyleEnabled ? styles.cardPressed : undefined}
-      style={[styles.card, backgroundStyle]}
+      style={[styles.card, backgroundStyle, toneStyle.surface]}
     >
-      <YStack style={[styles.inner, backgroundStyle, padded ? styles.padded : null]}>
+      <YStack
+        style={[styles.inner, backgroundStyle, toneStyle.surface, padded ? styles.padded : null]}
+      >
+        {tone === 'neutral' ? null : (
+          <View
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={[styles.accentRail, toneStyle.rail]}
+          />
+        )}
         {activeSide}
         {sideB ? (
           <Pressable
@@ -74,48 +82,83 @@ export function FlashCard({
 
 const styles = StyleSheet.create({
   card: {
-    borderColor: museBuddyColors.ink,
-    borderRadius: museBuddyRadii.large,
+    borderColor: museBuddyColors.frame,
+    borderRadius: museBuddyRadii.small,
     borderWidth: museBuddyBorders.bold,
-    boxShadow: `0 8px 0 ${museBuddyColors.ink}`,
+    boxShadow: `6px 7px 0 ${museBuddyColors.frame}`,
     overflow: 'hidden',
   },
   cardPressed: {
-    boxShadow: `0 3px 0 ${museBuddyColors.ink}`,
-    transform: [{ translateY: 5 }],
+    boxShadow: `2px 3px 0 ${museBuddyColors.frame}`,
+    transform: [{ translateY: 4 }],
   },
-  creamSurface: {
-    backgroundColor: museBuddyColors.surface,
+  supportingSurface: {
+    backgroundColor: museBuddyColors.mist,
   },
   flipButton: {
     alignItems: 'center',
     alignSelf: 'center',
-    backgroundColor: museBuddyColors.secondary,
-    borderColor: museBuddyColors.ink,
-    borderRadius: museBuddyRadii.round,
-    borderWidth: museBuddyBorders.bold,
-    boxShadow: `0 ${museBuddyShadows.dropSmall.y}px 0 ${museBuddyShadows.dropSmall.color}`,
+    backgroundColor: museBuddyColors.mist,
+    borderColor: museBuddyColors.frame,
+    borderRadius: museBuddyRadii.medium,
+    borderWidth: museBuddyBorders.standard,
     marginTop: 16,
-    minHeight: 42,
+    minHeight: 44,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
   flipButtonPressed: {
-    boxShadow: `0 1px 0 ${museBuddyColors.ink}`,
+    boxShadow: `0 1px 0 ${museBuddyColors.frame}`,
     transform: [{ translateY: 3 }],
   },
   flipButtonText: {
-    color: museBuddyColors.ink,
+    color: museBuddyColors.pine,
     fontSize: 14,
     fontWeight: '900',
   },
   inner: {
     gap: 0,
+    overflow: 'hidden',
   },
   padded: {
     padding: 18,
   },
-  whiteSurface: {
-    backgroundColor: museBuddyColors.white,
+  heroSurface: {
+    backgroundColor: museBuddyColors.mist,
+  },
+  accentRail: {
+    height: 8,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    zIndex: 1,
   },
 });
+
+const toneStyles = {
+  neutral: {
+    rail: {},
+    surface: {},
+  },
+  wildflower: {
+    rail: { backgroundColor: museBuddyColors.wildflower },
+    surface: { backgroundColor: museBuddyColors.petal },
+  },
+  sky: {
+    rail: { backgroundColor: museBuddyColors.sky },
+    surface: { backgroundColor: museBuddyColors.skyWash },
+  },
+  leaf: {
+    rail: { backgroundColor: museBuddyColors.leaf },
+    surface: { backgroundColor: museBuddyColors.leafWash },
+  },
+  sun: {
+    rail: { backgroundColor: museBuddyColors.sun },
+    surface: { backgroundColor: museBuddyColors.sunWash },
+  },
+  violet: {
+    rail: { backgroundColor: museBuddyColors.violet },
+    surface: { backgroundColor: museBuddyColors.violetWash },
+  },
+} as const;

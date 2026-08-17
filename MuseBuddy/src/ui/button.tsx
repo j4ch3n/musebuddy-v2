@@ -33,16 +33,17 @@ export function Button({
       style={[
         styles.button,
         !primary && styles.secondaryButton,
-        tone === 'success' && styles.successButton,
-        tone === 'danger' && styles.dangerButton,
+        !primary && tone === 'success' && styles.successButton,
+        !primary && tone === 'danger' && styles.dangerButton,
         disabled && styles.disabledButton,
       ]}
     >
       {children ?? (
         <Text
-          color={disabled ? 'rgba(32, 27, 34, 0.62)' : museBuddyColors.ink}
+          color={primary && !disabled ? museBuddyColors.mist : museBuddyColors.pine}
           fontSize={18}
           fontWeight="900"
+          numberOfLines={1}
           style={styles.buttonLabel}
         >
           {label}
@@ -55,34 +56,38 @@ export function Button({
 const styles = StyleSheet.create({
   button: {
     alignItems: 'center',
-    backgroundColor: museBuddyColors.primary,
-    borderColor: museBuddyColors.ink,
+    backgroundColor: museBuddyColors.wildflower,
+    borderColor: museBuddyColors.frame,
     borderRadius: museBuddyRadii.medium,
-    borderWidth: museBuddyBorders.bold,
-    boxShadow: `0 6px 0 ${museBuddyColors.ink}`,
+    borderWidth: museBuddyBorders.standard,
+    boxShadow: `0 6px 0 ${museBuddyColors.frame}`,
     justifyContent: 'center',
     minHeight: 58,
+    overflow: 'hidden',
     paddingHorizontal: 18,
     paddingVertical: 14,
   },
   secondaryButton: {
-    backgroundColor: museBuddyColors.secondary,
+    backgroundColor: museBuddyColors.secondaryFace,
+    boxShadow: `0 3px 0 ${museBuddyColors.frame}`,
   },
   successButton: {
-    backgroundColor: museBuddyColors.accentGreen,
+    backgroundColor: museBuddyColors.successFace,
   },
   dangerButton: {
-    backgroundColor: museBuddyColors.accentRed,
+    backgroundColor: museBuddyColors.dangerFace,
   },
   disabledButton: {
-    backgroundColor: museBuddyColors.surfaceMuted,
-    opacity: 0.72,
+    backgroundColor: museBuddyColors.mist,
+    boxShadow: 'none',
+    opacity: 0.62,
   },
   buttonPressed: {
-    boxShadow: `0 2px 0 ${museBuddyColors.ink}`,
+    boxShadow: `0 2px 0 ${museBuddyColors.frame}`,
     transform: [{ translateY: 4 }],
   },
   buttonLabel: {
     textAlign: 'center',
+    zIndex: 1,
   },
 });

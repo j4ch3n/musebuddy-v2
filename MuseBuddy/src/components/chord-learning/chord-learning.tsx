@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
   },
   link: {
     alignSelf: 'center',
-    backgroundColor: museBuddyColors.ink,
+    backgroundColor: museBuddyColors.pine,
     borderRadius: museBuddyBorders.bold,
     height: 24,
     width: museBuddyBorders.bold,

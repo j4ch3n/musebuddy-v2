@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef } from 'react';
 import { Accidental, Factory, StaveNote } from 'vexflow';
 
+import { museBuddyColors } from '@/constants/design-tokens';
 import type { ChordDisplayNote } from '@/music-theory';
 
 type ChordSheetProps = {
@@ -34,6 +35,8 @@ export default function ChordSheet({ notes }: ChordSheetProps) {
       },
     });
     const context = factory.getContext();
+    context.setFillStyle(museBuddyColors.pine);
+    context.setStrokeStyle(museBuddyColors.pine);
     const stave = factory.Stave({ width: STAVE_WIDTH - 16, x: 8, y: 4 });
     stave.addClef('treble');
     stave.setContext(context).draw();
@@ -66,7 +69,7 @@ export default function ChordSheet({ notes }: ChordSheetProps) {
       ref={containerRef}
       style={{
         alignItems: 'center',
-        background: '#ffffff',
+        background: museBuddyColors.mist,
         display: 'flex',
         height: STAVE_HEIGHT,
         justifyContent: 'center',

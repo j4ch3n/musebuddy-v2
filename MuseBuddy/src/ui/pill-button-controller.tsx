@@ -29,7 +29,7 @@ export function PillButtonController<TValue extends number | string>({
   return (
     <YStack gap="$2">
       {label ? (
-        <Text color={museBuddyColors.ink} fontSize={13} fontWeight="900" textTransform="uppercase">
+        <Text color={museBuddyColors.pine} fontSize={13} fontWeight="900" textTransform="uppercase">
           {label}
         </Text>
       ) : null}
@@ -53,13 +53,13 @@ export function PillButtonController<TValue extends number | string>({
                 onChange(option.value);
               }}
               pressStyle={{
-                background: isSelected ? museBuddyColors.active : museBuddyColors.surfaceMuted,
+                background: museBuddyColors.mist,
                 transform: [{ translateY: 2 }],
               }}
               style={[styles.option, isSelected && styles.optionSelected]}
             >
               <Text
-                color={museBuddyColors.ink}
+                color={museBuddyColors.pine}
                 fontSize={13}
                 fontWeight="900"
                 numberOfLines={1}
@@ -69,7 +69,7 @@ export function PillButtonController<TValue extends number | string>({
               </Text>
               {option.description ? (
                 <Text
-                  color={museBuddyColors.ink}
+                  color={museBuddyColors.pine}
                   fontSize={11}
                   fontWeight="800"
                   numberOfLines={1}
@@ -89,16 +89,16 @@ export function PillButtonController<TValue extends number | string>({
 
 const styles = StyleSheet.create({
   group: {
-    backgroundColor: museBuddyColors.surfaceMuted,
-    borderColor: museBuddyColors.ink,
+    backgroundColor: museBuddyColors.mist,
+    borderColor: museBuddyColors.frame,
     borderRadius: museBuddyRadii.round,
     borderWidth: museBuddyBorders.bold,
     padding: 6,
   },
   option: {
     alignItems: 'center',
-    backgroundColor: museBuddyColors.surface,
-    borderColor: museBuddyColors.ink,
+    backgroundColor: museBuddyColors.mist,
+    borderColor: museBuddyColors.frame,
     borderRadius: museBuddyRadii.round,
     borderWidth: 2,
     justifyContent: 'center',
@@ -107,7 +107,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   optionSelected: {
-    backgroundColor: museBuddyColors.active,
+    borderColor: museBuddyColors.wildflower,
+    borderWidth: museBuddyBorders.standard,
   },
   optionLabel: {
     textAlign: 'center',

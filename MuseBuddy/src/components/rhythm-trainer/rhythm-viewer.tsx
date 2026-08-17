@@ -1,11 +1,12 @@
 import { StyleSheet, View } from 'react-native';
 
-import { FlashCard } from '@/ui';
+import { GraphicSheet } from '@/ui';
 
 import { NoteBarViewer } from './note-bar-viewer';
 import { convertRhythmPatternToVexflowBars } from './note-bar-vexflow';
 import { normalizeRhythmPattern, splitRhythmPatternBars } from './rhythm-pattern';
 import { RhythmBarViewer } from './rhythm-bar-viewer';
+import { RhythmLegend } from './rhythm-legend';
 import type { RhythmAttackDot, RhythmPattern } from './types';
 
 type RhythmViewerProps = {
@@ -27,6 +28,7 @@ export function RhythmViewer({
 
   return (
     <View style={styles.container}>
+      <RhythmLegend />
       {bars.map((steps, barIndex) => {
         const barStartIndex = barIndex * steps.length;
         const currentStepInBar =
@@ -36,26 +38,22 @@ export function RhythmViewer({
             ? currentStepIndex - barStartIndex
             : null;
         return (
-          <FlashCard
-            key={barIndex}
-            padded={false}
-            sideA={
-              <View style={styles.barGroupContent}>
-                <RhythmBarViewer
-                  attackDots={attackDots}
-                  barIndex={barIndex}
-                  currentStepIndex={currentStepInBar}
-                  stepDurationMs={stepDurationMs}
-                  steps={steps}
-                />
-                <NoteBarViewer
-                  currentStepIndex={currentStepInBar}
-                  events={notationBars[barIndex]}
-                  steps={steps}
-                />
-              </View>
-            }
-          />
+          <GraphicSheet key={barIndex} tone="mist">
+            <View style={styles.barGroupContent}>
+              <RhythmBarViewer
+                attackDots={attackDots}
+                barIndex={barIndex}
+                currentStepIndex={currentStepInBar}
+                stepDurationMs={stepDurationMs}
+                steps={steps}
+              />
+              <NoteBarViewer
+                currentStepIndex={currentStepInBar}
+                events={notationBars[barIndex]}
+                steps={steps}
+              />
+            </View>
+          </GraphicSheet>
         );
       })}
     </View>

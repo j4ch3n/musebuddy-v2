@@ -9,13 +9,14 @@ import { getPianoKeyboardMarkers } from './piano-keyboard-utils';
 export type { PianoKeyboardMarker } from './piano-keyboard-utils';
 export { getPianoKeyboardMarkers } from './piano-keyboard-utils';
 
+export type PianoKeyboardMarkerTone = 'color' | 'essential' | 'optional' | 'root' | 'supporting';
+
 export type PianoKeyboardProps = {
   root: PianoPitchClass;
   keys?: readonly PianoPitchClass[];
   width?: number;
-  rootColor?: string;
-  keyColor?: string;
   markerLabels?: Partial<Record<PianoPitchClass, string>>;
+  markerTones?: Partial<Record<PianoPitchClass, PianoKeyboardMarkerTone>>;
   accessibilityLabel?: string;
 };
 
@@ -70,11 +71,10 @@ function getMarkerPosition(pitchClass: PianoPitchClass) {
 
 export function PianoKeyboard({
   accessibilityLabel,
-  keyColor = museBuddyColors.accentBlue,
   keys = [],
   markerLabels,
+  markerTones,
   root,
-  rootColor = museBuddyColors.accentRed,
   width,
 }: PianoKeyboardProps) {
   const markers = getPianoKeyboardMarkers(root, keys);
@@ -97,7 +97,7 @@ export function PianoKeyboard({
         <G>
           {whiteKeyPitchClasses.map((pitchClass) => (
             <Rect
-              fill={museBuddyColors.ink}
+              fill={museBuddyColors.pine}
               height={122}
               key={`white-shadow-${pitchClass}`}
               rx={museBuddyRadii.small}
@@ -108,7 +108,7 @@ export function PianoKeyboard({
           ))}
           {blackKeyPitchClasses.map((pitchClass) => (
             <Rect
-              fill={museBuddyColors.ink}
+              fill={museBuddyColors.pine}
               height={76}
               key={`black-shadow-${pitchClass}`}
               rx={museBuddyRadii.small}
@@ -122,11 +122,11 @@ export function PianoKeyboard({
         <G>
           {whiteKeyPitchClasses.map((pitchClass) => (
             <Rect
-              fill={museBuddyColors.surface}
+              fill={museBuddyColors.mist}
               height={122}
               key={pitchClass}
               rx={museBuddyRadii.small}
-              stroke={museBuddyColors.ink}
+              stroke={museBuddyColors.frame}
               strokeLinejoin="round"
               strokeWidth={museBuddyBorders.extraBold}
               width={40}
@@ -137,7 +137,7 @@ export function PianoKeyboard({
         </G>
 
         <Rect
-          fill={museBuddyColors.surfaceMuted}
+          fill={museBuddyColors.mist}
           height={12}
           rx={museBuddyRadii.small}
           width={280}
@@ -148,7 +148,7 @@ export function PianoKeyboard({
           fill="none"
           height={122}
           rx={museBuddyRadii.small}
-          stroke={museBuddyColors.ink}
+          stroke={museBuddyColors.frame}
           strokeWidth={museBuddyBorders.extraBold}
           width={280}
           x={10}
@@ -158,11 +158,11 @@ export function PianoKeyboard({
         <G>
           {blackKeyPitchClasses.map((pitchClass) => (
             <Rect
-              fill={museBuddyColors.ink}
+              fill={museBuddyColors.pine}
               height={76}
               key={pitchClass}
               rx={museBuddyRadii.small}
-              stroke={museBuddyColors.ink}
+              stroke={museBuddyColors.frame}
               strokeLinejoin="round"
               strokeWidth={museBuddyBorders.extraBold}
               width={24}
@@ -176,20 +176,22 @@ export function PianoKeyboard({
           {markers.map(({ isRoot, pitchClass }) => {
             const { cx, cy, r } = getMarkerPosition(pitchClass);
             const label = markerLabels?.[pitchClass];
+            const tone = isRoot ? 'root' : (markerTones?.[pitchClass] ?? 'supporting');
+            const appearance = markerToneAppearances[tone];
 
             return (
               <G key={`marker-${pitchClass}-${root}`}>
                 <Circle
                   cx={cx}
                   cy={cy}
-                  fill={isRoot ? rootColor : keyColor}
+                  fill={appearance.fill}
                   r={r}
-                  stroke={museBuddyColors.ink}
-                  strokeWidth={museBuddyBorders.bold}
+                  stroke={appearance.ring}
+                  strokeWidth={museBuddyBorders.extraBold}
                 />
                 {label ? (
                   <SvgText
-                    fill={museBuddyColors.white}
+                    fill={museBuddyColors.mist}
                     fontSize={label.length > 1 ? 9 : 11}
                     fontWeight="900"
                     textAnchor="middle"
@@ -215,3 +217,11 @@ const styles = StyleSheet.create({
     width: '100%',
   },
 });
+
+const markerToneAppearances: Record<PianoKeyboardMarkerTone, { fill: string; ring: string }> = {
+  color: { fill: museBuddyColors.violetInk, ring: museBuddyColors.violet },
+  essential: { fill: museBuddyColors.oceanInk, ring: museBuddyColors.sky },
+  optional: { fill: museBuddyColors.ochreInk, ring: museBuddyColors.sun },
+  root: { fill: museBuddyColors.berryInk, ring: museBuddyColors.wildflower },
+  supporting: { fill: museBuddyColors.mossInk, ring: museBuddyColors.leaf },
+};

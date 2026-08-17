@@ -77,8 +77,8 @@ export default function NoteBarSheet({ currentStepIndex, events }: NoteBarSheetP
 
       if (isCurrent) {
         staveNote.setStyle({
-          fillStyle: museBuddyColors.active,
-          strokeStyle: museBuddyColors.active,
+          fillStyle: museBuddyColors.wildflower,
+          strokeStyle: museBuddyColors.wildflower,
         });
       }
 
@@ -126,7 +126,7 @@ export default function NoteBarSheet({ currentStepIndex, events }: NoteBarSheetP
       ref={containerRef}
       style={{
         alignItems: 'center',
-        background: museBuddyColors.white,
+        background: museBuddyColors.mist,
         display: 'flex',
         height: RHYTHM_SHEET_HEIGHT_PX,
         justifyContent: 'center',

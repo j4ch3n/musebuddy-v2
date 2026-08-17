@@ -1,6 +1,8 @@
 /* eslint-disable react-hooks/immutability -- Reanimated shared values are intentionally mutated by event handlers and worklets. */
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
+import { useRouter } from 'expo-router';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -12,6 +14,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
+import { TrainingControlDeck } from '@/ui';
 
 import { usePerformanceGuidance } from './performance-guidance-context';
 
@@ -19,37 +22,18 @@ const HOLD_DURATION_MS = 3000;
 const STOP_HOLD_DURATION_MS = 800;
 
 export function PerformanceGuidanceButton() {
-  const {
-    completedCycles,
-    cycleCount,
-    countdownValue,
-    errorMessage,
-    finishText,
-    isDisabled,
-    listeningMode,
-    phase,
-    requestSkip,
-    reset,
-    start,
-  } = usePerformanceGuidance();
+  const { errorMessage, isDisabled, phase, requestSkip, reset, start } = usePerformanceGuidance();
+  const router = useRouter();
   const prepareScale = useSharedValue(1);
   const finishFill = useSharedValue(0);
   const mainHoldFill = useSharedValue(0);
   const skipFill = useSharedValue(0);
+  const abortFill = useSharedValue(0);
   const [isMainHoldActive, setIsMainHoldActive] = useState(false);
+  const abortConfirmationVisibleRef = useRef(false);
   const shouldSuppressNextMainPressRef = useRef(false);
   const isMainDisabled = phase === 'pending' && isDisabled;
-  const label =
-    isMainHoldActive && phase !== 'pending'
-      ? 'Hold to stop'
-      : getMainLabel({
-          completedCycles,
-          countdownValue,
-          cycleCount,
-          finishText,
-          hasListeningPhase: listeningMode.kind !== 'none',
-          phase,
-        });
+  const label = phase === 'pending' ? 'Start' : 'Pause';
 
   useEffect(() => {
     if (phase === 'prepare') {
@@ -103,6 +87,10 @@ export function PerformanceGuidanceButton() {
 
   const skipFillStyle = useAnimatedStyle(() => ({
     transform: [{ scaleX: skipFill.value }],
+  }));
+
+  const abortFillStyle = useAnimatedStyle(() => ({
+    transform: [{ scaleX: abortFill.value }],
   }));
 
   function handleMainPressIn() {
@@ -171,6 +159,53 @@ export function PerformanceGuidanceButton() {
     skipFill.value = withTiming(0, { duration: 140 });
   }
 
+  function handleAbortPressIn() {
+    cancelAnimation(abortFill);
+    abortFill.value = withTiming(
+      1,
+      {
+        duration: STOP_HOLD_DURATION_MS,
+        easing: Easing.linear,
+      },
+      (finished) => {
+        if (finished) {
+          runOnJS(showAbortConfirmation)();
+        }
+      },
+    );
+  }
+
+  function handleAbortPressOut() {
+    cancelAnimation(abortFill);
+    abortFill.value = withTiming(0, { duration: 140 });
+  }
+
+  function showAbortConfirmation() {
+    if (abortConfirmationVisibleRef.current) {
+      return;
+    }
+
+    abortConfirmationVisibleRef.current = true;
+    Alert.alert('Quit training?', 'Your current training activity will end.', [
+      {
+        onPress: () => {
+          abortConfirmationVisibleRef.current = false;
+        },
+        style: 'cancel',
+        text: 'Keep practicing',
+      },
+      {
+        onPress: () => {
+          abortConfirmationVisibleRef.current = false;
+          reset();
+          router.replace('/');
+        },
+        style: 'destructive',
+        text: 'Quit',
+      },
+    ]);
+  }
+
   function handleMainPress() {
     if (shouldSuppressNextMainPressRef.current) {
       shouldSuppressNextMainPressRef.current = false;
@@ -182,196 +217,213 @@ export function PerformanceGuidanceButton() {
 
   return (
     <View style={styles.container}>
-      <Pressable
-        accessibilityHint={
-          phase === 'pending'
-            ? 'Starts performance guidance.'
-            : 'Hold for one and a half seconds to stop playback and reset.'
+      <TrainingControlDeck
+        primary={
+          <Pressable
+            accessibilityHint={
+              phase === 'pending'
+                ? 'Starts performance guidance.'
+                : 'Pauses the current playback control.'
+            }
+            accessibilityRole="button"
+            accessibilityState={{ busy: isMainHoldActive, disabled: isMainDisabled }}
+            disabled={isMainDisabled}
+            onPress={phase === 'pending' ? handleMainPress : undefined}
+            onPressIn={handleMainPressIn}
+            onPressOut={handleMainPressOut}
+            style={styles.primaryPressable}
+          >
+            <Animated.View
+              style={[
+                styles.mainButton,
+                phase !== 'pending' && styles.pauseButton,
+                isMainDisabled && styles.disabledButton,
+                mainAnimatedStyle,
+              ]}
+            >
+              {phase === 'finish' && <Animated.View style={[styles.fill, finishFillStyle]} />}
+              {phase !== 'pending' && (
+                <Animated.View style={[styles.stopFill, mainHoldFillStyle]} />
+              )}
+              <MaterialDesignIcons
+                color={phase === 'pending' ? museBuddyColors.mist : museBuddyColors.pine}
+                name={phase === 'pending' ? 'play' : 'pause'}
+                size={21}
+              />
+              <Text
+                numberOfLines={1}
+                style={[
+                  styles.mainLabel,
+                  phase !== 'pending' && styles.pauseLabel,
+                  isMainDisabled && styles.disabledLabel,
+                ]}
+              >
+                {label}
+              </Text>
+            </Animated.View>
+          </Pressable>
         }
-        accessibilityRole="button"
-        accessibilityState={{ disabled: isMainDisabled }}
-        disabled={isMainDisabled}
-        onPress={phase === 'pending' ? handleMainPress : undefined}
-        onPressIn={handleMainPressIn}
-        onPressOut={handleMainPressOut}
-      >
-        <Animated.View
-          style={[
-            styles.mainButton,
-            phase === 'demo' && styles.demoButton,
-            phase === 'listening' && styles.listeningButton,
-            phase === 'finish' && styles.finishButton,
-            isMainDisabled && styles.disabledButton,
-            mainAnimatedStyle,
-          ]}
-        >
-          {phase === 'finish' && <Animated.View style={[styles.fill, finishFillStyle]} />}
-          {phase !== 'pending' && <Animated.View style={[styles.stopFill, mainHoldFillStyle]} />}
-          <Text style={styles.mainLabel}>{label}</Text>
-        </Animated.View>
-      </Pressable>
-
-      <View style={styles.metaRow}>
-        <Text style={styles.statusText}>{getStatusText(phase)}</Text>
-        <Pressable
-          accessibilityHint="Hold for three seconds to skip this training page."
-          accessibilityRole="button"
-          disabled={phase === 'finish'}
-          onPressIn={handleSkipPressIn}
-          onPressOut={handleSkipPressOut}
-          style={[styles.skipButton, phase === 'finish' && styles.skipDisabled]}
-        >
-          <Animated.View style={[styles.skipFill, skipFillStyle]} />
-          <Text style={styles.skipLabel}>Hold to skip</Text>
-        </Pressable>
-      </View>
+        skip={
+          <Pressable
+            accessibilityHint="Hold for three seconds to skip this training page."
+            accessibilityRole="button"
+            disabled={phase === 'finish'}
+            onPressIn={handleSkipPressIn}
+            onPressOut={handleSkipPressOut}
+            style={[styles.skipButton, phase === 'finish' && styles.skipDisabled]}
+          >
+            <Animated.View style={[styles.skipFill, skipFillStyle]} />
+            <MaterialDesignIcons color={museBuddyColors.pine} name="skip-next" size={17} />
+            <Text numberOfLines={1} style={styles.skipLabel}>
+              Skip
+            </Text>
+          </Pressable>
+        }
+        abort={
+          <Pressable
+            accessibilityHint="Hold to quit this training activity."
+            accessibilityRole="button"
+            onPressIn={handleAbortPressIn}
+            onPressOut={handleAbortPressOut}
+            style={styles.abortButton}
+          >
+            <Animated.View style={[styles.abortFill, abortFillStyle]} />
+            <MaterialDesignIcons color={museBuddyColors.wildflower} name="close" size={17} />
+            <Text numberOfLines={1} style={styles.abortLabel}>
+              Abort
+            </Text>
+          </Pressable>
+        }
+      />
 
       {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
     </View>
   );
 }
 
-function getMainLabel({
-  completedCycles,
-  countdownValue,
-  cycleCount,
-  finishText,
-  hasListeningPhase,
-  phase,
-}: {
-  completedCycles: number;
-  countdownValue: number;
-  cycleCount: number;
-  finishText: string;
-  hasListeningPhase: boolean;
-  phase: string;
-}) {
-  switch (phase) {
-    case 'prepare':
-      return String(countdownValue);
-    case 'demo':
-      return `Demo ${completedCycles + 1}/${cycleCount}`;
-    case 'listening':
-      return hasListeningPhase ? 'Your turn' : 'Demo';
-    case 'finish':
-      return finishText;
-    default:
-      return 'Start';
-  }
-}
-
-function getStatusText(phase: string) {
-  switch (phase) {
-    case 'prepare':
-      return 'Get ready';
-    case 'demo':
-      return 'Demoing';
-    case 'listening':
-      return 'Listening';
-    case 'finish':
-      return 'Finished';
-    default:
-      return 'Ready';
-  }
-}
-
 const styles = StyleSheet.create({
+  abortButton: {
+    alignItems: 'center',
+    backgroundColor: museBuddyColors.mist,
+    borderColor: museBuddyColors.wildflower,
+    borderRadius: museBuddyRadii.medium,
+    borderWidth: 1,
+    boxShadow: `0 3px 0 ${museBuddyColors.wildflower}`,
+    flex: 1,
+    gap: 2,
+    justifyContent: 'center',
+    minHeight: 58,
+    overflow: 'hidden',
+    paddingHorizontal: 4,
+  },
+  abortFill: {
+    backgroundColor: museBuddyColors.wildflower,
+    bottom: 0,
+    height: 5,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    transformOrigin: 'left',
+  },
+  abortLabel: {
+    color: museBuddyColors.wildflower,
+    fontSize: 12,
+    fontWeight: '900',
+    lineHeight: 15,
+    textAlign: 'center',
+  },
   container: {
     gap: 10,
   },
-  demoButton: {
-    backgroundColor: museBuddyColors.accentBlue,
-  },
   disabledButton: {
-    backgroundColor: museBuddyColors.surfaceMuted,
+    backgroundColor: museBuddyColors.mist,
+    boxShadow: 'none',
     opacity: 0.72,
   },
+  disabledLabel: {
+    color: museBuddyColors.pine,
+  },
   errorText: {
-    color: museBuddyColors.accentRed,
+    color: museBuddyColors.pine,
     fontSize: 14,
     fontWeight: '800',
     lineHeight: 18,
     textAlign: 'center',
   },
   fill: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: museBuddyColors.accentGreen,
-    opacity: 0.9,
+    bottom: 0,
+    backgroundColor: museBuddyColors.leaf,
+    height: 6,
+    left: 0,
+    position: 'absolute',
+    right: 0,
     transformOrigin: 'left',
   },
-  finishButton: {
-    backgroundColor: museBuddyColors.surface,
+  pauseButton: {
+    backgroundColor: museBuddyColors.sky,
   },
-  listeningButton: {
-    backgroundColor: museBuddyColors.accentPurple,
-  },
+  pauseLabel: { color: museBuddyColors.pine },
   mainButton: {
     alignItems: 'center',
-    backgroundColor: museBuddyColors.primary,
-    borderColor: museBuddyColors.ink,
+    backgroundColor: museBuddyColors.wildflower,
+    borderColor: museBuddyColors.frame,
     borderRadius: museBuddyRadii.medium,
-    borderWidth: museBuddyBorders.bold,
-    boxShadow: `0 8px 0 ${museBuddyColors.ink}`,
+    borderWidth: museBuddyBorders.standard,
+    boxShadow: `0 6px 0 ${museBuddyColors.frame}`,
+    flexDirection: 'row',
+    gap: 8,
     justifyContent: 'center',
-    minHeight: 72,
+    flex: 1,
+    minHeight: 58,
     overflow: 'hidden',
     paddingHorizontal: 18,
     paddingVertical: 16,
   },
   mainLabel: {
-    color: museBuddyColors.ink,
-    fontSize: 24,
+    color: museBuddyColors.mist,
+    fontSize: 17,
     fontVariant: ['tabular-nums'],
     fontWeight: '900',
     lineHeight: 30,
     textAlign: 'center',
   },
-  metaRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 10,
-    justifyContent: 'space-between',
-  },
+  primaryPressable: { flex: 1 },
   skipButton: {
     alignItems: 'center',
-    backgroundColor: museBuddyColors.surface,
-    borderColor: museBuddyColors.ink,
+    backgroundColor: museBuddyColors.mist,
+    borderColor: museBuddyColors.pine,
     borderRadius: museBuddyRadii.medium,
-    borderWidth: 3,
-    minHeight: 40,
-    minWidth: 126,
+    borderWidth: 1,
+    boxShadow: `0 3px 0 ${museBuddyColors.sky}`,
+    flex: 1,
+    gap: 2,
     overflow: 'hidden',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    justifyContent: 'center',
+    paddingHorizontal: 4,
   },
   skipDisabled: {
     opacity: 0.48,
   },
   skipFill: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: museBuddyColors.accentRed,
-    opacity: 0.9,
+    backgroundColor: museBuddyColors.sky,
+    bottom: 0,
+    height: 5,
+    left: 0,
+    position: 'absolute',
+    right: 0,
     transformOrigin: 'left',
   },
   skipLabel: {
-    color: museBuddyColors.ink,
-    fontSize: 13,
+    color: museBuddyColors.pine,
+    fontSize: 11,
     fontWeight: '900',
     lineHeight: 16,
     textAlign: 'center',
   },
   stopFill: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: museBuddyColors.accentRed,
-    opacity: 0.9,
+    backgroundColor: museBuddyColors.mist,
+    opacity: 0.22,
     transformOrigin: 'left',
-  },
-  statusText: {
-    color: museBuddyColors.ink,
-    flexShrink: 1,
-    fontSize: 14,
-    fontWeight: '900',
-    lineHeight: 18,
-    textTransform: 'uppercase',
   },
 });

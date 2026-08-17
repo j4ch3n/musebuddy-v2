@@ -46,7 +46,7 @@ export function RhythmTrainingPage({ staff }: RhythmTrainingPageProps) {
     return (
       <TrainingScreenShell currentStep={currentStep} footer={null}>
         <PlaceholderPanel
-          accent="blue"
+          accent="wildflower"
           body="Training material is not loaded yet."
           title="Prepare session"
         />
@@ -125,14 +125,15 @@ function RhythmTrainingContent({
       currentStep={staff === 'bass' ? 'rhythm-bass' : 'rhythm-treble'}
       footer={
         <View style={{ gap: 14 }}>
-          {showCombo ? <Text style={styles.combo}>COMBO ×{combo}</Text> : null}
+          {showCombo ? (
+            <View style={styles.comboPill}>
+              <Text style={styles.combo}>COMBO ×{combo}</Text>
+            </View>
+          ) : null}
           <PerformanceGuidanceButton />
         </View>
       }
     >
-      <Text accessibilityRole="header" style={styles.staffLabel}>
-        {staff === 'treble' ? 'Treble · right hand' : 'Bass · left hand'}
-      </Text>
       <RhythmViewer
         attackDots={attackDots}
         currentStepIndex={currentStepIndex}
@@ -145,24 +146,20 @@ function RhythmTrainingContent({
 
 const styles = StyleSheet.create({
   combo: {
-    color: museBuddyColors.ink,
+    color: museBuddyColors.pine,
     fontSize: 18,
     fontVariant: ['tabular-nums'],
     fontWeight: '900',
     lineHeight: 22,
     textAlign: 'center',
   },
-  staffLabel: {
-    alignSelf: 'flex-start',
-    backgroundColor: museBuddyColors.accentGreen,
-    borderColor: museBuddyColors.ink,
+  comboPill: {
+    alignSelf: 'center',
+    backgroundColor: museBuddyColors.leaf,
+    borderColor: museBuddyColors.frame,
     borderRadius: museBuddyRadii.round,
-    borderWidth: 3,
-    color: museBuddyColors.ink,
-    fontSize: 15,
-    fontWeight: '900',
-    overflow: 'hidden',
+    borderWidth: 2,
     paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingVertical: 5,
   },
 });

@@ -35,9 +35,25 @@ export const Success: Story = {
   },
 };
 
+export const SuccessSecondary: Story = {
+  args: {
+    label: 'Completed',
+    primary: false,
+    tone: 'success',
+  },
+};
+
 export const Danger: Story = {
   args: {
     label: 'Stop rhythm',
+    tone: 'danger',
+  },
+};
+
+export const DangerSecondary: Story = {
+  args: {
+    label: 'Stop rhythm',
+    primary: false,
     tone: 'danger',
   },
 };

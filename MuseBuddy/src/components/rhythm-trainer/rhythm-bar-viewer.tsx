@@ -106,7 +106,16 @@ export function RhythmBarViewer({
               dot.matched ? styles.matchedAttackDot : styles.unmatchedAttackDot,
               { left: dot.left },
             ]}
-          />
+          >
+            {dot.matched ? (
+              <View style={styles.matchedAttackCenter} />
+            ) : (
+              <>
+                <View style={[styles.attackCrossLine, styles.attackCrossLineForward]} />
+                <View style={[styles.attackCrossLine, styles.attackCrossLineBackward]} />
+              </>
+            )}
+          </View>
         ))}
       </View>
     </View>
@@ -125,7 +134,11 @@ function StepPart({ isCurrent, step, stepIndex }: StepPartProps) {
 
   return (
     <View accessibilityLabel={`Step ${stepIndex + 1}: ${label}`} style={styles.stepPart}>
-      {isCurrent ? <View pointerEvents="none" style={styles.stepPartCurrent} /> : null}
+      {isCurrent ? (
+        <View pointerEvents="none" style={styles.stepPartCurrent}>
+          <View style={styles.currentNotch} />
+        </View>
+      ) : null}
       <View
         style={[
           styles.stepBar,
@@ -149,7 +162,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   beatLabel: {
-    color: museBuddyColors.ink,
+    color: museBuddyColors.pine,
     flex: 1,
     fontSize: 11,
     fontVariant: ['tabular-nums'],
@@ -174,14 +187,14 @@ const styles = StyleSheet.create({
     top: 0,
   },
   beatBand: {
-    backgroundColor: museBuddyColors.surface,
+    backgroundColor: museBuddyColors.mist,
     flex: 1,
   },
   beatBandAlternate: {
-    backgroundColor: museBuddyColors.surfaceMuted,
+    backgroundColor: museBuddyColors.skyWash,
   },
   baseline: {
-    backgroundColor: museBuddyColors.ink,
+    backgroundColor: museBuddyColors.pine,
     bottom: 4,
     height: 2,
     left: 0,
@@ -200,7 +213,8 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   markerTrack: {
-    backgroundColor: museBuddyColors.surfaceMuted,
+    backgroundColor: museBuddyColors.frame,
+    opacity: 0.24,
     height: 2,
     left: 0,
     position: 'absolute',
@@ -208,7 +222,7 @@ const styles = StyleSheet.create({
     top: ATTACK_DOT_RADIUS_PX - 1,
   },
   attackDot: {
-    borderColor: museBuddyColors.ink,
+    borderColor: museBuddyColors.frame,
     borderRadius: ATTACK_DOT_RADIUS_PX,
     borderWidth: 2,
     height: ATTACK_DOT_DIAMETER_PX,
@@ -217,7 +231,7 @@ const styles = StyleSheet.create({
     width: ATTACK_DOT_DIAMETER_PX,
   },
   matchedAttackDot: {
-    backgroundColor: museBuddyColors.accentGreen,
+    backgroundColor: museBuddyColors.rhythmCorrect,
   },
   stepPart: {
     alignItems: 'center',
@@ -229,10 +243,12 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   stepPartCurrent: {
-    backgroundColor: museBuddyColors.active,
+    backgroundColor: museBuddyColors.petal,
+    borderColor: museBuddyColors.rhythmCurrent,
+    borderWidth: 3,
     bottom: 0,
     left: 0,
-    opacity: 0.48,
+    opacity: 0.82,
     position: 'absolute',
     right: 0,
     top: 0,
@@ -240,28 +256,64 @@ const styles = StyleSheet.create({
   stepBar: {
     borderCurve: 'continuous',
     borderRadius: 3,
-    width: '70%',
+    borderColor: museBuddyColors.frame,
+    borderWidth: 2,
     zIndex: 1,
   },
   strongStepBar: {
-    backgroundColor: museBuddyColors.accentPurple,
+    backgroundColor: museBuddyColors.rhythmStrong,
     height: 44,
+    width: '80%',
   },
   unmatchedAttackDot: {
-    backgroundColor: museBuddyColors.accentRed,
+    backgroundColor: museBuddyColors.coralWash,
+    borderColor: museBuddyColors.coralInk,
   },
   weakStepBar: {
-    backgroundColor: museBuddyColors.accentBlue,
+    backgroundColor: museBuddyColors.rhythmWeak,
     height: 30,
+    width: '66%',
   },
   holdStepBar: {
-    backgroundColor: museBuddyColors.accentGreen,
+    backgroundColor: museBuddyColors.rhythmHold,
     height: 12,
-    opacity: 0.78,
+    width: '90%',
   },
   restStepBar: {
-    backgroundColor: museBuddyColors.ink,
-    height: 4,
-    opacity: 0.28,
+    backgroundColor: museBuddyColors.rhythmRest,
+    height: 6,
+    width: '55%',
+  },
+  currentNotch: {
+    backgroundColor: museBuddyColors.rhythmCurrent,
+    borderBottomLeftRadius: 3,
+    borderBottomRightRadius: 3,
+    height: 7,
+    left: '25%',
+    position: 'absolute',
+    right: '25%',
+    top: 0,
+  },
+  matchedAttackCenter: {
+    alignSelf: 'center',
+    backgroundColor: museBuddyColors.frame,
+    borderRadius: 3,
+    height: 6,
+    marginTop: 3,
+    width: 6,
+  },
+  attackCrossLine: {
+    backgroundColor: museBuddyColors.coralInk,
+    height: 2,
+    left: 2,
+    position: 'absolute',
+    top: 5,
+    width: 9,
+  },
+  attackCrossLineForward: {
+    transform: [{ rotate: '45deg' }],
+  },
+  attackCrossLineBackward: {
+    transform: [{ rotate: '-45deg' }],
   },
 });

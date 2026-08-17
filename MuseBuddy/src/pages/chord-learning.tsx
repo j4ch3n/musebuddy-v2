@@ -8,6 +8,7 @@ import {
   PerformanceGuidanceProvider,
   usePerformanceGuidance,
 } from '@/components/performance-guidance';
+import { museBuddyColors } from '@/constants/design-tokens';
 import { useTrainingSession } from '@/contexts/training-session-context';
 import {
   buildChordPreviewSoundFontPlaybackConfiguration,
@@ -153,6 +154,9 @@ export function ChordLearningPage() {
           accessibilityLabel="Chords"
           getItemAccessibilityLabel={getSlideAccessibilityLabel}
           items={slides}
+          indicatorActiveColor={
+            currentSlide?.type === 'summary' ? museBuddyColors.leaf : museBuddyColors.wildflower
+          }
           key={session.chordDisplays.map((display) => display.idName).join('|')}
           keyExtractor={getSlideKey}
           onCurrentIndexChange={setCurrentSlideIndex}
@@ -161,7 +165,7 @@ export function ChordLearningPage() {
         />
       ) : (
         <PlaceholderPanel
-          accent="blue"
+          accent="wildflower"
           body="Training material is not loaded yet."
           title="Prepare session"
         />

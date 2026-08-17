@@ -1,3 +1,5 @@
+import Lucide from '@react-native-vector-icons/lucide';
+import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import Animated, {
@@ -50,11 +52,14 @@ export function BpmControl({ onChange, value }: BpmControlProps) {
         onPress={() => {
           setIsOpen((current) => !current);
         }}
-        style={({ pressed }) => [styles.trigger, pressed && styles.triggerPressed]}
+        style={styles.trigger}
       >
-        <Text color={museBuddyColors.ink} fontSize={14} fontWeight="900" style={styles.bpmText}>
-          {value} BPM
-        </Text>
+        <XStack style={styles.triggerContent}>
+          <Text color={museBuddyColors.pine} fontSize={11} fontWeight="900" style={styles.bpmText}>
+            {value} BPM
+          </Text>
+          <MaterialDesignIcons color={museBuddyColors.pine} name="metronome" size={14} />
+        </XStack>
       </Pressable>
 
       {isOpen ? (
@@ -76,21 +81,24 @@ export function BpmControl({ onChange, value }: BpmControlProps) {
                   pressStyle={styles.optionPressed}
                   style={[styles.option, isSelected && styles.optionSelected]}
                 >
+                  {isSelected ? (
+                    <Lucide color={museBuddyColors.mist} name="check" size={16} />
+                  ) : null}
                   <Text
-                    color={museBuddyColors.ink}
+                    color={museBuddyColors.pine}
                     fontSize={14}
                     fontWeight="900"
                     numberOfLines={1}
-                    style={styles.optionLabel}
+                    style={[styles.optionLabel, isSelected && styles.optionTextSelected]}
                   >
                     {option.label}
                   </Text>
                   <Text
-                    color={museBuddyColors.ink}
+                    color={museBuddyColors.pine}
                     fontSize={13}
                     fontWeight="900"
                     numberOfLines={1}
-                    style={[styles.bpmValue, isSelected && styles.bpmValueSelected]}
+                    style={[styles.bpmValue, isSelected && styles.optionTextSelected]}
                   >
                     {option.bpm}
                   </Text>
@@ -107,41 +115,40 @@ export function BpmControl({ onChange, value }: BpmControlProps) {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'flex-end',
-    minWidth: 92,
+    minWidth: 84,
     zIndex: 20,
   },
   trigger: {
     alignItems: 'center',
-    backgroundColor: museBuddyColors.secondary,
-    borderColor: museBuddyColors.ink,
+    backgroundColor: museBuddyColors.mist,
+    borderColor: museBuddyColors.frame,
     borderRadius: museBuddyRadii.round,
-    borderWidth: museBuddyBorders.bold,
-    boxShadow: `0 4px 0 ${museBuddyColors.ink}`,
+    borderWidth: 1,
     justifyContent: 'center',
-    minHeight: 42,
-    minWidth: 92,
-    paddingHorizontal: 12,
+    height: 38,
+    minWidth: 84,
+    paddingHorizontal: 8,
   },
-  triggerPressed: {
-    boxShadow: `0 1px 0 ${museBuddyColors.ink}`,
-    transform: [{ translateY: 3 }],
+  triggerContent: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 6,
   },
   drawer: {
-    backgroundColor: museBuddyColors.surface,
-    borderColor: museBuddyColors.ink,
-    borderRadius: museBuddyRadii.large,
-    borderWidth: museBuddyBorders.bold,
-    boxShadow: `0 5px 0 ${museBuddyColors.ink}`,
+    backgroundColor: museBuddyColors.leaf,
+    borderColor: museBuddyColors.frame,
+    borderRadius: museBuddyRadii.medium,
+    borderWidth: museBuddyBorders.standard,
     minWidth: 210,
     padding: 10,
     position: 'absolute',
     right: 0,
-    top: 52,
+    top: 40,
   },
   option: {
     alignItems: 'center',
-    backgroundColor: museBuddyColors.surfaceMuted,
-    borderColor: museBuddyColors.ink,
+    backgroundColor: museBuddyColors.mist,
+    borderColor: museBuddyColors.frame,
     borderRadius: museBuddyRadii.medium,
     borderWidth: 2,
     gap: 12,
@@ -151,29 +158,24 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   optionPressed: {
-    backgroundColor: museBuddyColors.secondary,
+    backgroundColor: museBuddyColors.leafWash,
     transform: [{ translateY: 2 }],
   },
   optionSelected: {
-    backgroundColor: museBuddyColors.active,
+    backgroundColor: museBuddyColors.wildflower,
+    borderColor: museBuddyColors.frame,
+    borderWidth: museBuddyBorders.standard,
   },
   optionLabel: {
     flexShrink: 1,
   },
+  optionTextSelected: {
+    color: museBuddyColors.mist,
+  },
   bpmValue: {
-    backgroundColor: museBuddyColors.surface,
-    borderColor: museBuddyColors.ink,
-    borderRadius: museBuddyRadii.round,
-    borderWidth: 2,
     fontVariant: ['tabular-nums'],
     minWidth: 48,
-    overflow: 'hidden',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
     textAlign: 'center',
-  },
-  bpmValueSelected: {
-    backgroundColor: museBuddyColors.secondary,
   },
   bpmText: {
     fontVariant: ['tabular-nums'],

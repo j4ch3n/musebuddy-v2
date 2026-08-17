@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef } from 'react';
 import { Accidental, Dot, Factory, Stem, type StaveNote } from 'vexflow';
 
+import { museBuddyColors } from '@/constants/design-tokens';
 import type { TrainingSessionScore } from '@/contexts/training-session-schema';
 
 import { groupScoreMeasures } from './piano-pattern-score-layout';
@@ -50,7 +51,7 @@ export default function PianoPatternScoreSheet({ score }: PianoPatternScoreSheet
       id={elementId}
       ref={containerRef}
       style={{
-        background: '#ffffff',
+        background: museBuddyColors.mist,
         height:
           (groupScoreMeasures(score.measures).length * ROW_HEIGHT + TOP_PADDING) * SCORE_SCALE,
         overflow: 'hidden',
@@ -74,6 +75,8 @@ function renderScore(container: HTMLDivElement, elementId: string, score: Traini
       width,
     },
   });
+  factory.getContext().setFillStyle(museBuddyColors.pine);
+  factory.getContext().setStrokeStyle(museBuddyColors.pine);
   const notesById = new Map<string, StaveNote>();
   const rowByEventId = new Map<string, number>();
 

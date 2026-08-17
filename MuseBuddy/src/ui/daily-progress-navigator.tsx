@@ -1,9 +1,9 @@
-import FontAwesome5 from '@react-native-vector-icons/fontawesome5';
-import Lucide from '@react-native-vector-icons/lucide';
+import { Ionicons } from '@react-native-vector-icons/ionicons';
+import { Lucide } from '@react-native-vector-icons/lucide';
 import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
+import { MaterialIcons } from '@react-native-vector-icons/material-icons';
 import { type Href, useRouter } from 'expo-router';
-import { Pressable, StyleSheet } from 'react-native';
-import { View, XStack } from 'tamagui';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 
@@ -14,74 +14,31 @@ export type DailyProgressNavigatorStep =
   | 'rhythm-treble'
   | 'pattern';
 
-type TrainingStepIconName = 'music';
-type RhythmClefIconName = 'music-clef-bass' | 'music-clef-treble';
-
 type DailyProgressNavigatorProps = {
   currentStep: DailyProgressNavigatorStep;
 };
 
 type DailyProgressNavigatorItem = {
-  accent: 'blue' | 'green' | 'purple' | 'secondary';
-  href: Href;
-  id: DailyProgressNavigatorStep;
+  href?: Href;
+  id: DailyProgressNavigatorStep | 'freestyle';
   label: string;
-} & (
-  | {
-      iconFamily: 'fontAwesome5';
-      iconName: TrainingStepIconName | 'shapes';
-    }
-  | {
-      iconFamily: 'lucide';
-      iconName: 'piano';
-    }
-  | {
-      clefIconName: RhythmClefIconName;
-      iconFamily: 'rhythm';
-    }
-);
+};
 
-const dailyProgressSteps: DailyProgressNavigatorItem[] = [
+const dailyProgressSteps: readonly DailyProgressNavigatorItem[] = [
+  { href: '/session-goal', id: 'goal', label: 'Preview' },
+  { href: '/chord-learning', id: 'chord', label: 'Chords' },
   {
-    accent: 'secondary',
-    href: '/session-goal',
-    iconFamily: 'lucide',
-    iconName: 'piano',
-    id: 'goal',
-    label: 'Goal',
-  },
-  {
-    accent: 'blue',
-    href: '/chord-learning',
-    iconFamily: 'fontAwesome5',
-    iconName: 'music',
-    id: 'chord',
-    label: 'Chord',
-  },
-  {
-    accent: 'green',
-    clefIconName: 'music-clef-bass',
-    href: '/rhythm-training-bass',
-    iconFamily: 'rhythm',
-    id: 'rhythm-bass',
-    label: 'Bass rhythm',
-  },
-  {
-    accent: 'green',
-    clefIconName: 'music-clef-treble',
     href: '/rhythm-training-treble',
-    iconFamily: 'rhythm',
     id: 'rhythm-treble',
-    label: 'Treble rhythm',
+    label: 'Right rhythm',
   },
   {
-    accent: 'purple',
-    href: '/pattern-training',
-    iconFamily: 'fontAwesome5',
-    iconName: 'shapes',
-    id: 'pattern',
-    label: 'Pattern',
+    href: '/rhythm-training-bass',
+    id: 'rhythm-bass',
+    label: 'Left rhythm',
   },
+  { href: '/pattern-training', id: 'pattern', label: 'Full score' },
+  { id: 'freestyle', label: 'Freestyle' },
 ];
 
 export function DailyProgressNavigator({ currentStep }: DailyProgressNavigatorProps) {
@@ -89,103 +46,140 @@ export function DailyProgressNavigator({ currentStep }: DailyProgressNavigatorPr
   const currentStepIndex = dailyProgressSteps.findIndex((step) => step.id === currentStep);
 
   return (
-    <XStack accessibilityRole="tablist" flex={1} gap={4}>
-      {dailyProgressSteps.map((step, index) => {
-        const isActive = step.id === currentStep;
-        const isComplete = index < currentStepIndex;
-        const accentStyle = isActive ? styles.stepAccentActive : accentStyles[step.accent];
-
-        return (
-          <Pressable
-            accessibilityLabel={`${step.label} step`}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: isActive }}
-            disabled={isActive}
+    <View accessibilityRole="tablist" style={styles.navigator}>
+      <View pointerEvents="none" style={styles.connectionTrack}>
+        {dailyProgressSteps.slice(0, -1).map((step, index) => (
+          <View
             key={step.id}
-            onPress={() => {
-              router.replace(step.href);
-            }}
-            style={[
-              styles.stepItem,
-              isActive && styles.stepItemActive,
-              isComplete && styles.stepItemComplete,
-            ]}
-          >
-            {step.iconFamily === 'rhythm' ? (
-              <View style={styles.rhythmIconPair}>
-                <FontAwesome5 color={museBuddyColors.ink} iconStyle="solid" name="drum" size={14} />
-                <MaterialDesignIcons
-                  color={museBuddyColors.ink}
-                  name={step.clefIconName}
-                  size={14}
+            style={[styles.connection, index < currentStepIndex && styles.connectionComplete]}
+          />
+        ))}
+      </View>
+      <View style={styles.steps}>
+        {dailyProgressSteps.map((step, index) => {
+          const isActive = step.id === currentStep;
+          const isComplete = index < currentStepIndex;
+          const isUnavailable = step.href === undefined;
+
+          return (
+            <Pressable
+              accessibilityLabel={`${step.label} stage`}
+              accessibilityRole="tab"
+              accessibilityState={{ disabled: isUnavailable, selected: isActive }}
+              disabled={isActive || isUnavailable}
+              hitSlop={4}
+              key={step.id}
+              onPress={() => {
+                if (step.href) {
+                  router.replace(step.href);
+                }
+              }}
+              style={({ pressed }) => [
+                styles.stepTouchTarget,
+                isActive && styles.stepTouchTargetActive,
+                pressed && !isActive && styles.stepPressed,
+              ]}
+            >
+              <View
+                style={[
+                  styles.stepTile,
+                  isActive && styles.stepTileActive,
+                  isComplete && styles.stepTileComplete,
+                ]}
+              >
+                <TrainingStageIcon
+                  color={isActive ? museBuddyColors.mist : museBuddyColors.pine}
+                  id={step.id}
+                  size={isActive ? 21 : 18}
                 />
+                {isComplete ? (
+                  <View style={styles.completionCheck}>
+                    <MaterialDesignIcons color={museBuddyColors.mist} name="check" size={10} />
+                  </View>
+                ) : null}
               </View>
-            ) : step.iconFamily === 'lucide' ? (
-              <Lucide color={museBuddyColors.ink} name={step.iconName} size={20} />
-            ) : (
-              <FontAwesome5
-                color={museBuddyColors.ink}
-                iconStyle="solid"
-                name={step.iconName}
-                size={18}
-              />
-            )}
-            <View style={[styles.stepAccent, accentStyle]} />
-          </Pressable>
-        );
-      })}
-    </XStack>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
   );
 }
 
-const accentStyles = StyleSheet.create({
-  blue: {
-    backgroundColor: museBuddyColors.accentBlue,
-  },
-  green: {
-    backgroundColor: museBuddyColors.accentGreen,
-  },
-  purple: {
-    backgroundColor: museBuddyColors.accentPurple,
-  },
-  secondary: {
-    backgroundColor: museBuddyColors.secondary,
-  },
-});
+function TrainingStageIcon({
+  color,
+  id,
+  size,
+}: {
+  color: string;
+  id: DailyProgressNavigatorItem['id'];
+  size: number;
+}) {
+  switch (id) {
+    case 'goal':
+      return <Lucide color={color} name="book-open" size={size} />;
+    case 'chord':
+      return <MaterialIcons color={color} name="grid-on" size={size} />;
+    case 'pattern':
+      return <Ionicons color={color} name="musical-note" size={size} />;
+    case 'freestyle':
+      return <MaterialIcons color={color} name="piano" size={size} />;
+    case 'rhythm-bass':
+      return <MaterialDesignIcons color={color} name="music-clef-bass" size={size} />;
+    case 'rhythm-treble':
+      return <MaterialDesignIcons color={color} name="music-clef-treble" size={size} />;
+  }
+}
 
 const styles = StyleSheet.create({
-  rhythmIconPair: {
+  completionCheck: {
     alignItems: 'center',
-    flexDirection: 'row',
-    gap: 1,
-  },
-  stepItem: {
-    alignItems: 'center',
-    backgroundColor: museBuddyColors.surface,
-    borderRadius: museBuddyRadii.medium,
-    flex: 1,
+    backgroundColor: museBuddyColors.pine,
+    borderRadius: museBuddyRadii.round,
+    bottom: -3,
+    height: 15,
     justifyContent: 'center',
-    minHeight: 42,
-    overflow: 'hidden',
-    paddingBottom: 7,
-    paddingHorizontal: 1,
-    paddingTop: 7,
-  },
-  stepItemActive: {
-    boxShadow: `0 5px 0 ${museBuddyColors.active}`,
-    transform: [{ translateY: -2 }],
-  },
-  stepItemComplete: {
-    backgroundColor: museBuddyColors.surfaceMuted,
-  },
-  stepAccent: {
-    bottom: 0,
-    height: 6,
-    left: 0,
     position: 'absolute',
-    right: 0,
+    right: -3,
+    width: 15,
   },
-  stepAccentActive: {
-    backgroundColor: museBuddyColors.active,
+  connection: { backgroundColor: museBuddyColors.pine, flex: 1, height: 1, opacity: 0.34 },
+  connectionComplete: { backgroundColor: museBuddyColors.leaf, opacity: 1 },
+  connectionTrack: {
+    flexDirection: 'row',
+    left: '8.333%',
+    position: 'absolute',
+    right: '8.333%',
+    top: 22,
   },
+  navigator: { flex: 1, height: 61, minWidth: 0 },
+  stepPressed: { transform: [{ translateY: 1 }] },
+  stepTile: {
+    alignItems: 'center',
+    backgroundColor: museBuddyColors.mist,
+    borderColor: museBuddyColors.pine,
+    borderRadius: museBuddyRadii.small,
+    borderWidth: 1,
+    height: 36,
+    justifyContent: 'center',
+    width: 36,
+  },
+  stepTileActive: {
+    backgroundColor: museBuddyColors.wildflower,
+    borderColor: museBuddyColors.wildflower,
+    height: 42,
+    width: 42,
+  },
+  stepTileComplete: {
+    backgroundColor: museBuddyColors.leaf,
+    borderColor: museBuddyColors.leaf,
+  },
+  stepTouchTarget: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'flex-start',
+    minHeight: 36,
+  },
+  stepTouchTargetActive: { marginTop: -3 },
+  steps: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between' },
 });
