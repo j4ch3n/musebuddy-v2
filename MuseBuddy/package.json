@@ -64,7 +64,7 @@
   "scripts": {
     "prepare": "husky",
     "compile:basic-pitch-model": "bash ./scripts/compile-basic-pitch-model.sh",
-    "build": "pnpm compile:basic-pitch-model && expo prebuild --platform ios",
+    "build": "pnpm compile:basic-pitch-model && expo prebuild --clean --platform ios",
     "start": "expo start --dev-client",
     "start:storybook": "EXPO_PUBLIC_STORYBOOK_ENABLED=true expo start --dev-client",
     "start:dev-client": "expo start --dev-client",
