@@ -83,7 +83,7 @@ export function TrainingScreenShell(props: TrainingScreenShellProps) {
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: museBuddyColors.sun,
+    backgroundColor: museBuddyColors.mist,
     flex: 1,
   },
   scroll: { flex: 1 },
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
     gap: 18,
   },
   footer: {
-    backgroundColor: museBuddyColors.sun,
+    backgroundColor: museBuddyColors.mist,
     paddingHorizontal: 12,
     paddingTop: 10,
   },

@@ -13,12 +13,13 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
+import { museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 import { TrainingControlDeck } from '@/ui';
 
 import { usePerformanceGuidance } from './performance-guidance-context';
 
 const HOLD_DURATION_MS = 3000;
+const SKIP_HOLD_DURATION_MS = 1000;
 const STOP_HOLD_DURATION_MS = 800;
 
 export function PerformanceGuidanceButton() {
@@ -139,7 +140,7 @@ export function PerformanceGuidanceButton() {
     skipFill.value = withTiming(
       1,
       {
-        duration: HOLD_DURATION_MS,
+        duration: SKIP_HOLD_DURATION_MS,
         easing: Easing.linear,
       },
       (finished) => {
@@ -265,7 +266,8 @@ export function PerformanceGuidanceButton() {
         }
         skip={
           <Pressable
-            accessibilityHint="Hold for three seconds to skip this training page."
+            accessibilityLabel="Skip training"
+            accessibilityHint="Hold for one second to skip this training page."
             accessibilityRole="button"
             disabled={phase === 'finish'}
             onPressIn={handleSkipPressIn}
@@ -273,14 +275,12 @@ export function PerformanceGuidanceButton() {
             style={[styles.skipButton, phase === 'finish' && styles.skipDisabled]}
           >
             <Animated.View style={[styles.skipFill, skipFillStyle]} />
-            <MaterialDesignIcons color={museBuddyColors.pine} name="skip-next" size={17} />
-            <Text numberOfLines={1} style={styles.skipLabel}>
-              Skip
-            </Text>
+            <MaterialDesignIcons color={museBuddyColors.pine} name="skip-next" size={21} />
           </Pressable>
         }
         abort={
           <Pressable
+            accessibilityLabel="Abort training"
             accessibilityHint="Hold to quit this training activity."
             accessibilityRole="button"
             onPressIn={handleAbortPressIn}
@@ -288,10 +288,7 @@ export function PerformanceGuidanceButton() {
             style={styles.abortButton}
           >
             <Animated.View style={[styles.abortFill, abortFillStyle]} />
-            <MaterialDesignIcons color={museBuddyColors.wildflower} name="close" size={17} />
-            <Text numberOfLines={1} style={styles.abortLabel}>
-              Abort
-            </Text>
+            <MaterialDesignIcons color={museBuddyColors.wildflower} name="close" size={21} />
           </Pressable>
         }
       />
@@ -308,9 +305,8 @@ const styles = StyleSheet.create({
     borderColor: museBuddyColors.wildflower,
     borderRadius: museBuddyRadii.medium,
     borderWidth: 1,
-    boxShadow: `0 3px 0 ${museBuddyColors.wildflower}`,
+    boxShadow: `4px 4px 0 ${museBuddyColors.wildflower}`,
     flex: 1,
-    gap: 2,
     justifyContent: 'center',
     minHeight: 58,
     overflow: 'hidden',
@@ -324,13 +320,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 0,
     transformOrigin: 'left',
-  },
-  abortLabel: {
-    color: museBuddyColors.wildflower,
-    fontSize: 12,
-    fontWeight: '900',
-    lineHeight: 15,
-    textAlign: 'center',
   },
   container: {
     gap: 10,
@@ -368,37 +357,38 @@ const styles = StyleSheet.create({
     backgroundColor: museBuddyColors.wildflower,
     borderColor: museBuddyColors.frame,
     borderRadius: museBuddyRadii.medium,
-    borderWidth: museBuddyBorders.standard,
-    boxShadow: `0 6px 0 ${museBuddyColors.frame}`,
+    borderWidth: 1,
+    boxShadow: `4px 4px 0 ${museBuddyColors.frame}`,
     flexDirection: 'row',
     gap: 8,
+    height: 58,
     justifyContent: 'center',
     flex: 1,
     minHeight: 58,
     overflow: 'hidden',
     paddingHorizontal: 18,
-    paddingVertical: 16,
+    paddingVertical: 0,
   },
   mainLabel: {
     color: museBuddyColors.mist,
     fontSize: 17,
     fontVariant: ['tabular-nums'],
     fontWeight: '900',
-    lineHeight: 30,
+    lineHeight: 22,
     textAlign: 'center',
   },
   primaryPressable: { flex: 1 },
   skipButton: {
     alignItems: 'center',
     backgroundColor: museBuddyColors.mist,
-    borderColor: museBuddyColors.pine,
+    borderColor: museBuddyColors.frame,
     borderRadius: museBuddyRadii.medium,
     borderWidth: 1,
-    boxShadow: `0 3px 0 ${museBuddyColors.sky}`,
+    boxShadow: `4px 4px 0 ${museBuddyColors.sun}`,
     flex: 1,
-    gap: 2,
     overflow: 'hidden',
     justifyContent: 'center',
+    minHeight: 58,
     paddingHorizontal: 4,
   },
   skipDisabled: {
@@ -412,13 +402,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 0,
     transformOrigin: 'left',
-  },
-  skipLabel: {
-    color: museBuddyColors.pine,
-    fontSize: 11,
-    fontWeight: '900',
-    lineHeight: 16,
-    textAlign: 'center',
   },
   stopFill: {
     ...StyleSheet.absoluteFill,

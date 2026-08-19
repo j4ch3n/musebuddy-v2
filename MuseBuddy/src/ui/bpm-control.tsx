@@ -52,7 +52,7 @@ export function BpmControl({ onChange, value }: BpmControlProps) {
         onPress={() => {
           setIsOpen((current) => !current);
         }}
-        style={styles.trigger}
+        style={({ pressed }) => [styles.trigger, pressed && styles.triggerPressed]}
       >
         <XStack style={styles.triggerContent}>
           <Text color={museBuddyColors.pine} fontSize={11} fontWeight="900" style={styles.bpmText}>
@@ -115,6 +115,7 @@ export function BpmControl({ onChange, value }: BpmControlProps) {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'flex-end',
+    height: 42,
     minWidth: 84,
     zIndex: 20,
   },
@@ -124,10 +125,15 @@ const styles = StyleSheet.create({
     borderColor: museBuddyColors.frame,
     borderRadius: museBuddyRadii.round,
     borderWidth: 1,
+    boxShadow: `4px 4px 0 ${museBuddyColors.frame}`,
     justifyContent: 'center',
     height: 38,
     minWidth: 84,
     paddingHorizontal: 8,
+  },
+  triggerPressed: {
+    boxShadow: `1px 1px 0 ${museBuddyColors.frame}`,
+    transform: [{ translateX: 3 }, { translateY: 3 }],
   },
   triggerContent: {
     alignItems: 'center',
@@ -135,10 +141,11 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   drawer: {
-    backgroundColor: museBuddyColors.leaf,
+    backgroundColor: museBuddyColors.mist,
     borderColor: museBuddyColors.frame,
     borderRadius: museBuddyRadii.medium,
-    borderWidth: museBuddyBorders.standard,
+    borderWidth: 1,
+    boxShadow: `4px 4px 0 ${museBuddyColors.frame}`,
     minWidth: 210,
     padding: 10,
     position: 'absolute',

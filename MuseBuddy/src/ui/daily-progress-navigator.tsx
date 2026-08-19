@@ -47,15 +47,13 @@ export function DailyProgressNavigator({ currentStep }: DailyProgressNavigatorPr
 
   return (
     <View accessibilityRole="tablist" style={styles.navigator}>
-      <View pointerEvents="none" style={styles.connectionTrack}>
-        {dailyProgressSteps.slice(0, -1).map((step, index) => (
-          <View
-            key={step.id}
-            style={[styles.connection, index < currentStepIndex && styles.connectionComplete]}
-          />
-        ))}
-      </View>
-      <View style={styles.steps}>
+      <View
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        pointerEvents="none"
+        style={styles.shadow}
+      />
+      <View style={styles.capsule}>
         {dailyProgressSteps.map((step, index) => {
           const isActive = step.id === currentStep;
           const isComplete = index < currentStepIndex;
@@ -75,29 +73,32 @@ export function DailyProgressNavigator({ currentStep }: DailyProgressNavigatorPr
                 }
               }}
               style={({ pressed }) => [
-                styles.stepTouchTarget,
-                isActive && styles.stepTouchTargetActive,
+                styles.step,
+                isActive && styles.stepActive,
+                isComplete && styles.stepComplete,
                 pressed && !isActive && styles.stepPressed,
               ]}
             >
-              <View
-                style={[
-                  styles.stepTile,
-                  isActive && styles.stepTileActive,
-                  isComplete && styles.stepTileComplete,
-                ]}
-              >
-                <TrainingStageIcon
-                  color={isActive ? museBuddyColors.mist : museBuddyColors.pine}
-                  id={step.id}
-                  size={isActive ? 21 : 18}
+              <TrainingStageIcon
+                color={isActive ? museBuddyColors.mist : museBuddyColors.pine}
+                id={step.id}
+                size={16}
+              />
+              {isComplete ? (
+                <View style={styles.completionCheck}>
+                  <MaterialDesignIcons color={museBuddyColors.pine} name="check" size={8} />
+                </View>
+              ) : null}
+              {!isActive &&
+              index + 1 !== currentStepIndex &&
+              index < dailyProgressSteps.length - 1 ? (
+                <View
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
+                  pointerEvents="none"
+                  style={styles.stepDivider}
                 />
-                {isComplete ? (
-                  <View style={styles.completionCheck}>
-                    <MaterialDesignIcons color={museBuddyColors.mist} name="check" size={10} />
-                  </View>
-                ) : null}
-              </View>
+              ) : null}
             </Pressable>
           );
         })}
@@ -134,52 +135,63 @@ function TrainingStageIcon({
 const styles = StyleSheet.create({
   completionCheck: {
     alignItems: 'center',
-    backgroundColor: museBuddyColors.pine,
-    borderRadius: museBuddyRadii.round,
-    bottom: -3,
-    height: 15,
-    justifyContent: 'center',
-    position: 'absolute',
-    right: -3,
-    width: 15,
-  },
-  connection: { backgroundColor: museBuddyColors.pine, flex: 1, height: 1, opacity: 0.34 },
-  connectionComplete: { backgroundColor: museBuddyColors.leaf, opacity: 1 },
-  connectionTrack: {
-    flexDirection: 'row',
-    left: '8.333%',
-    position: 'absolute',
-    right: '8.333%',
-    top: 22,
-  },
-  navigator: { flex: 1, height: 61, minWidth: 0 },
-  stepPressed: { transform: [{ translateY: 1 }] },
-  stepTile: {
-    alignItems: 'center',
     backgroundColor: museBuddyColors.mist,
     borderColor: museBuddyColors.pine,
-    borderRadius: museBuddyRadii.small,
+    borderRadius: museBuddyRadii.round,
     borderWidth: 1,
-    height: 36,
+    bottom: -2,
+    height: 12,
     justifyContent: 'center',
-    width: 36,
+    position: 'absolute',
+    right: -2,
+    width: 12,
   },
-  stepTileActive: {
-    backgroundColor: museBuddyColors.wildflower,
-    borderColor: museBuddyColors.wildflower,
+  capsule: {
+    backgroundColor: museBuddyColors.mist,
+    borderColor: museBuddyColors.frame,
+    borderRadius: museBuddyRadii.round,
+    borderWidth: 1,
+    flexDirection: 'row',
+    height: 38,
+    overflow: 'hidden',
+  },
+  navigator: {
+    flex: 1,
     height: 42,
-    width: 42,
+    minWidth: 0,
+    paddingBottom: 4,
+    paddingRight: 4,
+    position: 'relative',
   },
-  stepTileComplete: {
-    backgroundColor: museBuddyColors.leaf,
-    borderColor: museBuddyColors.leaf,
+  shadow: {
+    backgroundColor: museBuddyColors.frame,
+    borderColor: museBuddyColors.mist,
+    borderRadius: museBuddyRadii.round,
+    borderWidth: 1,
+    bottom: 0,
+    left: 4,
+    position: 'absolute',
+    right: 0,
+    top: 4,
   },
-  stepTouchTarget: {
+  step: {
     alignItems: 'center',
     flex: 1,
-    justifyContent: 'flex-start',
-    minHeight: 36,
+    justifyContent: 'center',
+    minWidth: 0,
+    position: 'relative',
   },
-  stepTouchTargetActive: { marginTop: -3 },
-  steps: { alignItems: 'flex-start', flexDirection: 'row', justifyContent: 'space-between' },
+  stepDivider: {
+    backgroundColor: museBuddyColors.frame,
+    bottom: 8,
+    position: 'absolute',
+    right: 0,
+    top: 8,
+    width: 1,
+  },
+  stepComplete: {
+    backgroundColor: museBuddyColors.leafWash,
+  },
+  stepActive: { backgroundColor: museBuddyColors.wildflower },
+  stepPressed: { transform: [{ translateX: 1 }, { translateY: 1 }] },
 });

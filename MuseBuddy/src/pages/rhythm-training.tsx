@@ -159,6 +159,7 @@ const styles = StyleSheet.create({
     borderColor: museBuddyColors.frame,
     borderRadius: museBuddyRadii.round,
     borderWidth: 2,
+    boxShadow: `4px 4px 0 ${museBuddyColors.sky}`,
     paddingHorizontal: 12,
     paddingVertical: 5,
   },

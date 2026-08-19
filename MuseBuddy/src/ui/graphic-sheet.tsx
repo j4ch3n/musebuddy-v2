@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { museBuddyBorders, museBuddyColors } from '@/constants/design-tokens';
+import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 
 export type GraphicSheetTone = 'leaf' | 'mist' | 'sky' | 'sun' | 'violet' | 'wildflower';
 
@@ -25,9 +25,12 @@ export function GraphicSheet({ children, tone = 'mist' }: GraphicSheetProps) {
 }
 
 const styles = StyleSheet.create({
-  frame: { paddingBottom: 8, paddingRight: 7, position: 'relative' },
+  frame: { paddingBottom: 8, paddingRight: 8, position: 'relative' },
   shadow: {
-    backgroundColor: museBuddyColors.frame,
+    backgroundColor: museBuddyColors.sky,
+    borderColor: museBuddyColors.mist,
+    borderRadius: museBuddyRadii.medium,
+    borderWidth: 2,
     bottom: 0,
     left: 7,
     position: 'absolute',
@@ -36,6 +39,7 @@ const styles = StyleSheet.create({
   },
   sheet: {
     borderColor: museBuddyColors.frame,
+    borderRadius: museBuddyRadii.medium,
     borderWidth: museBuddyBorders.standard,
     minHeight: 72,
     overflow: 'hidden',

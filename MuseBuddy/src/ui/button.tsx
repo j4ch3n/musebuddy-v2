@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
     borderColor: museBuddyColors.frame,
     borderRadius: museBuddyRadii.medium,
     borderWidth: museBuddyBorders.standard,
-    boxShadow: `0 6px 0 ${museBuddyColors.frame}`,
+    boxShadow: `6px 6px 0 ${museBuddyColors.frame}`,
     justifyContent: 'center',
     minHeight: 58,
     overflow: 'hidden',
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
   },
   secondaryButton: {
     backgroundColor: museBuddyColors.secondaryFace,
-    boxShadow: `0 3px 0 ${museBuddyColors.frame}`,
+    boxShadow: `4px 4px 0 ${museBuddyColors.sky}`,
   },
   successButton: {
     backgroundColor: museBuddyColors.successFace,
@@ -83,8 +83,8 @@ const styles = StyleSheet.create({
     opacity: 0.62,
   },
   buttonPressed: {
-    boxShadow: `0 2px 0 ${museBuddyColors.frame}`,
-    transform: [{ translateY: 4 }],
+    boxShadow: `2px 2px 0 ${museBuddyColors.frame}`,
+    transform: [{ translateX: 4 }, { translateY: 4 }],
   },
   buttonLabel: {
     textAlign: 'center',

@@ -83,14 +83,14 @@ export function FlashCard({
 const styles = StyleSheet.create({
   card: {
     borderColor: museBuddyColors.frame,
-    borderRadius: museBuddyRadii.small,
+    borderRadius: museBuddyRadii.medium,
     borderWidth: museBuddyBorders.bold,
-    boxShadow: `6px 7px 0 ${museBuddyColors.frame}`,
+    boxShadow: `6px 6px 0 ${museBuddyColors.frame}`,
     overflow: 'hidden',
   },
   cardPressed: {
-    boxShadow: `2px 3px 0 ${museBuddyColors.frame}`,
-    transform: [{ translateY: 4 }],
+    boxShadow: `2px 2px 0 ${museBuddyColors.frame}`,
+    transform: [{ translateX: 4 }, { translateY: 4 }],
   },
   supportingSurface: {
     backgroundColor: museBuddyColors.mist,
@@ -102,14 +102,15 @@ const styles = StyleSheet.create({
     borderColor: museBuddyColors.frame,
     borderRadius: museBuddyRadii.medium,
     borderWidth: museBuddyBorders.standard,
+    boxShadow: `4px 4px 0 ${museBuddyColors.sky}`,
     marginTop: 16,
     minHeight: 44,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
   flipButtonPressed: {
-    boxShadow: `0 1px 0 ${museBuddyColors.frame}`,
-    transform: [{ translateY: 3 }],
+    boxShadow: `1px 1px 0 ${museBuddyColors.sky}`,
+    transform: [{ translateX: 3 }, { translateY: 3 }],
   },
   flipButtonText: {
     color: museBuddyColors.pine,

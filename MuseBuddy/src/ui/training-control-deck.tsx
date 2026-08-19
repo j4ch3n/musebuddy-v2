@@ -23,8 +23,8 @@ export function TrainingControlDeck({ abort, primary, skip, utility }: TrainingC
 }
 
 const styles = StyleSheet.create({
-  abort: { flex: 5, minWidth: 0 },
+  abort: { minWidth: 0, width: 58 },
   deck: { alignItems: 'stretch', flexDirection: 'row', gap: 10, minHeight: 58 },
-  primary: { flex: 12, minWidth: 0 },
-  skip: { flex: 4.5, minWidth: 0 },
+  primary: { flex: 1, minWidth: 0 },
+  skip: { minWidth: 0, width: 58 },
 });
