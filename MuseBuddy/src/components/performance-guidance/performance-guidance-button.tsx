@@ -276,6 +276,7 @@ export function PerformanceGuidanceButton() {
           >
             <Animated.View style={[styles.skipFill, skipFillStyle]} />
             <MaterialDesignIcons color={museBuddyColors.pine} name="skip-next" size={21} />
+            <Text style={styles.skipLabel}>Skip</Text>
           </Pressable>
         }
         abort={
@@ -386,10 +387,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     boxShadow: `4px 4px 0 ${museBuddyColors.sun}`,
     flex: 1,
+    flexDirection: 'row',
+    gap: 4,
     overflow: 'hidden',
     justifyContent: 'center',
     minHeight: 58,
     paddingHorizontal: 4,
+  },
+  skipLabel: {
+    color: museBuddyColors.pine,
+    fontSize: 13,
+    fontWeight: '500',
+    lineHeight: 18,
   },
   skipDisabled: {
     opacity: 0.48,

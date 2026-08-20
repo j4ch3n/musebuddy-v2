@@ -91,7 +91,8 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     gap: 24,
     paddingBottom: 20,
-    paddingHorizontal: 20,
+    paddingLeft: 15,
+    paddingRight: 9,
     paddingTop: 28,
   },
   trainingHeader: {

@@ -26,5 +26,5 @@ const styles = StyleSheet.create({
   abort: { minWidth: 0, width: 58 },
   deck: { alignItems: 'stretch', flexDirection: 'row', gap: 10, minHeight: 58 },
   primary: { flex: 1, minWidth: 0 },
-  skip: { minWidth: 0, width: 58 },
+  skip: { minWidth: 0, width: 88 },
 });
