@@ -22,6 +22,13 @@ export default function NoteBarSheet({ currentStepIndex, events }: NoteBarSheetP
   const elementId = useId().replaceAll(':', '-');
 
   useEffect(() => {
+    document.documentElement.style.backgroundColor = museBuddyColors.mist;
+    document.documentElement.style.height = '100%';
+    document.body.style.backgroundColor = museBuddyColors.mist;
+    document.body.style.height = '100%';
+    document.body.style.margin = '0';
+    document.body.style.padding = '0';
+
     const container = containerRef.current;
 
     if (!container) {
@@ -117,6 +124,11 @@ export default function NoteBarSheet({ currentStepIndex, events }: NoteBarSheetP
           .draw();
       }
     });
+
+    const svg = container.querySelector('svg');
+    if (svg) {
+      svg.style.backgroundColor = museBuddyColors.mist;
+    }
   }, [currentStepIndex, elementId, events]);
 
   return (

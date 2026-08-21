@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
+import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 import { useTrainingSession } from '@/contexts/training-session-context';
 import { BpmControl, DailyProgressNavigator, type DailyProgressNavigatorStep } from '@/ui';
 
@@ -33,22 +33,27 @@ type TrainingScreenShellProps = StepTrainingScreenShellProps | HeaderTrainingScr
 export function TrainingScreenShell(props: TrainingScreenShellProps) {
   const { children, footer } = props;
   const { learningConfig, setBpm } = useTrainingSession();
+  const isTrainingScreen = props.currentStep !== undefined;
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {props.currentStep !== undefined ? (
+      {isTrainingScreen ? (
         <View style={styles.trainingHeader}>
           <DailyProgressNavigator currentStep={props.currentStep} />
           <BpmControl onChange={setBpm} value={learningConfig.bpm} />
         </View>
       ) : null}
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        contentInsetAdjustmentBehavior="automatic"
-        style={styles.scroll}
-      >
-        {props.currentStep !== undefined ? null : (
+      {isTrainingScreen ? (
+        <View style={styles.trainingContent}>
+          <View style={styles.learningArena}>{children}</View>
+        </View>
+      ) : (
+        <ScrollView
+          contentContainerStyle={styles.content}
+          contentInsetAdjustmentBehavior="automatic"
+          style={styles.scroll}
+        >
           <View style={styles.header}>
             <Text style={styles.eyebrow}>{props.eyebrow}</Text>
             {props.brandMark ? (
@@ -72,10 +77,9 @@ export function TrainingScreenShell(props: TrainingScreenShellProps) {
             )}
             <Text style={styles.subtitle}>{props.subtitle}</Text>
           </View>
-        )}
-
-        <View style={styles.body}>{children}</View>
-      </ScrollView>
+          <View style={styles.body}>{children}</View>
+        </ScrollView>
+      )}
       {footer ? <View style={styles.footer}>{footer}</View> : null}
     </SafeAreaView>
   );
@@ -102,6 +106,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingTop: 10,
     zIndex: 20,
+  },
+  trainingContent: {
+    flex: 1,
+    minHeight: 0,
+    paddingHorizontal: 12,
+    paddingTop: 12,
+  },
+  learningArena: {
+    backgroundColor: museBuddyColors.mist,
+    borderColor: museBuddyColors.frame,
+    borderRadius: museBuddyRadii.large,
+    borderWidth: museBuddyBorders.standard,
+    boxShadow: `7px 7px 0 ${museBuddyColors.sky}`,
+    flex: 1,
+    marginBottom: 8,
+    minHeight: 0,
+    overflow: 'hidden',
+    padding: 12,
+    paddingBottom: 19,
+    paddingRight: 19,
   },
   header: {
     gap: 8,
@@ -171,6 +195,7 @@ const styles = StyleSheet.create({
   footer: {
     backgroundColor: museBuddyColors.mist,
     paddingHorizontal: 12,
-    paddingTop: 10,
+    paddingBottom: 8,
+    paddingTop: 12,
   },
 });

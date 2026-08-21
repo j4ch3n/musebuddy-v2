@@ -1,25 +1,19 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { museBuddyColors } from '@/constants/design-tokens';
 import type { ChordDisplay } from '@/music-theory';
-import { FlashCard, PianoKeyboard, type PianoKeyboardMarkerTone } from '@/ui';
+import { PianoKeyboard, type PianoKeyboardMarkerTone } from '@/ui';
 import type { PianoPitchClass } from '@schema/music-theory-schema';
 
 import ChordSheet from './chord-sheet.dom';
-import {
-  chordToneRoleByImportance,
-  chordToneRoleColors,
-  type ChordToneColorRole,
-} from './chord-color-role';
+import { chordToneRoleByImportance, type ChordToneColorRole } from './chord-color-role';
 import { ChordToneLegend } from './chord-role-legend';
 
 type ChordKeyboardCardProps = {
   display: ChordDisplay;
-  isFlipped?: boolean;
-  onFlipChange?: (isFlipped: boolean) => void;
 };
 
-export function ChordKeyboardCard({ display, isFlipped, onFlipChange }: ChordKeyboardCardProps) {
+export function ChordKeyboardCard({ display }: ChordKeyboardCardProps) {
   const rootNote = display.notes.find((note) => note.isRoot) ?? display.notes[0];
   const selectedKeys = display.notes
     .filter((note) => note.pitchClass !== rootNote.pitchClass)
@@ -43,84 +37,34 @@ export function ChordKeyboardCard({ display, isFlipped, onFlipChange }: ChordKey
   );
 
   return (
-    <FlashCard
-      accessibilityLabel="Chord keyboard card"
-      isFlipped={isFlipped}
-      onFlipChange={onFlipChange}
-      sideA={
-        <View style={styles.keyboardContent}>
-          <PianoKeyboard
-            accessibilityLabel={`Piano keyboard highlighting ${noteNames}`}
-            keys={selectedKeys}
-            markerLabels={markerLabels}
-            markerTones={markerTones}
-            root={rootNote.pitchClass}
-          />
-          <ChordToneLegend roles={toneRoles} />
-        </View>
-      }
-      sideB={
-        <View style={styles.backContent}>
-          <View
-            accessibilityLabel={`Sheet notes: ${display.notes.map((note) => note.text).join(', ')}`}
-            style={styles.sheetFrame}
-          >
-            <ChordSheet
-              dom={{
-                scrollEnabled: false,
-                style: styles.sheet,
-              }}
-              notes={display.notes}
-            />
-          </View>
-          <View style={styles.explanations}>
-            {display.notes.map((note) =>
-              note.explanation ? (
-                <Text key={`${note.degree}-${note.text}`} style={styles.explanation}>
-                  <Text
-                    style={[
-                      styles.noteName,
-                      {
-                        color:
-                          chordToneRoleColors[
-                            note.isRoot ? 'root' : chordToneRoleByImportance[note.importance]
-                          ].fill,
-                      },
-                    ]}
-                  >
-                    {note.text}
-                  </Text>
-                  {` ${note.explanation}`}
-                </Text>
-              ) : null,
-            )}
-          </View>
-        </View>
-      }
-      tone="wildflower"
-    />
+    <View style={styles.content}>
+      <PianoKeyboard
+        accessibilityLabel={`Piano keyboard highlighting ${noteNames}`}
+        keys={selectedKeys}
+        markerLabels={markerLabels}
+        markerTones={markerTones}
+        root={rootNote.pitchClass}
+      />
+      <View
+        accessibilityLabel={`Sheet notes: ${display.notes.map((note) => note.text).join(', ')}`}
+        style={styles.sheetFrame}
+      >
+        <ChordSheet
+          dom={{
+            scrollEnabled: false,
+            style: styles.sheet,
+          }}
+          notes={display.notes}
+        />
+      </View>
+      <ChordToneLegend roles={toneRoles} />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  backContent: {
-    gap: 16,
-  },
-  explanations: {
-    gap: 8,
-  },
-  keyboardContent: {
+  content: {
     gap: 12,
-  },
-  explanation: {
-    color: museBuddyColors.pine,
-    fontSize: 16,
-    fontWeight: '700',
-    lineHeight: 23,
-  },
-  noteName: {
-    color: museBuddyColors.pine,
-    fontWeight: '900',
   },
   sheet: {
     backgroundColor: museBuddyColors.mist,

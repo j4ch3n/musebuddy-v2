@@ -19,6 +19,13 @@ export default function ChordSheet({ notes }: ChordSheetProps) {
   const elementId = useId().replaceAll(':', '-');
 
   useEffect(() => {
+    document.documentElement.style.backgroundColor = museBuddyColors.mist;
+    document.documentElement.style.height = '100%';
+    document.body.style.backgroundColor = museBuddyColors.mist;
+    document.body.style.height = '100%';
+    document.body.style.margin = '0';
+    document.body.style.padding = '0';
+
     const container = containerRef.current;
 
     if (!container) {
@@ -60,6 +67,11 @@ export default function ChordSheet({ notes }: ChordSheetProps) {
       .joinVoices([voice])
       .format([voice], STAVE_WIDTH - 96);
     voice.draw(context, stave);
+
+    const svg = container.querySelector('svg');
+    if (svg) {
+      svg.style.backgroundColor = museBuddyColors.mist;
+    }
   }, [elementId, notes]);
 
   return (

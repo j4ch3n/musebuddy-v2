@@ -1,57 +1,64 @@
+import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { museBuddyColors } from '@/constants/design-tokens';
 import type { TrainingSessionScore } from '@/contexts/training-session-schema';
-import { GraphicSheet } from '@/ui';
+import { Carousel } from '@/ui';
 
+import { paginateScore } from './piano-pattern-score-layout';
 import PianoPatternScoreSheet from './piano-pattern-score-sheet.dom';
 
 type PianoPatternScoreProps = {
   score: TrainingSessionScore;
+  swipeEnabled?: boolean;
 };
 
-export function PianoPatternScore({ score }: PianoPatternScoreProps) {
+export function PianoPatternScore({ score, swipeEnabled = true }: PianoPatternScoreProps) {
+  const pages = useMemo(() => paginateScore(score), [score]);
+
   return (
-    <GraphicSheet tone="mist">
-      <View
-        accessibilityLabel={`Piano score with ${score.measures.length} measures`}
-        style={styles.score}
-      >
-        <View
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-          style={styles.focusMarker}
-        />
-        <PianoPatternScoreSheet
-          dom={{
-            matchContents: true,
-            scrollEnabled: false,
-            style: styles.sheet,
-          }}
-          score={score}
-        />
-      </View>
-    </GraphicSheet>
+    <View style={styles.pager}>
+      <Carousel
+        accessibilityLabel="Music score pages"
+        getItemAccessibilityLabel={(_, index) => `Score page ${index + 1} of ${pages.length}`}
+        indicatorActiveColor={museBuddyColors.wildflower}
+        items={pages}
+        keyExtractor={(_, index) => `score-page-${index}`}
+        renderItem={(page) => <PianoPatternScorePage score={page} />}
+        swipeEnabled={swipeEnabled}
+      />
+    </View>
+  );
+}
+
+function PianoPatternScorePage({ score }: { score: TrainingSessionScore }) {
+  return (
+    <View
+      accessibilityLabel={`Piano score with ${score.measures.length} measures`}
+      style={styles.score}
+    >
+      <PianoPatternScoreSheet
+        dom={{
+          matchContents: true,
+          scrollEnabled: false,
+          style: styles.sheet,
+        }}
+        score={score}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  pager: {
+    flex: 1,
+    minHeight: 0,
+  },
   score: {
     backgroundColor: museBuddyColors.mist,
+    flex: 1,
     overflow: 'hidden',
     width: '100%',
-  },
-  focusMarker: {
-    backgroundColor: museBuddyColors.wildflower,
-    borderColor: museBuddyColors.frame,
-    borderRadius: 5,
-    borderWidth: 2,
-    height: 10,
-    position: 'absolute',
-    right: 12,
-    top: 12,
-    width: 10,
-    zIndex: 1,
   },
   sheet: {
     backgroundColor: museBuddyColors.mist,

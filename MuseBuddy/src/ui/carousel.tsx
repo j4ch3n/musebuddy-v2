@@ -33,6 +33,7 @@ export type CarouselProps<T> = {
   getItemAccessibilityLabel?: (item: T, index: number) => string;
   items: readonly T[];
   indicatorActiveColor?: string;
+  indicatorInactiveColor?: string;
   keyExtractor: (item: T, index: number) => string;
   onCurrentIndexChange?: (index: number) => void;
   renderItem: (item: T, index: number) => ReactNode;
@@ -113,6 +114,7 @@ export function Carousel<T>({
   getItemAccessibilityLabel,
   items,
   indicatorActiveColor = museBuddyColors.wildflower,
+  indicatorInactiveColor = museBuddyColors.sky,
   keyExtractor,
   onCurrentIndexChange,
   renderItem,
@@ -144,9 +146,13 @@ export function Carousel<T>({
     AccessibilityInfo.announceForAccessibility(itemLabel);
   }, [itemLabel]);
 
-  const updateCurrentIndex = useCallback((nextIndex: number) => {
-    setCurrentIndex(nextIndex);
-  }, []);
+  const updateCurrentIndex = useCallback(
+    (nextIndex: number) => {
+      setCurrentIndex(nextIndex);
+      onCurrentIndexChange?.(nextIndex);
+    },
+    [onCurrentIndexChange],
+  );
 
   useEffect(() => {
     animatedCurrentIndex.value = safeCurrentIndex;
@@ -163,10 +169,6 @@ export function Carousel<T>({
     dragOffset.value = 0;
     isTransitioning.value = false;
   }, [animatedCurrentIndex, dragOffset, isTransitioning, safeCurrentIndex, swipeEnabled]);
-
-  useEffect(() => {
-    onCurrentIndexChange?.(safeCurrentIndex);
-  }, [onCurrentIndexChange, safeCurrentIndex]);
 
   const canMove = useCallback(
     (direction: CarouselDirection) =>
@@ -340,18 +342,20 @@ export function Carousel<T>({
         style={styles.accessibilityControl}
       />
       <GestureDetector gesture={panGesture}>
-        <View style={styles.track}>
-          {items.map((item, index) => (
-            <CarouselItem
-              currentIndex={animatedCurrentIndex}
-              dragOffset={dragOffset}
-              key={keyExtractor(item, index)}
-              stride={stride}
-              width={width}
-            >
-              {renderItem(item, index)}
-            </CarouselItem>
-          ))}
+        <View style={styles.slideViewport}>
+          <View style={styles.track}>
+            {items.map((item, index) => (
+              <CarouselItem
+                currentIndex={animatedCurrentIndex}
+                dragOffset={dragOffset}
+                key={keyExtractor(item, index)}
+                stride={stride}
+                width={width}
+              >
+                {renderItem(item, index)}
+              </CarouselItem>
+            ))}
+          </View>
         </View>
       </GestureDetector>
       <View
@@ -365,7 +369,10 @@ export function Carousel<T>({
             style={[
               styles.indicatorMark,
               index === safeCurrentIndex && styles.indicatorMarkActive,
-              index === safeCurrentIndex ? { backgroundColor: indicatorActiveColor } : null,
+              {
+                backgroundColor:
+                  index === safeCurrentIndex ? indicatorActiveColor : indicatorInactiveColor,
+              },
             ]}
           />
         ))}
@@ -382,6 +389,7 @@ const styles = StyleSheet.create({
     width: 1,
   },
   item: {
+    height: '100%',
     flexShrink: 0,
     paddingBottom: 8,
   },
@@ -390,13 +398,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     justifyContent: 'center',
+    paddingBottom: 4,
     paddingTop: 8,
   },
   indicatorMark: {
-    backgroundColor: museBuddyColors.pine,
+    backgroundColor: museBuddyColors.sky,
     borderRadius: 2,
     height: 4,
-    opacity: 0.45,
     width: 18,
   },
   indicatorMarkActive: {
@@ -405,10 +413,16 @@ const styles = StyleSheet.create({
     opacity: 1,
   },
   track: {
+    flex: 1,
     flexDirection: 'row',
     gap: ITEM_GAP,
   },
   viewport: {
+    flex: 1,
+    overflow: 'hidden',
+  },
+  slideViewport: {
+    flex: 1,
     overflow: 'hidden',
   },
 });

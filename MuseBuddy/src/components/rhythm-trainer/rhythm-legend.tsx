@@ -23,11 +23,7 @@ export function RhythmLegend() {
           <View
             accessibilityElementsHidden
             importantForAccessibility="no-hide-descendants"
-            style={[
-              styles.swatch,
-              { backgroundColor: rhythmStepRoleColors[role] },
-              role === 'rest' ? styles.restSwatch : null,
-            ]}
+            style={[styles.swatch, { backgroundColor: rhythmStepRoleColors[role] }]}
           />
           <Text style={styles.label}>{rhythmStepRoleLabels[role]}</Text>
         </View>
@@ -48,16 +44,15 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   legend: {
+    alignSelf: 'flex-start',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
   },
-  restSwatch: {
-    borderColor: museBuddyColors.frame,
-    borderWidth: 2,
-  },
   swatch: {
+    borderColor: museBuddyColors.frame,
     borderRadius: museBuddyRadii.small,
+    borderWidth: 2,
     height: 10,
     width: 20,
   },

@@ -1,48 +1,45 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { museBuddyBorders, museBuddyColors } from '@/constants/design-tokens';
+import { museBuddyColors } from '@/constants/design-tokens';
 import type { ChordDisplay } from '@/music-theory';
 
 import { ChordKeyboardCard } from './chord-keyboard-card';
-import { ChordNameCard } from './chord-name-card';
+import { ChordName } from './chord-name';
 
 type ChordLearningProps = {
   display: ChordDisplay;
-  isKeyboardCardFlipped?: boolean;
-  onKeyboardCardFlipChange?: (isFlipped: boolean) => void;
 };
 
-export function ChordLearning({
-  display,
-  isKeyboardCardFlipped,
-  onKeyboardCardFlipChange,
-}: ChordLearningProps) {
+export function ChordLearning({ display }: ChordLearningProps) {
   return (
     <View style={styles.container}>
-      <ChordNameCard display={display} />
-      <View
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-        style={styles.link}
-      />
-      <ChordKeyboardCard
-        display={display}
-        isFlipped={isKeyboardCardFlipped}
-        onFlipChange={onKeyboardCardFlipChange}
-      />
+      <Text accessibilityLabel={`Chord name ${display.friendlyName}`} style={styles.friendlyName}>
+        {display.friendlyName}
+      </Text>
+      <View style={styles.learningContent}>
+        <ChordName display={display} size="large" />
+        <ChordKeyboardCard display={display} />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    gap: 0,
+    flex: 1,
+    paddingVertical: 8,
   },
-  link: {
-    alignSelf: 'center',
-    backgroundColor: museBuddyColors.pine,
-    borderRadius: museBuddyBorders.bold,
-    height: 24,
-    width: museBuddyBorders.bold,
+  learningContent: {
+    alignItems: 'stretch',
+    flex: 1,
+    gap: 2,
+    justifyContent: 'center',
+  },
+  friendlyName: {
+    color: museBuddyColors.pine,
+    fontSize: 20,
+    fontWeight: '900',
+    lineHeight: 26,
+    textAlign: 'left',
   },
 });

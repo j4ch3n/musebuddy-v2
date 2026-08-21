@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useState } from 'react';
-import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { ChordLearning, ChordListenNotes, ChordSessionSummary } from '@/components/chord-learning';
@@ -8,14 +7,12 @@ import {
   PerformanceGuidanceProvider,
   usePerformanceGuidance,
 } from '@/components/performance-guidance';
-import { museBuddyColors } from '@/constants/design-tokens';
 import { useTrainingSession } from '@/contexts/training-session-context';
 import {
   buildChordPreviewSoundFontPlaybackConfiguration,
   buildChordSummarySoundFontPlaybackConfiguration,
   type ChordDisplay,
 } from '@/music-theory';
-import { rhythmTrainingHrefs } from '@/pages/rhythm-training-flow';
 import { Carousel, type CarouselProps } from '@/ui';
 
 import { PlaceholderPanel } from './placeholder-panel';
@@ -33,10 +30,8 @@ type ChordLearningSlide =
     };
 
 export function ChordLearningPage() {
-  const router = useRouter();
   const { learningConfig, session } = useTrainingSession();
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
-  const [flippedChordIds, setFlippedChordIds] = useState<ReadonlySet<string>>(() => new Set());
   const slides = useMemo<readonly ChordLearningSlide[]>(() => {
     if (!session) {
       return [];
@@ -88,29 +83,9 @@ export function ChordLearningPage() {
         );
       }
 
-      const chordKey = getChordKey(slide.display, slide.chordIndex);
-
-      return (
-        <ChordLearning
-          display={slide.display}
-          isKeyboardCardFlipped={flippedChordIds.has(chordKey)}
-          onKeyboardCardFlipChange={(isFlipped) => {
-            setFlippedChordIds((current) => {
-              const next = new Set(current);
-
-              if (isFlipped) {
-                next.add(chordKey);
-              } else {
-                next.delete(chordKey);
-              }
-
-              return next;
-            });
-          }}
-        />
-      );
+      return <ChordLearning display={slide.display} />;
     },
-    [currentSlideIndex, flippedChordIds, getChordKey],
+    [currentSlideIndex],
   );
 
   const playbackConfiguration = useMemo(() => {
@@ -154,9 +129,6 @@ export function ChordLearningPage() {
           accessibilityLabel="Chords"
           getItemAccessibilityLabel={getSlideAccessibilityLabel}
           items={slides}
-          indicatorActiveColor={
-            currentSlide?.type === 'summary' ? museBuddyColors.leaf : museBuddyColors.wildflower
-          }
           key={session.chordDisplays.map((display) => display.idName).join('|')}
           keyExtractor={getSlideKey}
           onCurrentIndexChange={setCurrentSlideIndex}
@@ -181,24 +153,14 @@ export function ChordLearningPage() {
     <PerformanceGuidanceProvider
       demoListenCycleCount={3}
       finishText={finishText}
-      key={getSlideKey(currentSlide)}
-      onFinish={() => {
-        if (currentSlide.type === 'summary') {
-          router.push(rhythmTrainingHrefs.bass);
-          return;
-        }
-
-        setCurrentSlideIndex((index) => Math.min(index + 1, slides.length - 1));
-      }}
-      onSkip={() => {
-        router.push(rhythmTrainingHrefs.bass);
-      }}
+      onFinish={() => {}}
+      onSkip={() => {}}
       playback={{
         configuration: playbackConfiguration,
         kind: 'piano',
       }}
       listeningMode={{ kind: 'basic-pitch' }}
-      startPhase="prepare"
+      startPhase="pending"
     >
       {content}
     </PerformanceGuidanceProvider>

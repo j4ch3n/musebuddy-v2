@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 
@@ -7,7 +7,7 @@ import { ATTACK_DOT_DIAMETER_PX, ATTACK_DOT_RADIUS_PX } from './constants';
 import { getRhythmAttackDotPosition } from './rhythm-attack-geometry';
 import type { RhythmAttackDot, RhythmStep } from './types';
 
-const BEAT_NUMBERS = [1, 2, 3, 4] as const;
+const BEAT_BAND_INDEXES = [0, 1, 2, 3] as const;
 
 type RhythmBarViewerProps = {
   attackDots?: readonly RhythmAttackDot[];
@@ -43,17 +43,6 @@ export function RhythmBarViewer({
       style={styles.container}
     >
       <View
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-        style={styles.beatLabels}
-      >
-        {BEAT_NUMBERS.map((beatNumber) => (
-          <Text key={beatNumber} style={styles.beatLabel}>
-            {beatNumber}
-          </Text>
-        ))}
-      </View>
-      <View
         onLayout={(event) => {
           setGridWidth(event.nativeEvent.layout.width);
         }}
@@ -65,19 +54,13 @@ export function RhythmBarViewer({
           pointerEvents="none"
           style={styles.beatBands}
         >
-          {BEAT_NUMBERS.map((beatNumber, beatIndex) => (
+          {BEAT_BAND_INDEXES.map((beatIndex) => (
             <View
-              key={beatNumber}
+              key={beatIndex}
               style={[styles.beatBand, beatIndex % 2 === 0 && styles.beatBandAlternate]}
             />
           ))}
         </View>
-        <View
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-          pointerEvents="none"
-          style={styles.baseline}
-        />
         <View style={styles.stepGrid}>
           {steps.map((step, stepIndex) => (
             <StepPart
@@ -93,11 +76,6 @@ export function RhythmBarViewer({
         accessibilityLabel="Detected piano attacks"
         style={[styles.markerRow, { width: gridWidth }]}
       >
-        <View
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-          style={styles.markerTrack}
-        />
         {positionedDots.map((dot) => (
           <View
             key={dot.id}
@@ -135,9 +113,10 @@ function StepPart({ isCurrent, step, stepIndex }: StepPartProps) {
   return (
     <View accessibilityLabel={`Step ${stepIndex + 1}: ${label}`} style={styles.stepPart}>
       {isCurrent ? (
-        <View pointerEvents="none" style={styles.stepPartCurrent}>
-          <View style={styles.currentNotch} />
-        </View>
+        <>
+          <View pointerEvents="none" style={styles.currentPointer} />
+          <View pointerEvents="none" style={styles.currentScanLine} />
+        </>
       ) : null}
       <View
         style={[
@@ -154,22 +133,8 @@ function StepPart({ isCurrent, step, stepIndex }: StepPartProps) {
 
 const styles = StyleSheet.create({
   container: {
-    minHeight: 96,
+    minHeight: 82,
     paddingVertical: 2,
-  },
-  beatLabels: {
-    flexDirection: 'row',
-    marginBottom: 4,
-  },
-  beatLabel: {
-    color: museBuddyColors.pine,
-    flex: 1,
-    fontSize: 11,
-    fontVariant: ['tabular-nums'],
-    fontWeight: '900',
-    lineHeight: 14,
-    opacity: 0.72,
-    textAlign: 'center',
   },
   lane: {
     borderCurve: 'continuous',
@@ -193,15 +158,6 @@ const styles = StyleSheet.create({
   beatBandAlternate: {
     backgroundColor: museBuddyColors.skyWash,
   },
-  baseline: {
-    backgroundColor: museBuddyColors.pine,
-    bottom: 4,
-    height: 2,
-    left: 0,
-    opacity: 0.2,
-    position: 'absolute',
-    right: 0,
-  },
   stepGrid: {
     alignItems: 'flex-end',
     flexDirection: 'row',
@@ -211,15 +167,6 @@ const styles = StyleSheet.create({
     height: ATTACK_DOT_DIAMETER_PX,
     marginTop: 6,
     position: 'relative',
-  },
-  markerTrack: {
-    backgroundColor: museBuddyColors.frame,
-    opacity: 0.24,
-    height: 2,
-    left: 0,
-    position: 'absolute',
-    right: 0,
-    top: ATTACK_DOT_RADIUS_PX - 1,
   },
   attackDot: {
     borderColor: museBuddyColors.frame,
@@ -241,17 +188,6 @@ const styles = StyleSheet.create({
     minWidth: 0,
     paddingBottom: 5,
     position: 'relative',
-  },
-  stepPartCurrent: {
-    backgroundColor: museBuddyColors.petal,
-    borderColor: museBuddyColors.rhythmCurrent,
-    borderWidth: 3,
-    bottom: 0,
-    left: 0,
-    opacity: 0.82,
-    position: 'absolute',
-    right: 0,
-    top: 0,
   },
   stepBar: {
     borderCurve: 'continuous',
@@ -284,15 +220,31 @@ const styles = StyleSheet.create({
     height: 6,
     width: '55%',
   },
-  currentNotch: {
-    backgroundColor: museBuddyColors.rhythmCurrent,
-    borderBottomLeftRadius: 3,
-    borderBottomRightRadius: 3,
-    height: 7,
-    left: '25%',
+  currentPointer: {
+    borderLeftColor: 'transparent',
+    borderLeftWidth: 5,
+    borderRightColor: 'transparent',
+    borderRightWidth: 5,
+    borderTopColor: museBuddyColors.rhythmCurrent,
+    borderTopWidth: 8,
+    height: 0,
+    left: '50%',
+    marginLeft: -5,
     position: 'absolute',
-    right: '25%',
     top: 0,
+    width: 0,
+    zIndex: 2,
+  },
+  currentScanLine: {
+    backgroundColor: museBuddyColors.rhythmCurrent,
+    bottom: 0,
+    left: '50%',
+    marginLeft: -1,
+    opacity: 0.9,
+    position: 'absolute',
+    top: 8,
+    width: 2,
+    zIndex: 2,
   },
   matchedAttackCenter: {
     alignSelf: 'center',

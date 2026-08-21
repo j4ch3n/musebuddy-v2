@@ -8,8 +8,6 @@ import {
   museBuddyTypography,
 } from '@/constants/design-tokens';
 import type { ChordDisplay } from '@/music-theory';
-import { FlashCard } from '@/ui';
-
 import { ChordName } from './chord-name';
 import { useChordListenRecognition } from './use-chord-listen-recognition';
 
@@ -26,43 +24,35 @@ export function ChordSessionSummary({ displays, isActive }: ChordSessionSummaryP
 
   return (
     <View style={styles.root}>
-      <FlashCard
-        accessibilityLabel="All chords in this session"
-        sideA={
-          <View style={styles.container}>
-            {displays.map((display, index) => {
-              const isComplete = completedChordIndexes.has(index);
+      <View accessibilityLabel="All chords in this session" style={styles.container}>
+        {displays.map((display, index) => {
+          const isComplete = completedChordIndexes.has(index);
 
-              return (
-                <View
-                  accessibilityLabel={`${display.friendlyName}, ${isComplete ? 'complete' : 'not complete'}`}
-                  accessible
-                  key={`${display.idName}-${index}`}
-                  style={styles.chordRow}
-                >
-                  <View accessibilityElementsHidden style={styles.checkSpacer} />
-                  <ChordName
-                    colorized={false}
-                    display={display}
-                    size="large"
-                    style={styles.chordName}
-                  />
-                  <View
-                    accessibilityElementsHidden
-                    importantForAccessibility="no-hide-descendants"
-                    style={[styles.checkSlot, isComplete ? styles.checkSlotComplete : null]}
-                  >
-                    {isComplete ? (
-                      <Lucide color={museBuddyColors.pine} name="check" size={24} />
-                    ) : null}
-                  </View>
-                </View>
-              );
-            })}
-          </View>
-        }
-        tone="leaf"
-      />
+          return (
+            <View
+              accessibilityLabel={`${display.friendlyName}, ${isComplete ? 'complete' : 'not complete'}`}
+              accessible
+              key={`${display.idName}-${index}`}
+              style={styles.chordRow}
+            >
+              <View accessibilityElementsHidden style={styles.checkSpacer} />
+              <ChordName
+                colorized={false}
+                display={display}
+                size="large"
+                style={styles.chordName}
+              />
+              <View
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+                style={[styles.checkSlot, isComplete ? styles.checkSlotComplete : null]}
+              >
+                {isComplete ? <Lucide color={museBuddyColors.pine} name="check" size={24} /> : null}
+              </View>
+            </View>
+          );
+        })}
+      </View>
       {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
     </View>
   );
@@ -95,10 +85,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   container: {
+    alignSelf: 'center',
     gap: 12,
     justifyContent: 'center',
     minHeight: 320,
     paddingVertical: 24,
+    width: '92%',
   },
   errorText: {
     color: museBuddyColors.pine,
@@ -108,6 +100,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   root: {
+    alignItems: 'center',
+    flex: 1,
     gap: 12,
+    justifyContent: 'center',
   },
 });

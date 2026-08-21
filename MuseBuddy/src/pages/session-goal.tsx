@@ -5,6 +5,7 @@ import { PianoPatternScore } from '@/components/piano-pattern-score';
 import {
   PerformanceGuidanceButton,
   PerformanceGuidanceProvider,
+  usePerformanceGuidance,
 } from '@/components/performance-guidance';
 import { useTrainingSession } from '@/contexts/training-session-context';
 import { buildPatternSoundFontPlaybackConfiguration } from '@/music-theory/sound-font-playback';
@@ -27,7 +28,7 @@ export function SessionGoalPage() {
   const content = (
     <TrainingScreenShell currentStep="goal" footer={session ? <PerformanceGuidanceButton /> : null}>
       {session ? (
-        <PianoPatternScore score={session.score} />
+        <GuidedPianoPatternScore score={session.score} />
       ) : (
         <PlaceholderPanel
           accent="wildflower"
@@ -63,4 +64,14 @@ export function SessionGoalPage() {
       {content}
     </PerformanceGuidanceProvider>
   );
+}
+
+function GuidedPianoPatternScore({
+  score,
+}: {
+  score: NonNullable<ReturnType<typeof useTrainingSession>['session']>['score'];
+}) {
+  const { phase } = usePerformanceGuidance();
+
+  return <PianoPatternScore score={score} swipeEnabled={phase === 'pending'} />;
 }
