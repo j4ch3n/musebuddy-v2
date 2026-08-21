@@ -45,6 +45,8 @@ export default function NoteBarSheet({ currentStepIndex, events }: NoteBarSheetP
       },
     });
     const context = factory.getContext();
+    context.setFillStyle(museBuddyColors.notation);
+    context.setStrokeStyle(museBuddyColors.notation);
     const stave = factory.Stave({
       options: {
         numLines: 1,
@@ -84,8 +86,8 @@ export default function NoteBarSheet({ currentStepIndex, events }: NoteBarSheetP
 
       if (isCurrent) {
         staveNote.setStyle({
-          fillStyle: museBuddyColors.wildflower,
-          strokeStyle: museBuddyColors.wildflower,
+          fillStyle: museBuddyColors.rhythmCurrent,
+          strokeStyle: museBuddyColors.rhythmCurrent,
         });
       }
 

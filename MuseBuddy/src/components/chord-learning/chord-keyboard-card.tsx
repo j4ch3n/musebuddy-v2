@@ -6,7 +6,11 @@ import { PianoKeyboard, type PianoKeyboardMarkerTone } from '@/ui';
 import type { PianoPitchClass } from '@schema/music-theory-schema';
 
 import ChordSheet from './chord-sheet.dom';
-import { chordToneRoleByImportance, type ChordToneColorRole } from './chord-color-role';
+import {
+  chordToneRoleByImportance,
+  chordToneRoleColors,
+  type ChordToneColorRole,
+} from './chord-color-role';
 import { ChordToneLegend } from './chord-role-legend';
 
 type ChordKeyboardCardProps = {
@@ -38,13 +42,16 @@ export function ChordKeyboardCard({ display }: ChordKeyboardCardProps) {
 
   return (
     <View style={styles.content}>
-      <PianoKeyboard
-        accessibilityLabel={`Piano keyboard highlighting ${noteNames}`}
-        keys={selectedKeys}
-        markerLabels={markerLabels}
-        markerTones={markerTones}
-        root={rootNote.pitchClass}
-      />
+      <View style={styles.keyboardFrame}>
+        <PianoKeyboard
+          accessibilityLabel={`Piano keyboard highlighting ${noteNames}`}
+          keys={selectedKeys}
+          markerAppearances={chordToneRoleColors}
+          markerLabels={markerLabels}
+          markerTones={markerTones}
+          root={rootNote.pitchClass}
+        />
+      </View>
       <View
         accessibilityLabel={`Sheet notes: ${display.notes.map((note) => note.text).join(', ')}`}
         style={styles.sheetFrame}
@@ -65,6 +72,11 @@ export function ChordKeyboardCard({ display }: ChordKeyboardCardProps) {
 const styles = StyleSheet.create({
   content: {
     gap: 12,
+  },
+  keyboardFrame: {
+    alignSelf: 'center',
+    transform: [{ translateX: 8 }],
+    width: '108%',
   },
   sheet: {
     backgroundColor: museBuddyColors.mist,

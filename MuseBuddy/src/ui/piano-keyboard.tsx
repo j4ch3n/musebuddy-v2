@@ -11,14 +11,23 @@ export { getPianoKeyboardMarkers } from './piano-keyboard-utils';
 
 export type PianoKeyboardMarkerTone = 'color' | 'essential' | 'optional' | 'root' | 'supporting';
 
+export type PianoKeyboardMarkerAppearance = {
+  fill: string;
+  label: string;
+  ring: string;
+};
+
 export type PianoKeyboardProps = {
   root: PianoPitchClass;
   keys?: readonly PianoPitchClass[];
   width?: number;
+  markerAppearances?: Partial<Record<PianoKeyboardMarkerTone, PianoKeyboardMarkerAppearance>>;
   markerLabels?: Partial<Record<PianoPitchClass, string>>;
   markerTones?: Partial<Record<PianoPitchClass, PianoKeyboardMarkerTone>>;
   accessibilityLabel?: string;
 };
+
+const KEYBOARD_HEIGHT = 170;
 
 const whiteKeyPositions = {
   0: 10,
@@ -58,20 +67,21 @@ function getMarkerPosition(pitchClass: PianoPitchClass) {
     return {
       cx: whiteKeyPositions[pitchClass as keyof typeof whiteKeyPositions] + 20,
       cy: 114,
-      r: 12,
+      r: 14,
     };
   }
 
   return {
     cx: blackKeyPositions[pitchClass as keyof typeof blackKeyPositions],
     cy: 72,
-    r: 10,
+    r: 12,
   };
 }
 
 export function PianoKeyboard({
   accessibilityLabel,
   keys = [],
+  markerAppearances,
   markerLabels,
   markerTones,
   root,
@@ -93,11 +103,11 @@ export function PianoKeyboard({
       accessibilityRole="image"
       style={[styles.container, width === undefined ? null : { width }]}
     >
-      <Svg height="100%" viewBox="0 0 320 170" width="100%">
+      <Svg height="100%" viewBox={`0 0 320 ${KEYBOARD_HEIGHT}`} width="100%">
         <G>
           {whiteKeyPitchClasses.map((pitchClass) => (
             <Rect
-              fill={museBuddyColors.pine}
+              fill={museBuddyColors.notation}
               height={122}
               key={`white-shadow-${pitchClass}`}
               rx={museBuddyRadii.small}
@@ -108,7 +118,7 @@ export function PianoKeyboard({
           ))}
           {blackKeyPitchClasses.map((pitchClass) => (
             <Rect
-              fill={museBuddyColors.pine}
+              fill={museBuddyColors.notation}
               height={76}
               key={`black-shadow-${pitchClass}`}
               rx={museBuddyRadii.small}
@@ -126,7 +136,7 @@ export function PianoKeyboard({
               height={122}
               key={pitchClass}
               rx={museBuddyRadii.small}
-              stroke={museBuddyColors.frame}
+              stroke={museBuddyColors.notation}
               strokeLinejoin="round"
               strokeWidth={museBuddyBorders.extraBold}
               width={40}
@@ -148,7 +158,7 @@ export function PianoKeyboard({
           fill="none"
           height={122}
           rx={museBuddyRadii.small}
-          stroke={museBuddyColors.frame}
+          stroke={museBuddyColors.notation}
           strokeWidth={museBuddyBorders.extraBold}
           width={280}
           x={10}
@@ -158,11 +168,11 @@ export function PianoKeyboard({
         <G>
           {blackKeyPitchClasses.map((pitchClass) => (
             <Rect
-              fill={museBuddyColors.pine}
+              fill={museBuddyColors.notation}
               height={76}
               key={pitchClass}
               rx={museBuddyRadii.small}
-              stroke={museBuddyColors.frame}
+              stroke={museBuddyColors.notation}
               strokeLinejoin="round"
               strokeWidth={museBuddyBorders.extraBold}
               width={24}
@@ -177,7 +187,7 @@ export function PianoKeyboard({
             const { cx, cy, r } = getMarkerPosition(pitchClass);
             const label = markerLabels?.[pitchClass];
             const tone = isRoot ? 'root' : (markerTones?.[pitchClass] ?? 'supporting');
-            const appearance = markerToneAppearances[tone];
+            const appearance = markerAppearances?.[tone] ?? markerToneAppearances[tone];
 
             return (
               <G key={`marker-${pitchClass}-${root}`}>
@@ -191,8 +201,8 @@ export function PianoKeyboard({
                 />
                 {label ? (
                   <SvgText
-                    fill={museBuddyColors.mist}
-                    fontSize={label.length > 1 ? 9 : 11}
+                    fill={appearance.label}
+                    fontSize={label.length > 1 ? 10 : 13}
                     fontWeight="900"
                     textAnchor="middle"
                     x={cx}
@@ -212,16 +222,36 @@ export function PianoKeyboard({
 
 const styles = StyleSheet.create({
   container: {
-    aspectRatio: 320 / 170,
+    aspectRatio: 320 / KEYBOARD_HEIGHT,
     maxWidth: '100%',
     width: '100%',
   },
 });
 
-const markerToneAppearances: Record<PianoKeyboardMarkerTone, { fill: string; ring: string }> = {
-  color: { fill: museBuddyColors.violetInk, ring: museBuddyColors.violet },
-  essential: { fill: museBuddyColors.oceanInk, ring: museBuddyColors.sky },
-  optional: { fill: museBuddyColors.ochreInk, ring: museBuddyColors.sun },
-  root: { fill: museBuddyColors.berryInk, ring: museBuddyColors.wildflower },
-  supporting: { fill: museBuddyColors.mossInk, ring: museBuddyColors.leaf },
+const markerToneAppearances: Record<PianoKeyboardMarkerTone, PianoKeyboardMarkerAppearance> = {
+  color: {
+    fill: museBuddyColors.cyan,
+    label: museBuddyColors.mist,
+    ring: museBuddyColors.cyanLight,
+  },
+  essential: {
+    fill: museBuddyColors.pink,
+    label: museBuddyColors.mist,
+    ring: museBuddyColors.pinkLight,
+  },
+  optional: {
+    fill: museBuddyColors.pink,
+    label: museBuddyColors.mist,
+    ring: museBuddyColors.pinkLight,
+  },
+  root: {
+    fill: museBuddyColors.blue,
+    label: museBuddyColors.mist,
+    ring: museBuddyColors.blueLight,
+  },
+  supporting: {
+    fill: museBuddyColors.yellow,
+    label: museBuddyColors.mist,
+    ring: museBuddyColors.yellowLight,
+  },
 };

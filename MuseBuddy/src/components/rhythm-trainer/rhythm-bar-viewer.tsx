@@ -202,8 +202,8 @@ const styles = StyleSheet.create({
     width: '80%',
   },
   unmatchedAttackDot: {
-    backgroundColor: museBuddyColors.coralWash,
-    borderColor: museBuddyColors.coralInk,
+    backgroundColor: museBuddyColors.cobaltWash,
+    borderColor: museBuddyColors.cobaltInk,
   },
   weakStepBar: {
     backgroundColor: museBuddyColors.rhythmWeak,
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     width: 6,
   },
   attackCrossLine: {
-    backgroundColor: museBuddyColors.coralInk,
+    backgroundColor: museBuddyColors.cobaltInk,
     height: 2,
     left: 2,
     position: 'absolute',

@@ -91,8 +91,8 @@ function renderScore(
       width,
     },
   });
-  factory.getContext().setFillStyle(museBuddyColors.pine);
-  factory.getContext().setStrokeStyle(museBuddyColors.pine);
+  factory.getContext().setFillStyle(museBuddyColors.notation);
+  factory.getContext().setStrokeStyle(museBuddyColors.notation);
   const notesById = new Map<string, StaveNote>();
   const rowByEventId = new Map<string, number>();
   const activeEventIds = getActiveScoreEventIds(score, currentStepIndex);
@@ -117,8 +117,8 @@ function renderScore(
             const note = createNote(factory, event, staffData.clef);
             if (activeEventIds.has(event.id)) {
               note.setStyle({
-                fillStyle: museBuddyColors.wildflower,
-                strokeStyle: museBuddyColors.wildflower,
+                fillStyle: museBuddyColors.rhythmCurrent,
+                strokeStyle: museBuddyColors.rhythmCurrent,
               });
             }
             notesById.set(event.id, note);

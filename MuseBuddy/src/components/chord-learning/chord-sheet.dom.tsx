@@ -6,6 +6,8 @@ import { Accidental, Factory, StaveNote } from 'vexflow';
 import { museBuddyColors } from '@/constants/design-tokens';
 import type { ChordDisplayNote } from '@/music-theory';
 
+import { chordToneRoleByImportance, chordToneRoleColors } from './chord-color-role';
+
 type ChordSheetProps = {
   dom?: import('expo/dom').DOMProps;
   notes: readonly ChordDisplayNote[];
@@ -13,6 +15,10 @@ type ChordSheetProps = {
 
 const STAVE_HEIGHT = 120;
 const STAVE_WIDTH = 328;
+const STAVE_GAP = 8;
+const STAVE_INSET_X = 4;
+const STAVE_RENDER_WIDTH = (STAVE_WIDTH - STAVE_INSET_X * 2 - STAVE_GAP) / 2;
+const BASS_TOP_MIDI_LIMIT = 64;
 
 export default function ChordSheet({ notes }: ChordSheetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -42,31 +48,48 @@ export default function ChordSheet({ notes }: ChordSheetProps) {
       },
     });
     const context = factory.getContext();
-    context.setFillStyle(museBuddyColors.pine);
-    context.setStrokeStyle(museBuddyColors.pine);
-    const stave = factory.Stave({ width: STAVE_WIDTH - 16, x: 8, y: 4 });
-    stave.addClef('treble');
-    stave.setContext(context).draw();
+    context.setFillStyle(museBuddyColors.notation);
+    context.setStrokeStyle(museBuddyColors.notation);
+    const bassOctaveOffset = getBassOctaveOffset(notes);
 
-    const staveNote = new StaveNote({
-      clef: 'treble',
-      duration: 'w',
-      keys: notes.map((note) => `${note.letter.toLowerCase()}/${note.octave}`),
+    (['treble', 'bass'] as const).forEach((clef, index) => {
+      const stave = factory.Stave({
+        width: STAVE_RENDER_WIDTH,
+        x: STAVE_INSET_X + index * (STAVE_RENDER_WIDTH + STAVE_GAP),
+        y: 4,
+      });
+      stave.addClef(clef);
+      stave.setContext(context).draw();
+
+      const octaveOffset = clef === 'bass' ? bassOctaveOffset : 0;
+      const staveNote = new StaveNote({
+        clef,
+        duration: 'w',
+        keys: notes.map((note) => `${note.letter.toLowerCase()}/${note.octave + octaveOffset}`),
+      });
+
+      notes.forEach((note, noteIndex) => {
+        const toneRole = note.isRoot ? 'root' : chordToneRoleByImportance[note.importance];
+        const color = chordToneRoleColors[toneRole].accent;
+        const noteStyle = { fillStyle: color, strokeStyle: color };
+
+        staveNote.setKeyStyle(noteIndex, noteStyle);
+
+        if (note.accidental) {
+          const accidental = new Accidental(note.accidental);
+          accidental.setStyle(noteStyle);
+          staveNote.addModifier(accidental, noteIndex);
+        }
+      });
+
+      const voice = factory.Voice({ time: '4/4' }).setStrict(false);
+      voice.addTickable(staveNote);
+      factory
+        .Formatter()
+        .joinVoices([voice])
+        .format([voice], STAVE_RENDER_WIDTH - 52);
+      voice.draw(context, stave);
     });
-
-    notes.forEach((note, noteIndex) => {
-      if (note.accidental) {
-        staveNote.addModifier(new Accidental(note.accidental), noteIndex);
-      }
-    });
-
-    const voice = factory.Voice({ time: '4/4' }).setStrict(false);
-    voice.addTickable(staveNote);
-    factory
-      .Formatter()
-      .joinVoices([voice])
-      .format([voice], STAVE_WIDTH - 96);
-    voice.draw(context, stave);
 
     const svg = container.querySelector('svg');
     if (svg) {
@@ -76,7 +99,7 @@ export default function ChordSheet({ notes }: ChordSheetProps) {
 
   return (
     <div
-      aria-label="Sheet music for today's chord"
+      aria-label="Treble and bass sheet music for today's chord"
       id={elementId}
       ref={containerRef}
       style={{
@@ -90,4 +113,12 @@ export default function ChordSheet({ notes }: ChordSheetProps) {
       }}
     />
   );
+}
+
+function getBassOctaveOffset(notes: readonly ChordDisplayNote[]) {
+  const highestMidi = Math.max(...notes.map((note) => note.midi));
+
+  return highestMidi > BASS_TOP_MIDI_LIMIT
+    ? -Math.ceil((highestMidi - BASS_TOP_MIDI_LIMIT) / 12)
+    : 0;
 }

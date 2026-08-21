@@ -75,10 +75,38 @@ export const chordSyntaxRoleColors: Record<ChordSyntaxColorRole, { accent: strin
     separator: { accent: museBuddyColors.mist, text: museBuddyColors.pine },
   };
 
-export const chordToneRoleColors: Record<ChordToneColorRole, { accent: string; fill: string }> = {
-  color: { accent: museBuddyColors.violet, fill: museBuddyColors.violetInk },
-  essential: { accent: museBuddyColors.sky, fill: museBuddyColors.oceanInk },
-  optional: { accent: museBuddyColors.sun, fill: museBuddyColors.ochreInk },
-  root: { accent: museBuddyColors.wildflower, fill: museBuddyColors.berryInk },
-  supporting: { accent: museBuddyColors.leaf, fill: museBuddyColors.mossInk },
+export const chordToneRoleColors: Record<
+  ChordToneColorRole,
+  { accent: string; fill: string; label: string; ring: string }
+> = {
+  color: {
+    accent: museBuddyColors.rhythmWeak,
+    fill: museBuddyColors.cyan,
+    label: museBuddyColors.mist,
+    ring: museBuddyColors.cyanLight,
+  },
+  essential: {
+    accent: museBuddyColors.rhythmHold,
+    fill: museBuddyColors.pink,
+    label: museBuddyColors.mist,
+    ring: museBuddyColors.pinkLight,
+  },
+  optional: {
+    accent: museBuddyColors.rhythmHold,
+    fill: museBuddyColors.pink,
+    label: museBuddyColors.mist,
+    ring: museBuddyColors.pinkLight,
+  },
+  root: {
+    accent: museBuddyColors.rhythmStrong,
+    fill: museBuddyColors.blue,
+    label: museBuddyColors.mist,
+    ring: museBuddyColors.blueLight,
+  },
+  supporting: {
+    accent: museBuddyColors.rhythmRest,
+    fill: museBuddyColors.yellow,
+    label: museBuddyColors.mist,
+    ring: museBuddyColors.yellowLight,
+  },
 };
