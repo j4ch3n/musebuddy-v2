@@ -3,7 +3,13 @@ import { describe, expect, it } from 'vitest';
 import type { TrainingSessionScore } from '@/contexts/training-session-schema';
 import { createTrainingSession } from '@/contexts/training-session-test-fixture';
 
-import { groupScoreMeasures, paginateScore } from './piano-pattern-score-layout';
+import {
+  getActiveScoreEventIds,
+  getActiveScoreMeasureIndex,
+  getScorePageIndexForMeasure,
+  groupScoreMeasures,
+  paginateScore,
+} from './piano-pattern-score-layout';
 
 function measures(count: number): TrainingSessionScore['measures'] {
   return Array.from({ length: count }, (_, index) => ({
@@ -65,5 +71,44 @@ describe('paginateScore', () => {
       ],
       [],
     ]);
+  });
+});
+
+describe('getActiveScoreMeasureIndex', () => {
+  it('maps the two 32-step playback parts in each measure to one score measure', () => {
+    expect(getActiveScoreMeasureIndex(null)).toBeNull();
+    expect(getActiveScoreMeasureIndex(0)).toBe(0);
+    expect(getActiveScoreMeasureIndex(63)).toBe(0);
+    expect(getActiveScoreMeasureIndex(64)).toBe(1);
+    expect(getActiveScoreMeasureIndex(191)).toBe(2);
+  });
+});
+
+describe('getScorePageIndexForMeasure', () => {
+  it('finds the page that contains the active score measure', () => {
+    const pages = paginateScore(createTrainingSession(4).score);
+
+    expect(getScorePageIndexForMeasure(pages, 0)).toBe(0);
+    expect(getScorePageIndexForMeasure(pages, 2)).toBe(0);
+    expect(getScorePageIndexForMeasure(pages, 3)).toBe(1);
+    expect(getScorePageIndexForMeasure(pages, null)).toBeNull();
+  });
+});
+
+describe('getActiveScoreEventIds', () => {
+  it('selects the individual event under the playback position in each voice', () => {
+    const score = createTrainingSession(1).score;
+    const trebleVoice = score.measures[0].staves.treble.voices[0];
+    const [event] = trebleVoice.events;
+
+    trebleVoice.events = [
+      { ...event, duration: 'q', id: 'treble-first' },
+      { ...event, duration: 'q', id: 'treble-second' },
+      { ...event, duration: 'h', id: 'treble-third' },
+    ];
+
+    expect(getActiveScoreEventIds(score, 0)).toEqual(new Set(['treble-first', 'm0-bass-v1-e0']));
+    expect(getActiveScoreEventIds(score, 16)).toEqual(new Set(['treble-second', 'm0-bass-v1-e0']));
+    expect(getActiveScoreEventIds(score, 32)).toEqual(new Set(['treble-third', 'm0-bass-v1-e0']));
   });
 });

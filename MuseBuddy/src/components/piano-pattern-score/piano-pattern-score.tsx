@@ -1,20 +1,35 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { museBuddyColors } from '@/constants/design-tokens';
 import type { TrainingSessionScore } from '@/contexts/training-session-schema';
 import { Carousel } from '@/ui';
 
-import { paginateScore } from './piano-pattern-score-layout';
+import {
+  getActiveScoreMeasureIndex,
+  getScorePageIndexForMeasure,
+  paginateScore,
+} from './piano-pattern-score-layout';
 import PianoPatternScoreSheet from './piano-pattern-score-sheet.dom';
 
 type PianoPatternScoreProps = {
+  currentStepIndex?: number | null;
   score: TrainingSessionScore;
   swipeEnabled?: boolean;
 };
 
-export function PianoPatternScore({ score, swipeEnabled = true }: PianoPatternScoreProps) {
+export function PianoPatternScore({
+  currentStepIndex = null,
+  score,
+  swipeEnabled = true,
+}: PianoPatternScoreProps) {
   const pages = useMemo(() => paginateScore(score), [score]);
+  const [manualPageIndex, setManualPageIndex] = useState(0);
+  const playbackPageIndex = getScorePageIndexForMeasure(
+    pages,
+    getActiveScoreMeasureIndex(currentStepIndex),
+  );
+  const selectedPageIndex = playbackPageIndex ?? manualPageIndex;
 
   return (
     <View style={styles.pager}>
@@ -24,14 +39,24 @@ export function PianoPatternScore({ score, swipeEnabled = true }: PianoPatternSc
         indicatorActiveColor={museBuddyColors.wildflower}
         items={pages}
         keyExtractor={(_, index) => `score-page-${index}`}
-        renderItem={(page) => <PianoPatternScorePage score={page} />}
+        onCurrentIndexChange={setManualPageIndex}
+        renderItem={(page) => (
+          <PianoPatternScorePage currentStepIndex={currentStepIndex} score={page} />
+        )}
+        selectedIndex={selectedPageIndex}
         swipeEnabled={swipeEnabled}
       />
     </View>
   );
 }
 
-function PianoPatternScorePage({ score }: { score: TrainingSessionScore }) {
+function PianoPatternScorePage({
+  currentStepIndex,
+  score,
+}: {
+  currentStepIndex: number | null;
+  score: TrainingSessionScore;
+}) {
   return (
     <View
       accessibilityLabel={`Piano score with ${score.measures.length} measures`}
@@ -43,6 +68,7 @@ function PianoPatternScorePage({ score }: { score: TrainingSessionScore }) {
           scrollEnabled: false,
           style: styles.sheet,
         }}
+        currentStepIndex={currentStepIndex}
         score={score}
       />
     </View>

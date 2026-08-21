@@ -71,7 +71,13 @@ function GuidedPianoPatternScore({
 }: {
   score: NonNullable<ReturnType<typeof useTrainingSession>['session']>['score'];
 }) {
-  const { phase } = usePerformanceGuidance();
+  const { currentStepIndex, phase } = usePerformanceGuidance();
 
-  return <PianoPatternScore score={score} swipeEnabled={phase === 'pending'} />;
+  return (
+    <PianoPatternScore
+      currentStepIndex={currentStepIndex}
+      score={score}
+      swipeEnabled={phase === 'pending'}
+    />
+  );
 }

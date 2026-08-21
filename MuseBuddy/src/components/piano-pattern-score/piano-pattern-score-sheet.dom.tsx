@@ -6,9 +6,10 @@ import { Accidental, Dot, Factory, Stem, type StaveNote } from 'vexflow';
 import { museBuddyColors } from '@/constants/design-tokens';
 import type { TrainingSessionScore } from '@/contexts/training-session-schema';
 
-import { groupScoreMeasures } from './piano-pattern-score-layout';
+import { getActiveScoreEventIds, groupScoreMeasures } from './piano-pattern-score-layout';
 
 type PianoPatternScoreSheetProps = {
+  currentStepIndex: number | null;
   dom?: import('expo/dom').DOMProps;
   score: TrainingSessionScore;
 };
@@ -22,7 +23,10 @@ const ROW_HEIGHT = 200;
 const SCORE_SCALE = 0.8;
 const TOP_PADDING = 12;
 
-export default function PianoPatternScoreSheet({ score }: PianoPatternScoreSheetProps) {
+export default function PianoPatternScoreSheet({
+  currentStepIndex,
+  score,
+}: PianoPatternScoreSheetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const elementId = useId().replaceAll(':', '-');
 
@@ -40,7 +44,7 @@ export default function PianoPatternScoreSheet({ score }: PianoPatternScoreSheet
     }
 
     const render = () => {
-      renderScore(container, elementId, score);
+      renderScore(container, elementId, score, currentStepIndex);
     };
     const observer = new ResizeObserver(render);
     observer.observe(container);
@@ -50,7 +54,7 @@ export default function PianoPatternScoreSheet({ score }: PianoPatternScoreSheet
       observer.disconnect();
       container.replaceChildren();
     };
-  }, [elementId, score]);
+  }, [currentStepIndex, elementId, score]);
 
   return (
     <div
@@ -69,7 +73,12 @@ export default function PianoPatternScoreSheet({ score }: PianoPatternScoreSheet
   );
 }
 
-function renderScore(container: HTMLDivElement, elementId: string, score: TrainingSessionScore) {
+function renderScore(
+  container: HTMLDivElement,
+  elementId: string,
+  score: TrainingSessionScore,
+  currentStepIndex: number | null,
+) {
   container.replaceChildren();
 
   const width = Math.max(MIN_SCORE_WIDTH, Math.floor(container.clientWidth / SCORE_SCALE));
@@ -86,6 +95,7 @@ function renderScore(container: HTMLDivElement, elementId: string, score: Traini
   factory.getContext().setStrokeStyle(museBuddyColors.pine);
   const notesById = new Map<string, StaveNote>();
   const rowByEventId = new Map<string, number>();
+  const activeEventIds = getActiveScoreEventIds(score, currentStepIndex);
 
   rows.forEach((rowMeasures, rowIndex) => {
     const measureWidth = (width - HORIZONTAL_PADDING * 2) / rowMeasures.length;
@@ -105,6 +115,12 @@ function renderScore(container: HTMLDivElement, elementId: string, score: Traini
         const voices = staffData.voices.map((voiceData) => {
           const notes = voiceData.events.map((event) => {
             const note = createNote(factory, event, staffData.clef);
+            if (activeEventIds.has(event.id)) {
+              note.setStyle({
+                fillStyle: museBuddyColors.wildflower,
+                strokeStyle: museBuddyColors.wildflower,
+              });
+            }
             notesById.set(event.id, note);
             rowByEventId.set(event.id, rowIndex);
             return note;
