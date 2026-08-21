@@ -30,7 +30,7 @@ type ChordLearningSlide =
     };
 
 export function ChordLearningPage() {
-  const { learningConfig, session } = useTrainingSession();
+  const { learningConfig, session, training } = useTrainingSession();
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const slides = useMemo<readonly ChordLearningSlide[]>(() => {
     if (!session) {
@@ -160,7 +160,7 @@ export function ChordLearningPage() {
         kind: 'piano',
       }}
       listeningMode={{ kind: 'basic-pitch' }}
-      startPhase="pending"
+      startPhase={training ? 'prepare' : 'pending'}
     >
       {content}
     </PerformanceGuidanceProvider>

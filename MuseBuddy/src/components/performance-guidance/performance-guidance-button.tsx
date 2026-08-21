@@ -14,6 +14,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
+import { useTrainingSession } from '@/contexts/training-session-context';
 import { TrainingControlDeck } from '@/ui';
 
 import { usePerformanceGuidance } from './performance-guidance-context';
@@ -24,6 +25,7 @@ const STOP_HOLD_DURATION_MS = 800;
 
 export function PerformanceGuidanceButton() {
   const { errorMessage, isDisabled, phase, requestSkip, reset, start } = usePerformanceGuidance();
+  const { setTraining } = useTrainingSession();
   const router = useRouter();
   const prepareScale = useSharedValue(1);
   const finishFill = useSharedValue(0);
@@ -117,7 +119,7 @@ export function PerformanceGuidanceButton() {
         if (finished) {
           runOnJS(suppressNextMainPress)();
           runOnJS(setIsMainHoldActive)(false);
-          runOnJS(reset)();
+          runOnJS(pauseTraining)();
         }
       },
     );
@@ -205,7 +207,7 @@ export function PerformanceGuidanceButton() {
       {
         onPress: () => {
           abortConfirmationVisibleRef.current = false;
-          reset();
+          pauseTraining();
           router.replace('/');
         },
         style: 'destructive',
@@ -220,7 +222,13 @@ export function PerformanceGuidanceButton() {
       return;
     }
 
+    setTraining(true);
     start();
+  }
+
+  function pauseTraining() {
+    setTraining(false);
+    reset();
   }
 
   return (

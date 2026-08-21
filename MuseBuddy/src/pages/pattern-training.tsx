@@ -15,7 +15,7 @@ import { TrainingScreenShell } from './training-screen-shell';
 
 export function PatternTrainingPage() {
   const router = useRouter();
-  const { learningConfig, session } = useTrainingSession();
+  const { learningConfig, session, training } = useTrainingSession();
   const playbackConfiguration = useMemo(
     () =>
       session
@@ -60,6 +60,7 @@ export function PatternTrainingPage() {
         configuration: playbackConfiguration,
         kind: 'piano',
       }}
+      startPhase={training ? 'prepare' : 'pending'}
     >
       {content}
     </PerformanceGuidanceProvider>

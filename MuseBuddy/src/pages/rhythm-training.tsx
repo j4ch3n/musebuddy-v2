@@ -28,7 +28,7 @@ type RhythmTrainingPageProps = {
 
 export function RhythmTrainingPage({ staff }: RhythmTrainingPageProps) {
   const router = useRouter();
-  const { learningConfig, session } = useTrainingSession();
+  const { learningConfig, session, training } = useTrainingSession();
   const pattern = session?.rhythms[staff].pattern ?? EMPTY_RHYTHM_PATTERN;
   const currentStep = staff === 'bass' ? 'rhythm-bass' : 'rhythm-treble';
   const stepDurationMs = 0.125 * (60_000 / learningConfig.bpm);
@@ -70,7 +70,7 @@ export function RhythmTrainingPage({ staff }: RhythmTrainingPageProps) {
         configuration: playbackConfiguration,
         kind: 'groove',
       }}
-      startPhase="prepare"
+      startPhase={training ? 'prepare' : 'pending'}
     >
       <RhythmTrainingContent
         allowedOffsetMs={allowedOffsetMs}

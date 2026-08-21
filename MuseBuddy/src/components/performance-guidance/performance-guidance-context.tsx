@@ -328,6 +328,7 @@ export function PerformanceGuidanceProvider({
     ) {
       return;
     }
+    didAutoStartRef.current = true;
     flowGenerationRef.current += 1;
     const generation = flowGenerationRef.current;
     detectorShouldRemainActiveRef.current = listeningModeRef.current.kind === 'piano-attack';

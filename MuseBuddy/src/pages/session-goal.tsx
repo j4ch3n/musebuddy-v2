@@ -16,7 +16,7 @@ import { TrainingScreenShell } from './training-screen-shell';
 
 export function SessionGoalPage() {
   const router = useRouter();
-  const { learningConfig, prepareTrainingSession, session } = useTrainingSession();
+  const { learningConfig, prepareTrainingSession, session, training } = useTrainingSession();
   const playbackConfiguration = useMemo(
     () =>
       session
@@ -60,6 +60,7 @@ export function SessionGoalPage() {
         configuration: playbackConfiguration,
         kind: 'piano',
       }}
+      startPhase={training ? 'prepare' : 'pending'}
     >
       {content}
     </PerformanceGuidanceProvider>
