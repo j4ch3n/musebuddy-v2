@@ -10,6 +10,8 @@ export {
 export {
   DailyProgressNavigator,
   type DailyProgressNavigatorStep,
+  TrainingStageIcon,
+  type TrainingStageIconId,
 } from './daily-progress-navigator';
 export { FlashCard, type FlashCardTone } from './flash-card';
 export { GraphicSheet, type GraphicSheetTone } from './graphic-sheet';

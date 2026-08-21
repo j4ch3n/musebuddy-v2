@@ -18,9 +18,11 @@ type DailyProgressNavigatorProps = {
   currentStep: DailyProgressNavigatorStep;
 };
 
+export type TrainingStageIconId = DailyProgressNavigatorStep | 'freestyle';
+
 type DailyProgressNavigatorItem = {
   href?: Href;
-  id: DailyProgressNavigatorStep | 'freestyle';
+  id: TrainingStageIconId;
   label: string;
 };
 
@@ -107,13 +109,13 @@ export function DailyProgressNavigator({ currentStep }: DailyProgressNavigatorPr
   );
 }
 
-function TrainingStageIcon({
+export function TrainingStageIcon({
   color,
   id,
   size,
 }: {
   color: string;
-  id: DailyProgressNavigatorItem['id'];
+  id: TrainingStageIconId;
   size: number;
 }) {
   switch (id) {
