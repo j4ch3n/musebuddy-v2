@@ -31,6 +31,7 @@ export function PerformanceGuidanceButton() {
   const skipFill = useSharedValue(0);
   const abortFill = useSharedValue(0);
   const [isMainHoldActive, setIsMainHoldActive] = useState(false);
+  const [isStartPressed, setIsStartPressed] = useState(false);
   const abortConfirmationVisibleRef = useRef(false);
   const shouldSuppressNextMainPressRef = useRef(false);
   const isMainDisabled = phase === 'pending' && isDisabled;
@@ -75,7 +76,11 @@ export function PerformanceGuidanceButton() {
   }, [mainHoldFill, phase]);
 
   const mainAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: prepareScale.value }],
+    transform: [
+      { scale: prepareScale.value },
+      { translateX: isStartPressed ? 4 : 0 },
+      { translateY: isStartPressed ? 4 : 0 },
+    ],
   }));
 
   const finishFillStyle = useAnimatedStyle(() => ({
@@ -96,6 +101,7 @@ export function PerformanceGuidanceButton() {
 
   function handleMainPressIn() {
     if (phase === 'pending') {
+      setIsStartPressed(true);
       return;
     }
 
@@ -123,6 +129,7 @@ export function PerformanceGuidanceButton() {
 
   function handleMainPressOut() {
     if (phase === 'pending') {
+      setIsStartPressed(false);
       return;
     }
 
@@ -239,6 +246,7 @@ export function PerformanceGuidanceButton() {
                 styles.mainButton,
                 phase !== 'pending' && styles.pauseButton,
                 isMainDisabled && styles.disabledButton,
+                isStartPressed && styles.startPressedButton,
                 mainAnimatedStyle,
               ]}
             >
@@ -411,6 +419,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 0,
     transformOrigin: 'left',
+  },
+  startPressedButton: {
+    boxShadow: 'none',
   },
   stopFill: {
     ...StyleSheet.absoluteFill,
