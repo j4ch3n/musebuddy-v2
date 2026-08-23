@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 
-import { ChordLearning, ChordSessionSummary } from '@/components/chord-learning';
+import { ChordLearning } from '@/components/chord-learning';
 import {
   PerformanceGuidanceButton,
   PerformanceGuidanceProvider,
@@ -9,26 +9,16 @@ import {
 import { getTrainingSectionScreenIds } from '@/contexts/training-session-flow';
 import { useTrainingSession } from '@/contexts/training-session-context';
 import { useTrainingSessionTransition } from '@/hooks/use-training-session-transition';
-import {
-  buildChordPreviewSoundFontPlaybackConfiguration,
-  buildChordSummarySoundFontPlaybackConfiguration,
-  type ChordDisplay,
-} from '@/music-theory';
+import { buildChordPreviewSoundFontPlaybackConfiguration, type ChordDisplay } from '@/music-theory';
 import { Carousel, type CarouselProps } from '@/ui';
 
 import { PlaceholderPanel } from './placeholder-panel';
 import { TrainingScreenShell } from './training-screen-shell';
 
-type ChordLearningSlide =
-  | {
-      chordIndex: number;
-      display: ChordDisplay;
-      type: 'chord';
-    }
-  | {
-      displays: readonly ChordDisplay[];
-      type: 'summary';
-    };
+type ChordLearningSlide = {
+  chordIndex: number;
+  display: ChordDisplay;
+};
 
 export function ChordLearningPage() {
   const { learningConfig, session, training } = useTrainingSession();
@@ -38,17 +28,7 @@ export function ChordLearningPage() {
       return [];
     }
 
-    return [
-      ...session.chordDisplays.map((display, chordIndex) => ({
-        chordIndex,
-        display,
-        type: 'chord' as const,
-      })),
-      {
-        displays: session.chordDisplays,
-        type: 'summary' as const,
-      },
-    ];
+    return session.chordDisplays.map((display, chordIndex) => ({ chordIndex, display }));
   }, [session]);
   const screenIds = useMemo(
     () => (session ? getTrainingSectionScreenIds({ sectionId: 'chords', session }) : []),
@@ -78,34 +58,19 @@ export function ChordLearningPage() {
   );
 
   const getSlideKey = useCallback(
-    (slide: ChordLearningSlide) => {
-      if (slide.type === 'summary') {
-        return 'chord-session-summary';
-      }
-
-      return getChordKey(slide.display, slide.chordIndex);
-    },
+    (slide: ChordLearningSlide) => getChordKey(slide.display, slide.chordIndex),
     [getChordKey],
   );
 
-  const getSlideAccessibilityLabel = useCallback((slide: ChordLearningSlide) => {
-    if (slide.type === 'summary') {
-      return 'All chords';
-    }
-
-    return slide.display.friendlyName;
-  }, []);
+  const getSlideAccessibilityLabel = useCallback(
+    (slide: ChordLearningSlide) => slide.display.friendlyName,
+    [],
+  );
 
   const renderSlide = useCallback(
-    (slide: ChordLearningSlide, index: number) => {
-      if (slide.type === 'summary') {
-        return (
-          <ChordSessionSummary displays={slide.displays} isActive={index === currentSlideIndex} />
-        );
-      }
-
-      return <ChordLearning display={slide.display} isActive={index === currentSlideIndex} />;
-    },
+    (slide: ChordLearningSlide, index: number) => (
+      <ChordLearning display={slide.display} isActive={index === currentSlideIndex} />
+    ),
     [currentSlideIndex],
   );
 
@@ -114,22 +79,12 @@ export function ChordLearningPage() {
       return null;
     }
 
-    if (currentSlide.type === 'summary') {
-      return buildChordSummarySoundFontPlaybackConfiguration(
-        currentSlide.displays,
-        learningConfig.bpm,
-      );
-    }
-
     return buildChordPreviewSoundFontPlaybackConfiguration(
       currentSlide.display,
       learningConfig.bpm,
     );
   }, [currentSlide, learningConfig.bpm]);
-  const finishText =
-    currentSlide?.type === 'chord'
-      ? `${currentSlide.display.friendlyName} is easy!`
-      : 'These chords are easy!';
+  const finishText = currentSlide ? `${currentSlide.display.friendlyName} is easy!` : '';
 
   const content = (
     <TrainingScreenShell

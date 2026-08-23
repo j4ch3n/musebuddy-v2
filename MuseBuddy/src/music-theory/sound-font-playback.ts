@@ -95,25 +95,6 @@ export function buildChordPreviewSoundFontPlaybackConfiguration(
   };
 }
 
-export function buildChordSummarySoundFontPlaybackConfiguration(
-  displays: readonly ChordDisplay[],
-  bpm: number,
-): SoundFontPlaybackConfiguration {
-  return {
-    bpm,
-    tracks: {
-      treble: displays.map((display) =>
-        buildChordPart(display, [
-          { durationSteps: 8, startStep: 0, velocity: 96 },
-          { durationSteps: 8, startStep: 8, velocity: 75 },
-          { durationSteps: 8, startStep: 16, velocity: 80 },
-          { durationSteps: 8, startStep: 24, velocity: 96 },
-        ]),
-      ),
-    },
-  };
-}
-
 function buildTracksFromPatternBeats(
   beats: readonly TrainingSessionPatternBeat[],
 ): SoundFontPlaybackConfiguration['tracks'] {

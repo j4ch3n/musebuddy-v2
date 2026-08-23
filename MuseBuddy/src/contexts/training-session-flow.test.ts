@@ -12,19 +12,15 @@ import {
 describe('training session flow', () => {
   const session = prepareTrainingSessionDisplay(createTrainingSession());
 
-  it('registers each chord and the summary as chord-learning screens', () => {
-    expect(getTrainingSectionScreenIds({ sectionId: 'chords', session })).toEqual([
-      ...session.chordDisplays.map((_, index) => `chord:${index}`),
-      'summary',
-    ]);
+  it('registers each chord as a chord-learning screen', () => {
+    expect(getTrainingSectionScreenIds({ sectionId: 'chords', session })).toEqual(
+      session.chordDisplays.map((_, index) => `chord:${index}`),
+    );
   });
 
-  it('advances through screens before advancing to the next section', () => {
+  it('advances from the last chord directly to the next section', () => {
     expect(
       getNextTrainingSessionTransition({ screenId: 'chord:0', sectionId: 'chords', session }),
-    ).toEqual({ kind: 'screen', screenId: 'summary' });
-    expect(
-      getNextTrainingSessionTransition({ screenId: 'summary', sectionId: 'chords', session }),
     ).toEqual({ href: '/rhythm-training-treble', kind: 'section' });
   });
 

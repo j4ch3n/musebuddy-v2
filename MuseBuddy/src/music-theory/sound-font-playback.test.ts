@@ -6,7 +6,6 @@ import type { PianoPitchClass } from '@schema/music-theory-schema';
 
 import {
   buildChordPreviewSoundFontPlaybackConfiguration,
-  buildChordSummarySoundFontPlaybackConfiguration,
   buildPatternSoundFontPlaybackConfiguration,
   buildRhythmSoundFontPlaybackConfiguration,
 } from './sound-font-playback';
@@ -128,31 +127,5 @@ describe('buildChordPreviewSoundFontPlaybackConfiguration', () => {
     [1, 7, 9, 15, 17, 23, 25, 31].forEach((stepIndex) => {
       expect(part?.[stepIndex]).toEqual(holdStep);
     });
-  });
-});
-
-describe('buildChordSummarySoundFontPlaybackConfiguration', () => {
-  it('plays each chord as four quarter-note hits before moving to the next chord', () => {
-    const configuration = buildChordSummarySoundFontPlaybackConfiguration(
-      [chordDisplay('C', [60, 64, 67]), chordDisplay('F', [65, 69, 72])],
-      104,
-    );
-
-    expect(configuration.bpm).toBe(104);
-    expect(configuration.tracks.treble).toHaveLength(2);
-    expect(configuration.tracks.treble[0]?.filter((step) => step[0]?.midi === 60)).toHaveLength(4);
-    expect(configuration.tracks.treble[1]?.filter((step) => step[0]?.midi === 65)).toHaveLength(4);
-    expect(configuration.tracks.treble[0]?.[0]).toEqual([
-      { midi: 60, velocity: 96 },
-      { midi: 64, velocity: 96 },
-      { midi: 67, velocity: 96 },
-      { midi: 36, velocity: 96 },
-    ]);
-    expect(configuration.tracks.treble[1]?.[24]).toEqual([
-      { midi: 65, velocity: 96 },
-      { midi: 69, velocity: 96 },
-      { midi: 72, velocity: 96 },
-      { midi: 41, velocity: 96 },
-    ]);
   });
 });

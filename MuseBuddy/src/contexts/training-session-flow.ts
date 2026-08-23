@@ -41,10 +41,7 @@ export const trainingSessionFlow = createTrainingSessionFlow<TrainingSectionId>(
       id: 'goal',
     },
     {
-      getScreenIds: (session) => [
-        ...session.chordDisplays.map((_, index) => `chord:${index}`),
-        'summary',
-      ],
+      getScreenIds: (session) => session.chordDisplays.map((_, index) => `chord:${index}`),
       href: '/chord-learning',
       id: 'chords',
     },

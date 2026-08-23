@@ -17,12 +17,16 @@ type ChordKeyboardCardProps = {
   display: ChordDisplay;
   errorMessage?: string;
   liveKeys?: Partial<Record<PianoPitchClass, PianoKeyboardLiveKeyState>>;
+  showKeyHighlightDots?: boolean;
+  showSheetNotation?: boolean;
 };
 
 export function ChordKeyboardCard({
   display,
   errorMessage,
   liveKeys = {},
+  showKeyHighlightDots = true,
+  showSheetNotation = true,
 }: ChordKeyboardCardProps) {
   const rootNote = display.notes.find((note) => note.isRoot) ?? display.notes[0];
   const selectedKeys = display.notes
@@ -57,11 +61,16 @@ export function ChordKeyboardCard({
           markerTones={markerTones}
           liveKeys={liveKeys}
           root={rootNote.pitchClass}
+          showMarkers={showKeyHighlightDots}
         />
       </View>
       {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
       <View
-        accessibilityLabel={`Sheet notes: ${display.notes.map((note) => note.text).join(', ')}`}
+        accessibilityLabel={
+          showSheetNotation
+            ? `Sheet notes: ${display.notes.map((note) => note.text).join(', ')}`
+            : undefined
+        }
         style={styles.sheetFrame}
       >
         <ChordSheet
@@ -71,6 +80,14 @@ export function ChordKeyboardCard({
           }}
           notes={display.notes}
         />
+        {!showSheetNotation ? (
+          <View
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            pointerEvents="none"
+            style={styles.sheetCover}
+          />
+        ) : null}
       </View>
       <ChordToneLegend roles={toneRoles} />
     </View>
@@ -103,5 +120,14 @@ const styles = StyleSheet.create({
     height: 120,
     justifyContent: 'center',
     overflow: 'hidden',
+    position: 'relative',
+  },
+  sheetCover: {
+    backgroundColor: museBuddyColors.mist,
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
   },
 });

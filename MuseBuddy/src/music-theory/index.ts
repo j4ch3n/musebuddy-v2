@@ -23,7 +23,6 @@ export {
 } from './training-session-display';
 export {
   buildChordPreviewSoundFontPlaybackConfiguration,
-  buildChordSummarySoundFontPlaybackConfiguration,
   buildPatternSoundFontPlaybackConfiguration,
   buildRhythmSoundFontPlaybackConfiguration,
 } from './sound-font-playback';

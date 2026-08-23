@@ -32,6 +32,7 @@ export type PianoKeyboardProps = {
   markerLabels?: Partial<Record<PianoPitchClass, string>>;
   markerTones?: Partial<Record<PianoPitchClass, PianoKeyboardMarkerTone>>;
   liveKeys?: Partial<Record<PianoPitchClass, PianoKeyboardLiveKeyState>>;
+  showMarkers?: boolean;
   accessibilityLabel?: string;
 };
 
@@ -116,6 +117,7 @@ export function PianoKeyboard({
   markerTones,
   liveKeys,
   root,
+  showMarkers = true,
   width,
 }: PianoKeyboardProps) {
   const markers = getPianoKeyboardMarkers(root, keys);
@@ -242,41 +244,48 @@ export function PianoKeyboard({
           </G>
         ) : null}
 
-        <G>
-          {markers.map(({ isRoot, pitchClass }) => {
-            const { cx, cy, r } = getMarkerPosition(pitchClass);
-            const label = markerLabels?.[pitchClass];
-            const tone = isRoot ? 'root' : (markerTones?.[pitchClass] ?? 'supporting');
-            const appearance = markerAppearances?.[tone] ?? markerToneAppearances[tone];
+        {showMarkers ? (
+          <G>
+            {markers.map(({ isRoot, pitchClass }) => {
+              const { cx, cy, r } = getMarkerPosition(pitchClass);
+              const label = markerLabels?.[pitchClass];
+              const tone = isRoot ? 'root' : (markerTones?.[pitchClass] ?? 'supporting');
+              const appearance = markerAppearances?.[tone] ?? markerToneAppearances[tone];
 
-            return (
-              <G key={`marker-${pitchClass}-${root}`}>
-                <Circle
-                  cx={cx}
-                  cy={cy}
-                  fill="none"
-                  r={r + MARKER_HALO_RADIUS_OFFSET}
-                  stroke={appearance.fill}
-                  strokeOpacity={MARKER_HALO_OPACITY}
-                  strokeWidth={2}
-                />
-                <Circle cx={cx} cy={cy} fill={appearance.fill} r={r - MARKER_CORE_RADIUS_OFFSET} />
-                {label ? (
-                  <SvgText
-                    fill={appearance.label}
-                    fontSize={label.length > 1 ? 10 : 13}
-                    fontWeight="900"
-                    textAnchor="middle"
-                    x={cx}
-                    y={cy + 3}
-                  >
-                    {label}
-                  </SvgText>
-                ) : null}
-              </G>
-            );
-          })}
-        </G>
+              return (
+                <G key={`marker-${pitchClass}-${root}`}>
+                  <Circle
+                    cx={cx}
+                    cy={cy}
+                    fill="none"
+                    r={r + MARKER_HALO_RADIUS_OFFSET}
+                    stroke={appearance.fill}
+                    strokeOpacity={MARKER_HALO_OPACITY}
+                    strokeWidth={2}
+                  />
+                  <Circle
+                    cx={cx}
+                    cy={cy}
+                    fill={appearance.fill}
+                    r={r - MARKER_CORE_RADIUS_OFFSET}
+                  />
+                  {label ? (
+                    <SvgText
+                      fill={appearance.label}
+                      fontSize={label.length > 1 ? 10 : 13}
+                      fontWeight="900"
+                      textAnchor="middle"
+                      x={cx}
+                      y={cy + 3}
+                    >
+                      {label}
+                    </SvgText>
+                  ) : null}
+                </G>
+              );
+            })}
+          </G>
+        ) : null}
       </Svg>
     </View>
   );
