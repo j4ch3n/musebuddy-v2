@@ -23,8 +23,17 @@ const SKIP_HOLD_DURATION_MS = 1000;
 const STOP_HOLD_DURATION_MS = 800;
 
 export function PerformanceGuidanceButton() {
-  const { errorMessage, finishDurationMs, isDisabled, phase, requestSkip, reset, start } =
-    usePerformanceGuidance();
+  const {
+    errorMessage,
+    finishDurationMs,
+    isDisabled,
+    isRetryingCurrentSegment,
+    phase,
+    primaryButtonLabel,
+    requestSkip,
+    reset,
+    start,
+  } = usePerformanceGuidance();
   const { setTraining } = useTrainingSession();
   const router = useRouter();
   const prepareScale = useSharedValue(1);
@@ -37,7 +46,7 @@ export function PerformanceGuidanceButton() {
   const abortConfirmationVisibleRef = useRef(false);
   const shouldSuppressNextMainPressRef = useRef(false);
   const isMainDisabled = phase === 'pending' && isDisabled;
-  const label = phase === 'pending' ? 'Start' : 'Pause';
+  const label = primaryButtonLabel;
 
   useEffect(() => {
     if (phase === 'prepare') {
@@ -253,6 +262,7 @@ export function PerformanceGuidanceButton() {
               style={[
                 styles.mainButton,
                 phase !== 'pending' && styles.pauseButton,
+                isRetryingCurrentSegment && styles.retryButton,
                 isMainDisabled && styles.disabledButton,
                 isStartPressed && styles.startPressedButton,
                 mainAnimatedStyle,
@@ -263,7 +273,11 @@ export function PerformanceGuidanceButton() {
                 <Animated.View style={[styles.stopFill, mainHoldFillStyle]} />
               )}
               <MaterialDesignIcons
-                color={phase === 'pending' ? museBuddyColors.mist : museBuddyColors.pine}
+                color={
+                  phase === 'pending' || isRetryingCurrentSegment
+                    ? museBuddyColors.mist
+                    : museBuddyColors.pine
+                }
                 name={phase === 'pending' ? 'play' : 'pause'}
                 size={21}
               />
@@ -272,6 +286,7 @@ export function PerformanceGuidanceButton() {
                 style={[
                   styles.mainLabel,
                   phase !== 'pending' && styles.pauseLabel,
+                  isRetryingCurrentSegment && styles.retryLabel,
                   isMainDisabled && styles.disabledLabel,
                 ]}
               >
@@ -369,6 +384,10 @@ const styles = StyleSheet.create({
     backgroundColor: museBuddyColors.sky,
   },
   pauseLabel: { color: museBuddyColors.pine },
+  retryButton: {
+    backgroundColor: museBuddyColors.dangerFace,
+  },
+  retryLabel: { color: museBuddyColors.mist },
   mainButton: {
     alignItems: 'center',
     backgroundColor: museBuddyColors.wildflower,

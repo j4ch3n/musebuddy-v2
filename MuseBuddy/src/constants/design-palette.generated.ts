@@ -23,4 +23,6 @@ export const museBuddyPalette = {
   violet: '#8C6DB1',
   violetWash: '#EAE1F3',
   cobaltInk: '#293C9A',
+  error: '#C1121F',
+  success: '#A7C957',
 } as const;

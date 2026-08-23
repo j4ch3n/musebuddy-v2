@@ -7,6 +7,7 @@ import {
   isValidRhythmPatternLength,
   normalizeRhythmPattern,
   splitRhythmPatternBars,
+  splitRhythmPatternChunks,
 } from './rhythm-pattern';
 import type { RhythmStep } from './types';
 
@@ -27,6 +28,12 @@ describe('rhythm pattern helpers', () => {
     expect(splitRhythmPatternBars(pattern)).toHaveLength(2);
     expect(splitRhythmPatternBars(pattern)[0]).toHaveLength(32);
     expect(splitRhythmPatternBars(pattern)[1]).toHaveLength(32);
+  });
+
+  it('groups bars into two-bar chunks while preserving a final odd bar', () => {
+    const pattern = Array.from<RhythmStep>({ length: 96 }).fill(null);
+
+    expect(splitRhythmPatternChunks(pattern).map((chunk) => chunk.length)).toEqual([64, 32]);
   });
 
   it('keeps adjacent strong and weak attacks as separate rhythm events', () => {

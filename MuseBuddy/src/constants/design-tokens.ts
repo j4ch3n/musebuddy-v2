@@ -5,7 +5,7 @@ export const museBuddyColors = {
   frame: museBuddyPalette.pineDeep,
   secondaryFace: museBuddyPalette.skyWash,
   successFace: museBuddyPalette.leafWash,
-  dangerFace: museBuddyPalette.cobaltWash,
+  dangerFace: museBuddyPalette.error,
   rhythmStrong: museBuddyPalette.pink,
   rhythmWeak: museBuddyPalette.yellow,
   rhythmHold: museBuddyPalette.cyan,

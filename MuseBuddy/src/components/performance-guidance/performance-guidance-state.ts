@@ -1,7 +1,13 @@
 import type { DetectionResult } from '@modules/basic-pitch';
 import type { SoundFontPlaybackConfiguration } from '@modules/sound-font-player';
 
-export type PerformanceGuidancePhase = 'pending' | 'prepare' | 'demo' | 'listening' | 'finish';
+export type PerformanceGuidancePhase =
+  | 'pending'
+  | 'prepare'
+  | 'demo'
+  | 'listening'
+  | 'retry'
+  | 'finish';
 export type PerformanceGuidanceStartPhase = Extract<
   PerformanceGuidancePhase,
   'pending' | 'prepare'
@@ -10,12 +16,14 @@ export type PerformanceGuidanceStartPhase = Extract<
 export type GuidanceState = {
   phase: PerformanceGuidancePhase;
   completedCycles: number;
+  currentSegmentIndex: number;
   countdownValue: number;
   currentStepIndex: number | null;
   latestDetection: DetectionResult | null;
   listeningStartedAtMs: number | null;
   errorMessage: string;
   flowId: number;
+  isRetryingCurrentSegment: boolean;
 };
 
 export type GuidanceAction =
@@ -26,6 +34,8 @@ export type GuidanceAction =
   | { type: 'finish' }
   | { type: 'detection'; detection: DetectionResult }
   | { type: 'complete-cycle'; completedCycles: number }
+  | { type: 'next-segment' }
+  | { type: 'retry' }
   | {
       type: 'clock';
       countdownValue: number;
@@ -40,12 +50,14 @@ export function createGuidanceState(phase: PerformanceGuidanceStartPhase): Guida
   return {
     phase,
     completedCycles: 0,
+    currentSegmentIndex: 0,
     countdownValue: 4,
     currentStepIndex: null,
     latestDetection: null,
     listeningStartedAtMs: null,
     errorMessage: '',
     flowId: 0,
+    isRetryingCurrentSegment: false,
   };
 }
 
@@ -72,6 +84,7 @@ export function guidanceReducer(state: GuidanceState, action: GuidanceAction): G
         currentStepIndex: null,
         latestDetection: null,
         listeningStartedAtMs: null,
+        isRetryingCurrentSegment: false,
       };
     case 'detection':
       return { ...state, latestDetection: action.detection };
@@ -82,6 +95,25 @@ export function guidanceReducer(state: GuidanceState, action: GuidanceAction): G
         currentStepIndex: null,
         latestDetection: null,
         listeningStartedAtMs: null,
+      };
+    case 'next-segment':
+      return {
+        ...state,
+        completedCycles: 0,
+        currentSegmentIndex: state.currentSegmentIndex + 1,
+        currentStepIndex: null,
+        latestDetection: null,
+        listeningStartedAtMs: null,
+        isRetryingCurrentSegment: false,
+      };
+    case 'retry':
+      return {
+        ...state,
+        phase: 'retry',
+        currentStepIndex: null,
+        latestDetection: null,
+        listeningStartedAtMs: null,
+        isRetryingCurrentSegment: true,
       };
     case 'clock':
       return {

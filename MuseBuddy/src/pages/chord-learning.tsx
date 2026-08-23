@@ -118,7 +118,7 @@ export function ChordLearningPage() {
 
   return (
     <PerformanceGuidanceProvider
-      demoListenCycleCount={3}
+      cycleCount={3}
       finishText={finishText}
       key={currentScreenId}
       onFinish={advance}

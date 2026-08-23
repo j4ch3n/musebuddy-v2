@@ -17,9 +17,9 @@ type UseRhythmListenProgressOptions = {
   flowId: number;
   listeningDurationMs: number;
   listeningStartedAtMs: number | null;
-  onComplete: () => Promise<void>;
+  onComplete: (outcome: 'pass' | 'retry') => Promise<void>;
   pattern: RhythmPattern;
-  phase: 'pending' | 'prepare' | 'demo' | 'listening' | 'finish';
+  phase: 'pending' | 'prepare' | 'demo' | 'listening' | 'retry' | 'finish';
   stepDurationMs: number;
 };
 
@@ -51,6 +51,7 @@ export function useRhythmListenProgress({
   stepDurationMs,
 }: UseRhythmListenProgressOptions) {
   const [round, setRound] = useState<RhythmRoundState>(() => createRoundState(flowId));
+  const roundRef = useRef(round);
   const [currentStepIndex, setCurrentStepIndex] = useState<number | null>(null);
   const completionStartedRef = useRef(false);
   const latestConfigurationRef = useRef<LatestConfiguration>({
@@ -70,6 +71,10 @@ export function useRhythmListenProgress({
     setRound(createRoundState(flowId, listeningStartedAtMs, round.combo));
     setCurrentStepIndex(null);
   }
+
+  useEffect(() => {
+    roundRef.current = round;
+  }, [round]);
 
   useEffect(() => {
     latestConfigurationRef.current = {
@@ -110,26 +115,27 @@ export function useRhythmListenProgress({
           return;
         }
         completionStartedRef.current = true;
-        setRound((current) => {
-          const activeRound = activateRoundState(current, flowId, listeningStartedAtMs);
-          const progress = deriveRoundProgress(activeRound, configuration, listeningDurationMs);
-          return {
-            ...activeRound,
-            combo: progress.combo,
-            elapsedMs: listeningDurationMs,
-          };
-        });
+        const activeRound = activateRoundState(roundRef.current, flowId, listeningStartedAtMs);
+        const progress = deriveRoundProgress(activeRound, configuration, listeningDurationMs);
+        const nextRound = { ...activeRound, combo: progress.combo, elapsedMs: listeningDurationMs };
+        roundRef.current = nextRound;
+        setRound(nextRound);
         setCurrentStepIndex(null);
-        void onComplete();
+        void onComplete(
+          progress.expectedHits.every((expectedHit) => expectedHit.matched) &&
+            progress.dots.every((dot) => dot.matched)
+            ? 'pass'
+            : 'retry',
+        );
         return;
       }
 
       setCurrentStepIndex(Math.floor(elapsedMs / stepDurationMs));
-      setRound((current) => {
-        const activeRound = activateRoundState(current, flowId, listeningStartedAtMs);
-        const progress = deriveRoundProgress(activeRound, configuration, elapsedMs);
-        return { ...activeRound, combo: progress.combo, elapsedMs };
-      });
+      const activeRound = activateRoundState(roundRef.current, flowId, listeningStartedAtMs);
+      const progress = deriveRoundProgress(activeRound, configuration, elapsedMs);
+      const nextRound = { ...activeRound, combo: progress.combo, elapsedMs };
+      roundRef.current = nextRound;
+      setRound(nextRound);
     };
 
     update();
@@ -163,24 +169,18 @@ export function useRhythmListenProgress({
         return;
       }
 
-      setRound((current) => {
-        const activeRound = activateRoundState(current, latest.flowId, startedAtMs);
-        if (activeRound.attacks.some(({ id }) => id === attack.id)) {
-          return activeRound;
-        }
-        const nextRound = {
-          ...activeRound,
-          attacks: [
-            ...activeRound.attacks,
-            { absoluteTimeMs: attack.absoluteTimeMs, id: attack.id },
-          ],
-        };
-        if (latest.phase !== 'listening') {
-          return nextRound;
-        }
-        const progress = deriveRoundProgress(nextRound, latest);
-        return { ...nextRound, combo: progress.combo };
-      });
+      const activeRound = activateRoundState(roundRef.current, latest.flowId, startedAtMs);
+      if (activeRound.attacks.some(({ id }) => id === attack.id)) {
+        return;
+      }
+      const nextRound = {
+        ...activeRound,
+        attacks: [...activeRound.attacks, { absoluteTimeMs: attack.absoluteTimeMs, id: attack.id }],
+      };
+      const progress = latest.phase === 'listening' ? deriveRoundProgress(nextRound, latest) : null;
+      const updatedRound = progress ? { ...nextRound, combo: progress.combo } : nextRound;
+      roundRef.current = updatedRound;
+      setRound(updatedRound);
     });
     return () => {
       subscription.remove();

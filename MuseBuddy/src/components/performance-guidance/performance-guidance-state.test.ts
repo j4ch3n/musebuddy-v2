@@ -93,6 +93,24 @@ describe('performance guidance state', () => {
     );
   });
 
+  it('moves to the next guidance segment with clean cycle state', () => {
+    const state = guidanceReducer(
+      { ...createGuidanceState('pending'), completedCycles: 1 },
+      { type: 'next-segment' },
+    );
+
+    expect(state).toMatchObject({ completedCycles: 0, currentSegmentIndex: 1 });
+  });
+
+  it('enters an explicit retry phase without advancing segments', () => {
+    const state = guidanceReducer(
+      { ...createGuidanceState('pending'), currentSegmentIndex: 1 },
+      { type: 'retry' },
+    );
+
+    expect(state).toMatchObject({ currentSegmentIndex: 1, phase: 'retry' });
+  });
+
   it('publishes a scheduled rhythm boundary without entering listening', () => {
     const demoState = guidanceReducer(createGuidanceState('prepare'), { type: 'demo' });
     const scheduledState = guidanceReducer(demoState, {

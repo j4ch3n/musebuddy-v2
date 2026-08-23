@@ -4,7 +4,6 @@ import { museBuddyColors } from '@/constants/design-tokens';
 
 import { NoteBarViewer } from './note-bar-viewer';
 import { convertRhythmPatternToVexflowBars } from './note-bar-vexflow';
-import { getActiveRhythmBarIndex } from './rhythm-bar-selection';
 import { normalizeRhythmPattern, splitRhythmPatternBars } from './rhythm-pattern';
 import { RhythmBarViewer } from './rhythm-bar-viewer';
 import { RhythmLegend } from './rhythm-legend';
@@ -14,6 +13,7 @@ type RhythmViewerProps = {
   attackDots?: readonly RhythmAttackDot[];
   currentStepIndex: number | null;
   pattern: RhythmPattern;
+  previewPattern?: RhythmPattern;
   stepDurationMs?: number;
 };
 
@@ -21,24 +21,22 @@ export function RhythmViewer({
   attackDots = [],
   currentStepIndex,
   pattern,
+  previewPattern = [],
   stepDurationMs = 1,
 }: RhythmViewerProps) {
   const normalizedPattern = normalizeRhythmPattern(pattern);
   const bars = splitRhythmPatternBars(normalizedPattern);
   const notationBars = convertRhythmPatternToVexflowBars(normalizedPattern);
-  const activeBarIndex = getActiveRhythmBarIndex(currentStepIndex, bars.length);
-  const visibleBarIndexes = [activeBarIndex, activeBarIndex + 1].filter(
-    (barIndex) => barIndex < bars.length,
+  const previewBars = splitRhythmPatternBars(normalizeRhythmPattern(previewPattern));
+  const previewNotationBars = convertRhythmPatternToVexflowBars(
+    normalizeRhythmPattern(previewPattern),
   );
-  const previewBarIndex = activeBarIndex + 2;
-  const previewNotation = notationBars[previewBarIndex];
 
   return (
     <View style={styles.container}>
       <RhythmLegend />
       <View style={styles.currentBars}>
-        {visibleBarIndexes.map((barIndex) => {
-          const steps = bars[barIndex];
+        {bars.map((steps, barIndex) => {
           const barStartIndex = barIndex * steps.length;
           const currentStepInBar =
             currentStepIndex !== null &&
@@ -66,17 +64,20 @@ export function RhythmViewer({
         })}
       </View>
       <View style={styles.preview}>
-        {previewNotation ? (
+        {previewNotationBars.length > 0 ? (
           <>
-            <Text style={styles.previewLabel}>NEXT BAR</Text>
-            <NoteBarViewer
-              currentStepIndex={null}
-              events={previewNotation}
-              steps={bars[previewBarIndex]}
-            />
+            <Text style={styles.previewLabel}>NEXT</Text>
+            {previewNotationBars.map((events, barIndex) => (
+              <NoteBarViewer
+                currentStepIndex={null}
+                events={events}
+                key={barIndex}
+                steps={previewBars[barIndex]!}
+              />
+            ))}
           </>
         ) : (
-          <Text style={styles.completionLabel}>Final bar — keep the groove going.</Text>
+          <Text style={styles.completionLabel}>Final section — keep the groove going.</Text>
         )}
       </View>
     </View>

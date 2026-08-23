@@ -21,6 +21,8 @@
   --mb-color-violet: #8c6db1;
   --mb-color-violet-wash: #eae1f3;
   --mb-color-cobalt-ink: #293c9a;
+  --mb-color-error: #c1121f;
+  --mb-color-success: #a7c957;
 
   --font-display:
     Spline Sans, Inter, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji,

@@ -47,8 +47,6 @@ const KEY_SHADOW_RADIUS = museBuddyRadii.medium;
 const LIVE_KEYBOARD_HEIGHT = 230;
 const LIVE_KEY_SHADOW_EXTENSION = 54;
 const LIVE_RIPPLE_DURATION_MS = 180;
-const LIVE_ERROR_COLOR = '#C1121F';
-const LIVE_SUCCESS_COLOR = '#A7C957';
 const WHITE_KEY_HEIGHT = 132;
 const BLACK_KEY_HEIGHT = 86;
 const WHITE_MARKER_Y = 127;
@@ -373,11 +371,11 @@ function KeyboardKeyShadow({
   }, [extension, isExtended]);
 
   const fill = liveState?.isSuccess
-    ? LIVE_SUCCESS_COLOR
+    ? museBuddyColors.success
     : hasExpectedHit
       ? appearance.fill
       : liveState?.isUnexpectedActive
-        ? LIVE_ERROR_COLOR
+        ? museBuddyColors.error
         : museBuddyColors.notation;
   const labelY = (isBlack ? KEY_FACE_Y + BLACK_KEY_HEIGHT - 2 : KEY_SHADOW_Y + baseHeight) + 15;
 

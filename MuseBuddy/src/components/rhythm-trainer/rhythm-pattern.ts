@@ -44,6 +44,20 @@ export function splitRhythmPatternBars(pattern: RhythmPattern): RhythmStep[][] {
   );
 }
 
+export function splitRhythmPatternChunks(
+  pattern: RhythmPattern,
+  barsPerChunk: number = 2,
+): RhythmStep[][] {
+  if (!Number.isInteger(barsPerChunk) || barsPerChunk < 1) {
+    throw new Error('barsPerChunk must be a positive integer.');
+  }
+
+  const bars = splitRhythmPatternBars(pattern);
+  return Array.from({ length: Math.ceil(bars.length / barsPerChunk) }, (_, chunkIndex) =>
+    bars.slice(chunkIndex * barsPerChunk, (chunkIndex + 1) * barsPerChunk).flat(),
+  );
+}
+
 export function collectRhythmEvents(steps: readonly RhythmStep[]): RhythmEvent[] {
   const events: RhythmEvent[] = [];
   let stepIndex = 0;
