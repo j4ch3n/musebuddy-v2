@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { AppState } from 'react-native';
 
 import { addDetectionFinishListener, BasicPitchError } from '@modules/basic-pitch';
 import {
@@ -307,11 +308,14 @@ export function PerformanceGuidanceProvider({
         recognitionIdRef.current = null;
         if (mode.kind === 'piano-attack') {
           const beatDurationMs = 60_000 / currentConfiguration.bpm;
+          const demoStartedAtMs = result.startedAtMs + (leadIn ? 4 * beatDurationMs : 0);
           const listeningStartedAtMs =
-            result.startedAtMs +
-            (leadIn ? 4 * beatDurationMs : 0) +
-            getSoundFontDemoDurationMs(currentConfiguration);
-          dispatch({ type: 'schedule-listening', startedAtMs: listeningStartedAtMs });
+            demoStartedAtMs + getSoundFontDemoDurationMs(currentConfiguration);
+          dispatch({
+            type: 'schedule-listening',
+            demoStartedAtMs,
+            startedAtMs: listeningStartedAtMs,
+          });
         }
         startClock({ generation, leadIn, repetitions, startedAtMs: result.startedAtMs });
       } catch (error) {
@@ -464,6 +468,7 @@ export function PerformanceGuidanceProvider({
 
   const reset = useCallback(() => {
     flowGenerationRef.current += 1;
+    detectorShouldRemainActiveRef.current = false;
     clearClock();
     clearFinishTimer();
     clearRetryTimer();
@@ -472,8 +477,8 @@ export function PerformanceGuidanceProvider({
     completionInProgressRef.current = false;
     setFinishMessageOverride(null);
     dispatch({ type: 'pending', flowId: flowGenerationRef.current });
-    void trainingAudioCoordinator.release(ownerIdRef.current);
-  }, [clearClock, clearFinishTimer, clearRetryTimer, dispatch]);
+    void releaseAllAudio();
+  }, [clearClock, clearFinishTimer, clearRetryTimer, dispatch, releaseAllAudio]);
 
   const requestSkip = useCallback(() => {
     flowGenerationRef.current += 1;
@@ -512,6 +517,19 @@ export function PerformanceGuidanceProvider({
   useEffect(() => {
     listeningModeRef.current = listeningMode;
   }, [listeningMode]);
+
+  useEffect(() => {
+    const appStateSubscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        return;
+      }
+      detectorShouldRemainActiveRef.current = false;
+      void stopAttackDetector().catch(() => {});
+    });
+    return () => {
+      appStateSubscription.remove();
+    };
+  }, [stopAttackDetector]);
 
   useEffect(() => {
     const playbackSubscription = addPlaybackFinishListener((event) => {

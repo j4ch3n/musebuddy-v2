@@ -114,6 +114,7 @@ describe('performance guidance state', () => {
   it('publishes a scheduled rhythm boundary without entering listening', () => {
     const demoState = guidanceReducer(createGuidanceState('prepare'), { type: 'demo' });
     const scheduledState = guidanceReducer(demoState, {
+      demoStartedAtMs: 12_000,
       type: 'schedule-listening',
       startedAtMs: 14_000,
     });

@@ -73,10 +73,9 @@ The shared training-audio coordinator serializes SoundFont playback and Basic Pi
 recognition. Commands carry a monotonically assigned provider owner ID so old cleanup cannot
 stop newer audio.
 
-Rhythm separately owns piano attack detection so input can overlap SoundFont output. Reset
-stops the current SoundFont graph but leaves the detector active for another start. Skip,
-unmount, and final completion stop SoundFont first, then stop the detector, which deactivates
-the shared session.
+Rhythm separately owns piano attack detection so input can overlap SoundFont output. Pause,
+skip, unmount, final completion, and app backgrounding stop the detector. This deactivates
+the shared session after any current SoundFont graph has been released.
 
 Playback or microphone failures return to `pending`, preserve no progress, and show the
 mapped error. Permission denial never advances a round.

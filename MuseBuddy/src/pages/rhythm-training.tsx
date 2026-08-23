@@ -19,6 +19,7 @@ import { PlaceholderPanel } from './placeholder-panel';
 import { TrainingScreenShell } from './training-screen-shell';
 
 const EMPTY_RHYTHM_PATTERN: RhythmPattern = [];
+const RHYTHM_MATCH_TOLERANCE_MS = 20;
 type RhythmStaff = 'bass' | 'treble';
 
 type RhythmTrainingPageProps = {
@@ -36,7 +37,7 @@ export function RhythmTrainingPage({ staff }: RhythmTrainingPageProps) {
   const pattern = session?.rhythms[staff].pattern ?? EMPTY_RHYTHM_PATTERN;
   const currentStep = staff === 'bass' ? 'rhythm-bass' : 'rhythm-treble';
   const stepDurationMs = 0.125 * (60_000 / learningConfig.bpm);
-  const allowedOffsetMs = stepDurationMs / 2;
+  const allowedOffsetMs = RHYTHM_MATCH_TOLERANCE_MS;
   const chunks = useMemo(() => splitRhythmPatternChunks(pattern), [pattern]);
   const playbackConfigurations = useMemo(
     () =>
@@ -110,7 +111,11 @@ function RhythmTrainingContent({
   const pattern = chunks[currentSegmentIndex] ?? EMPTY_RHYTHM_PATTERN;
   const previewPattern = chunks[currentSegmentIndex + 1] ?? EMPTY_RHYTHM_PATTERN;
   const listeningDurationMs = pattern.length * stepDurationMs;
-  const { attackDots, currentStepIndex: listeningStepIndex } = useRhythmListenProgress({
+  const {
+    attackDots,
+    attackFlashId,
+    currentStepIndex: listeningStepIndex,
+  } = useRhythmListenProgress({
     allowedOffsetMs,
     flowId,
     listeningDurationMs,
@@ -129,6 +134,7 @@ function RhythmTrainingContent({
     >
       <RhythmViewer
         attackDots={attackDots}
+        attackFlashId={attackFlashId}
         currentStepIndex={currentStepIndex}
         pattern={pattern}
         previewPattern={previewPattern}

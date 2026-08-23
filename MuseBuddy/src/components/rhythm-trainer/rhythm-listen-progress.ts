@@ -78,19 +78,17 @@ export function deriveRhythmListenProgress({
 }): RhythmListenProgress {
   const baseProgress = createRhythmListenProgress(pattern, stepDurationMs, startingCombo);
   const seenAttackIds = new Set<number>();
-  const windowAttacks = attacks
+  const recordedAttacks = attacks
     .flatMap((attack) => {
       if (seenAttackIds.has(attack.id)) {
         return [];
       }
       seenAttackIds.add(attack.id);
       const attackOffsetMs = attack.absoluteTimeMs - listeningStartedAtMs;
-      return attackOffsetMs >= -allowedOffsetMs && attackOffsetMs < listeningDurationMs
-        ? [{ ...attack, attackOffsetMs }]
-        : [];
+      return [{ ...attack, attackOffsetMs }];
     })
     .sort((left, right) => left.attackOffsetMs - right.attackOffsetMs || left.id - right.id);
-  const candidates = windowAttacks.flatMap((attack, attackIndex) =>
+  const candidates = recordedAttacks.flatMap((attack, attackIndex) =>
     baseProgress.expectedHits.flatMap((expectedHit, expectedHitIndex) => {
       const distanceMs = Math.abs(attack.attackOffsetMs - expectedHit.offsetMs);
       return distanceMs <= allowedOffsetMs ? [{ attackIndex, distanceMs, expectedHitIndex }] : [];
@@ -99,9 +97,9 @@ export function deriveRhythmListenProgress({
   candidates.sort(
     (left, right) =>
       left.distanceMs - right.distanceMs ||
-      windowAttacks[left.attackIndex].attackOffsetMs -
-        windowAttacks[right.attackIndex].attackOffsetMs ||
-      windowAttacks[left.attackIndex].id - windowAttacks[right.attackIndex].id ||
+      recordedAttacks[left.attackIndex].attackOffsetMs -
+        recordedAttacks[right.attackIndex].attackOffsetMs ||
+      recordedAttacks[left.attackIndex].id - recordedAttacks[right.attackIndex].id ||
       left.expectedHitIndex - right.expectedHitIndex,
   );
 
@@ -122,22 +120,19 @@ export function deriveRhythmListenProgress({
       !matchedExpectedHitIndexes.has(expectedHitIndex) &&
       elapsedMs > expectedHit.offsetMs + allowedOffsetMs,
   }));
-  const dots = windowAttacks.flatMap((attack, attackIndex) => {
+  const dots = recordedAttacks.map((attack, attackIndex) => {
     const matched = matchedAttackIndexes.has(attackIndex);
-    if (attack.attackOffsetMs < 0 && !matched) {
-      return [];
-    }
-    return [
-      {
-        attackOffsetMs: Math.max(0, attack.attackOffsetMs),
-        id: attack.id,
-        matched,
-      },
-    ];
+    return {
+      // Keep every in-phase attack visible, including an early or late one. The
+      // marker is clamped only for display so it stays in the current two-bar grid.
+      attackOffsetMs: clampAttackOffsetForDisplay(attack.attackOffsetMs, listeningDurationMs),
+      id: attack.id,
+      matched,
+    };
   });
 
   const comboOutcomes: { increments: boolean; timeMs: number }[] = [];
-  windowAttacks.forEach((attack, attackIndex) => {
+  recordedAttacks.forEach((attack, attackIndex) => {
     if (attack.attackOffsetMs > elapsedMs) {
       return;
     }
@@ -165,4 +160,8 @@ export function deriveRhythmListenProgress({
   );
 
   return { combo, dots, expectedHits };
+}
+
+function clampAttackOffsetForDisplay(attackOffsetMs: number, listeningDurationMs: number): number {
+  return Math.min(Math.max(attackOffsetMs, 0), Math.max(0, listeningDurationMs - 0.001));
 }

@@ -10,7 +10,7 @@ import type { RhythmPattern } from './types';
 
 const pattern: RhythmPattern = ['s', null, 'w', 'h'];
 const stepDurationMs = 100;
-const allowedOffsetMs = 50;
+const allowedOffsetMs = 20;
 const listeningDurationMs = pattern.length * stepDurationMs;
 const listeningStartedAtMs = 10_000;
 
@@ -47,7 +47,7 @@ describe('rhythm listen progress', () => {
     const progress = derive(
       [
         { absoluteTimeMs: 10_020, id: 1 },
-        { absoluteTimeMs: 10_175, id: 2 },
+        { absoluteTimeMs: 10_182, id: 2 },
       ],
       250,
     );
@@ -55,20 +55,22 @@ describe('rhythm listen progress', () => {
     expect(progress.combo).toBe(2);
     expect(progress.dots).toEqual([
       { attackOffsetMs: 20, id: 1, matched: true },
-      { attackOffsetMs: 175, id: 2, matched: true },
+      { attackOffsetMs: 182, id: 2, matched: true },
     ]);
   });
 
   it('admits an early first hit within allowance and clamps its dot to step one', () => {
-    const progress = derive([{ absoluteTimeMs: 9_960, id: 1 }], 0, 3);
+    const progress = derive([{ absoluteTimeMs: 9_980, id: 1 }], 0, 3);
 
     expect(progress.combo).toBe(4);
     expect(progress.dots).toEqual([{ attackOffsetMs: 0, id: 1, matched: true }]);
     expect(progress.expectedHits[0]).toMatchObject({ matched: true, missed: false });
   });
 
-  it('ignores demo attacks outside the first hit allowance', () => {
-    expect(derive([{ absoluteTimeMs: 9_949, id: 1 }]).dots).toEqual([]);
+  it('keeps an in-phase early attack visible as an unmatched dot', () => {
+    expect(derive([{ absoluteTimeMs: 9_979, id: 1 }]).dots).toEqual([
+      { attackOffsetMs: 0, id: 1, matched: false },
+    ]);
   });
 
   it('uses one attack per expected hit and retains duplicate attacks as unmatched dots', () => {

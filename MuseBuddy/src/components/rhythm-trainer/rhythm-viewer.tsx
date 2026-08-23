@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { museBuddyColors } from '@/constants/design-tokens';
 
 import { NoteBarViewer } from './note-bar-viewer';
+import { RhythmAttackDebugIndicator } from './rhythm-attack-debug-indicator';
 import { convertRhythmPatternToVexflowBars } from './note-bar-vexflow';
 import { normalizeRhythmPattern, splitRhythmPatternBars } from './rhythm-pattern';
 import { RhythmBarViewer } from './rhythm-bar-viewer';
@@ -11,6 +12,7 @@ import type { RhythmAttackDot, RhythmPattern } from './types';
 
 type RhythmViewerProps = {
   attackDots?: readonly RhythmAttackDot[];
+  attackFlashId?: number;
   currentStepIndex: number | null;
   pattern: RhythmPattern;
   previewPattern?: RhythmPattern;
@@ -19,6 +21,7 @@ type RhythmViewerProps = {
 
 export function RhythmViewer({
   attackDots = [],
+  attackFlashId = 0,
   currentStepIndex,
   pattern,
   previewPattern = [],
@@ -34,6 +37,7 @@ export function RhythmViewer({
 
   return (
     <View style={styles.container}>
+      <RhythmAttackDebugIndicator flashId={attackFlashId} />
       <RhythmLegend />
       <View style={styles.currentBars}>
         {bars.map((steps, barIndex) => {
