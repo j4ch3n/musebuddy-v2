@@ -1,4 +1,3 @@
-import { Ionicons } from '@react-native-vector-icons/ionicons';
 import { Lucide } from '@react-native-vector-icons/lucide';
 import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 import { MaterialIcons } from '@react-native-vector-icons/material-icons';
@@ -12,13 +11,13 @@ export type DailyProgressNavigatorStep =
   | 'chord'
   | 'rhythm-bass'
   | 'rhythm-treble'
-  | 'pattern';
+  | 'freestyle';
 
 type DailyProgressNavigatorProps = {
   currentStep: DailyProgressNavigatorStep;
 };
 
-export type TrainingStageIconId = DailyProgressNavigatorStep | 'freestyle';
+export type TrainingStageIconId = DailyProgressNavigatorStep;
 
 type DailyProgressNavigatorItem = {
   href?: Href;
@@ -39,8 +38,7 @@ const dailyProgressSteps: readonly DailyProgressNavigatorItem[] = [
     id: 'rhythm-bass',
     label: 'Left rhythm',
   },
-  { href: '/pattern-training', id: 'pattern', label: 'Full score' },
-  { id: 'freestyle', label: 'Freestyle' },
+  { href: '/improvise', id: 'freestyle', label: 'Improvise' },
 ];
 
 export function DailyProgressNavigator({ currentStep }: DailyProgressNavigatorProps) {
@@ -86,11 +84,6 @@ export function DailyProgressNavigator({ currentStep }: DailyProgressNavigatorPr
                 id={step.id}
                 size={16}
               />
-              {isComplete ? (
-                <View style={styles.completionCheck}>
-                  <MaterialDesignIcons color={museBuddyColors.pine} name="check" size={8} />
-                </View>
-              ) : null}
               {!isActive &&
               index + 1 !== currentStepIndex &&
               index < dailyProgressSteps.length - 1 ? (
@@ -123,8 +116,6 @@ export function TrainingStageIcon({
       return <Lucide color={color} name="book-open" size={size} />;
     case 'chord':
       return <MaterialIcons color={color} name="grid-on" size={size} />;
-    case 'pattern':
-      return <Ionicons color={color} name="musical-note" size={size} />;
     case 'freestyle':
       return <MaterialIcons color={color} name="piano" size={size} />;
     case 'rhythm-bass':
@@ -135,19 +126,6 @@ export function TrainingStageIcon({
 }
 
 const styles = StyleSheet.create({
-  completionCheck: {
-    alignItems: 'center',
-    backgroundColor: museBuddyColors.mist,
-    borderColor: museBuddyColors.pine,
-    borderRadius: museBuddyRadii.round,
-    borderWidth: 1,
-    bottom: -2,
-    height: 12,
-    justifyContent: 'center',
-    position: 'absolute',
-    right: -2,
-    width: 12,
-  },
   capsule: {
     backgroundColor: museBuddyColors.mist,
     borderColor: museBuddyColors.frame,

@@ -7,6 +7,6 @@ export type RhythmStaff = keyof typeof rhythmTrainingHrefs;
 
 export function getNextRhythmTrainingHref(
   staff: RhythmStaff,
-): (typeof rhythmTrainingHrefs)['treble'] | '/pattern-training' {
-  return staff === 'bass' ? rhythmTrainingHrefs.treble : '/pattern-training';
+): (typeof rhythmTrainingHrefs)['treble'] | '/improvise' {
+  return staff === 'bass' ? rhythmTrainingHrefs.treble : '/improvise';
 }

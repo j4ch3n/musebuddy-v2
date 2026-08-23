@@ -11,7 +11,7 @@ const meta = {
   argTypes: {
     currentStep: {
       control: 'select',
-      options: ['goal', 'chord', 'rhythm-bass', 'rhythm-treble', 'pattern'],
+      options: ['goal', 'chord', 'rhythm-bass', 'rhythm-treble', 'freestyle'],
     },
   },
 } satisfies Meta<typeof DailyProgressNavigator>;
@@ -40,8 +40,8 @@ export const TrebleRhythm: Story = {
   },
 };
 
-export const Pattern: Story = {
+export const Improvise: Story = {
   args: {
-    currentStep: 'pattern',
+    currentStep: 'freestyle',
   },
 };

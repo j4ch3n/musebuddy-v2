@@ -7,7 +7,7 @@ describe('rhythm training flow', () => {
     expect(getNextRhythmTrainingHref('bass')).toBe('/rhythm-training-treble');
   });
 
-  it('advances treble rhythm to pattern training', () => {
-    expect(getNextRhythmTrainingHref('treble')).toBe('/pattern-training');
+  it('advances treble rhythm to improvisation', () => {
+    expect(getNextRhythmTrainingHref('treble')).toBe('/improvise');
   });
 });

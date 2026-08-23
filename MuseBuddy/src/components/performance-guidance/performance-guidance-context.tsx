@@ -37,10 +37,15 @@ import {
 } from './performance-guidance-state';
 import { trainingAudioCoordinator } from './training-audio-coordinator';
 
-type PerformanceGuidancePlayback = {
-  configuration: SoundFontPlaybackConfiguration | null;
-  kind: 'groove' | 'piano';
-};
+type PerformanceGuidancePlayback =
+  | {
+      configuration: SoundFontPlaybackConfiguration | null;
+      kind: 'groove' | 'piano';
+    }
+  | {
+      configuration: null;
+      kind: 'silent';
+    };
 
 export type PerformanceGuidanceListeningMode =
   | { kind: 'none' }
@@ -112,9 +117,10 @@ export function PerformanceGuidanceProvider({
   const totalCycleCount = demoListenCycleCount ?? cycleCount;
   const configuration = playback.configuration;
   const isDisabled =
-    !configuration ||
-    getSoundFontPartCount(configuration) === 0 ||
-    getSoundFontStepCount(configuration) === 0;
+    playback.kind !== 'silent' &&
+    (!configuration ||
+      getSoundFontPartCount(configuration) === 0 ||
+      getSoundFontStepCount(configuration) === 0);
 
   const dispatch = useCallback((action: GuidanceAction) => {
     stateRef.current = guidanceReducer(stateRef.current, action);
@@ -240,6 +246,11 @@ export function PerformanceGuidanceProvider({
   const startDemo = useCallback(
     async (generation: number, leadIn: boolean) => {
       const currentPlayback = playbackRef.current;
+      if (currentPlayback.kind === 'silent') {
+        completionInProgressRef.current = false;
+        dispatch({ type: 'demo' });
+        return;
+      }
       if (!currentPlayback.configuration) {
         return;
       }
@@ -320,11 +331,13 @@ export function PerformanceGuidanceProvider({
   );
 
   const start = useCallback(() => {
-    const currentConfiguration = playbackRef.current.configuration;
+    const currentPlayback = playbackRef.current;
+    const currentConfiguration = currentPlayback.configuration;
     if (
-      !currentConfiguration ||
-      getSoundFontPartCount(currentConfiguration) === 0 ||
-      getSoundFontStepCount(currentConfiguration) === 0
+      currentPlayback.kind !== 'silent' &&
+      (!currentConfiguration ||
+        getSoundFontPartCount(currentConfiguration) === 0 ||
+        getSoundFontStepCount(currentConfiguration) === 0)
     ) {
       return;
     }

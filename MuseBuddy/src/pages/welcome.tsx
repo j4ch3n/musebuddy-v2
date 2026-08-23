@@ -73,10 +73,10 @@ const practicePathSteps: readonly PracticePathStep[] = [
     label: 'Left rhythm',
   },
   {
-    description: 'Put both hands together.',
-    icon: 'pattern',
-    id: 'full-score',
-    label: 'Full score',
+    description: 'Put it all together and make it your own.',
+    icon: 'freestyle',
+    id: 'improvise',
+    label: 'Improvise',
   },
 ];
 
@@ -230,7 +230,12 @@ function PracticePath({
         })}
       </View>
       <View accessibilityLiveRegion="polite" style={styles.tooltip}>
-        <View style={[styles.tooltipPointer, { left: `${10 + selectedStepIndex * 20}%` }]} />
+        <View
+          style={[
+            styles.tooltipPointer,
+            { left: `${((selectedStepIndex + 0.5) / practicePathSteps.length) * 100}%` },
+          ]}
+        />
         <Text style={styles.tooltipTitle}>{selectedStep.label}</Text>
         <Text style={styles.tooltipBody}>{selectedStep.description}</Text>
       </View>
