@@ -6,7 +6,9 @@ import {
   PerformanceGuidanceProvider,
   usePerformanceGuidance,
 } from '@/components/performance-guidance';
+import { getTrainingSectionScreenIds } from '@/contexts/training-session-flow';
 import { useTrainingSession } from '@/contexts/training-session-context';
+import { useTrainingSessionTransition } from '@/hooks/use-training-session-transition';
 import {
   buildChordPreviewSoundFontPlaybackConfiguration,
   buildChordSummarySoundFontPlaybackConfiguration,
@@ -48,7 +50,27 @@ export function ChordLearningPage() {
       },
     ];
   }, [session]);
+  const screenIds = useMemo(
+    () => (session ? getTrainingSectionScreenIds({ sectionId: 'chords', session }) : []),
+    [session],
+  );
   const currentSlide = slides[Math.min(currentSlideIndex, Math.max(slides.length - 1, 0))];
+  const currentScreenId = screenIds[currentSlideIndex] ?? 'chord:0';
+
+  const handleScreenChange = useCallback(
+    (nextScreenId: string) => {
+      const nextScreenIndex = screenIds.indexOf(nextScreenId);
+      if (nextScreenIndex !== -1) {
+        setCurrentSlideIndex(nextScreenIndex);
+      }
+    },
+    [screenIds],
+  );
+  const { advance, skipSection } = useTrainingSessionTransition({
+    onScreenChange: handleScreenChange,
+    screenId: currentScreenId,
+    sectionId: 'chords',
+  });
 
   const getChordKey = useCallback(
     (display: ChordDisplay, index: number) => `${display.idName}-${index}`,
@@ -143,8 +165,9 @@ export function ChordLearningPage() {
     <PerformanceGuidanceProvider
       demoListenCycleCount={3}
       finishText={finishText}
-      onFinish={() => {}}
-      onSkip={() => {}}
+      key={currentScreenId}
+      onFinish={advance}
+      onSkip={skipSection}
       playback={{
         configuration: playbackConfiguration,
         kind: 'piano',

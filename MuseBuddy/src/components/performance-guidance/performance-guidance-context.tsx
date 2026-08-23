@@ -55,6 +55,7 @@ export type PerformanceGuidanceListeningMode =
 export type PerformanceGuidanceContextValue = GuidanceState & {
   completeListening: () => Promise<void>;
   cycleCount: number;
+  finishDurationMs: number;
   finishText: string;
   isDisabled: boolean;
   listeningMode: PerformanceGuidanceListeningMode;
@@ -68,6 +69,7 @@ type PerformanceGuidanceProviderProps = {
   children: ReactNode;
   cycleCount?: number;
   demoListenCycleCount?: number;
+  finishDurationMs?: number;
   finishText: string;
   listeningMode: PerformanceGuidanceListeningMode;
   onFinish: () => void;
@@ -76,7 +78,7 @@ type PerformanceGuidanceProviderProps = {
   startPhase?: PerformanceGuidanceStartPhase;
 };
 
-const FINISH_DURATION_MS = 3_000;
+const DEFAULT_FINISH_DURATION_MS = 1_500;
 const CLOCK_INTERVAL_MS = 30;
 const RECOGNITION_OPTIONS = {
   detectionIntervalMs: 200,
@@ -90,6 +92,7 @@ export function PerformanceGuidanceProvider({
   children,
   cycleCount = 3,
   demoListenCycleCount,
+  finishDurationMs = DEFAULT_FINISH_DURATION_MS,
   finishText,
   listeningMode,
   onFinish,
@@ -203,9 +206,9 @@ export function PerformanceGuidanceProvider({
           return;
         }
         void trainingAudioCoordinator.release(ownerIdRef.current).finally(onFinish);
-      }, FINISH_DURATION_MS);
+      }, finishDurationMs);
     },
-    [clearClock, clearFinishTimer, dispatch, onFinish],
+    [clearClock, clearFinishTimer, dispatch, finishDurationMs, onFinish],
   );
 
   const startClock = useCallback(
@@ -556,6 +559,7 @@ export function PerformanceGuidanceProvider({
       ...state,
       completeListening,
       cycleCount: totalCycleCount,
+      finishDurationMs,
       finishText: finishMessageOverride ?? finishText,
       isDisabled,
       listeningMode,
@@ -567,6 +571,7 @@ export function PerformanceGuidanceProvider({
     [
       completeListening,
       finishMessageOverride,
+      finishDurationMs,
       finishText,
       isDisabled,
       listeningMode,

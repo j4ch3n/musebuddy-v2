@@ -1,18 +1,21 @@
-import { useRouter } from 'expo-router';
-
 import { PianoPatternScore } from '@/components/piano-pattern-score';
 import {
   PerformanceGuidanceButton,
   PerformanceGuidanceProvider,
 } from '@/components/performance-guidance';
 import { useTrainingSession } from '@/contexts/training-session-context';
+import { useTrainingSessionTransition } from '@/hooks/use-training-session-transition';
 
 import { PlaceholderPanel } from './placeholder-panel';
 import { TrainingScreenShell } from './training-screen-shell';
 
 export function ImprovisePage() {
   const { session } = useTrainingSession();
-  const router = useRouter();
+  const { advance, skipSection } = useTrainingSessionTransition({
+    onScreenChange: () => {},
+    screenId: 'improvise',
+    sectionId: 'improvise',
+  });
 
   const content = (
     <TrainingScreenShell
@@ -40,10 +43,10 @@ export function ImprovisePage() {
       finishText="Improvise session complete!"
       listeningMode={{ kind: 'none' }}
       onFinish={() => {
-        router.push('/congrats');
+        advance();
       }}
       onSkip={() => {
-        router.push('/congrats');
+        skipSection();
       }}
       playback={{ configuration: null, kind: 'silent' }}
     >

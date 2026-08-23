@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
 import {
@@ -14,21 +13,27 @@ import {
 } from '@/components/rhythm-trainer';
 import { museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 import { useTrainingSession } from '@/contexts/training-session-context';
+import { useTrainingSessionTransition } from '@/hooks/use-training-session-transition';
 import { buildRhythmSoundFontPlaybackConfiguration } from '@/music-theory/sound-font-playback';
 
 import { PlaceholderPanel } from './placeholder-panel';
-import { getNextRhythmTrainingHref, type RhythmStaff } from './rhythm-training-flow';
 import { TrainingScreenShell } from './training-screen-shell';
 
 const EMPTY_RHYTHM_PATTERN: RhythmPattern = [];
+type RhythmStaff = 'bass' | 'treble';
 
 type RhythmTrainingPageProps = {
   staff: RhythmStaff;
 };
 
 export function RhythmTrainingPage({ staff }: RhythmTrainingPageProps) {
-  const router = useRouter();
   const { learningConfig, session, training } = useTrainingSession();
+  const sectionId = staff === 'bass' ? 'rhythm-bass' : 'rhythm-treble';
+  const { advance, skipSection } = useTrainingSessionTransition({
+    onScreenChange: () => {},
+    screenId: sectionId,
+    sectionId,
+  });
   const pattern = session?.rhythms[staff].pattern ?? EMPTY_RHYTHM_PATTERN;
   const currentStep = staff === 'bass' ? 'rhythm-bass' : 'rhythm-treble';
   const stepDurationMs = 0.125 * (60_000 / learningConfig.bpm);
@@ -61,10 +66,10 @@ export function RhythmTrainingPage({ staff }: RhythmTrainingPageProps) {
       key={`rhythm-${staff}-${pattern.join('')}`}
       listeningMode={{ kind: 'piano-attack', allowedOffsetMs }}
       onFinish={() => {
-        router.push(getNextRhythmTrainingHref(staff));
+        advance();
       }}
       onSkip={() => {
-        router.push(getNextRhythmTrainingHref(staff));
+        skipSection();
       }}
       playback={{
         configuration: playbackConfiguration,

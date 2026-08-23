@@ -1,4 +1,3 @@
-import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 
 import { PianoPatternScore } from '@/components/piano-pattern-score';
@@ -8,6 +7,7 @@ import {
   usePerformanceGuidance,
 } from '@/components/performance-guidance';
 import { useTrainingSession } from '@/contexts/training-session-context';
+import { useTrainingSessionTransition } from '@/hooks/use-training-session-transition';
 import { buildPatternSoundFontPlaybackConfiguration } from '@/music-theory/sound-font-playback';
 import { Button } from '@/ui';
 
@@ -15,8 +15,12 @@ import { PlaceholderPanel } from './placeholder-panel';
 import { TrainingScreenShell } from './training-screen-shell';
 
 export function SessionGoalPage() {
-  const router = useRouter();
   const { learningConfig, prepareTrainingSession, session, training } = useTrainingSession();
+  const { advance, skipSection } = useTrainingSessionTransition({
+    onScreenChange: () => {},
+    screenId: 'goal',
+    sectionId: 'goal',
+  });
   const playbackConfiguration = useMemo(
     () =>
       session
@@ -51,10 +55,10 @@ export function SessionGoalPage() {
       key="session-goal"
       listeningMode={{ kind: 'none' }}
       onFinish={() => {
-        router.push('/chord-learning');
+        advance();
       }}
       onSkip={() => {
-        router.push('/chord-learning');
+        skipSection();
       }}
       playback={{
         configuration: playbackConfiguration,

@@ -19,12 +19,12 @@ import { TrainingControlDeck } from '@/ui';
 
 import { usePerformanceGuidance } from './performance-guidance-context';
 
-const HOLD_DURATION_MS = 3000;
 const SKIP_HOLD_DURATION_MS = 1000;
 const STOP_HOLD_DURATION_MS = 800;
 
 export function PerformanceGuidanceButton() {
-  const { errorMessage, isDisabled, phase, requestSkip, reset, start } = usePerformanceGuidance();
+  const { errorMessage, finishDurationMs, isDisabled, phase, requestSkip, reset, start } =
+    usePerformanceGuidance();
   const { setTraining } = useTrainingSession();
   const router = useRouter();
   const prepareScale = useSharedValue(1);
@@ -62,11 +62,11 @@ export function PerformanceGuidanceButton() {
 
     if (phase === 'finish') {
       finishFill.value = withTiming(1, {
-        duration: HOLD_DURATION_MS,
+        duration: finishDurationMs,
         easing: Easing.linear,
       });
     }
-  }, [finishFill, phase]);
+  }, [finishDurationMs, finishFill, phase]);
 
   useEffect(() => {
     if (phase !== 'pending') {
