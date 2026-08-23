@@ -79,6 +79,7 @@
     "storybook-generate": "sb-rn-get-stories --config-path ./.rnstorybook",
     "web": "expo start --web",
     "diagnose:basic-pitch": "bash ./scripts/diagnose-basic-pitch.sh",
+    "diagnose:piano-attack-detector": "bash ./scripts/diagnose-piano-attack-detector.sh",
     "diagnose:play-combined-soundfonts": "bash ./scripts/diagnose-play-combined-soundfonts.sh",
     "diagnose:play-soundfont": "pnpm diagnose:play-combined-soundfonts",
     "tokens:generate": "node scripts/generate-design-tokens.mjs",

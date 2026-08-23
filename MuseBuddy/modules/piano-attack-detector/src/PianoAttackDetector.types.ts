@@ -12,44 +12,22 @@ export type PianoAttackDetectorArtifactFiles = {
 };
 
 export type PianoAttackDetectorConfiguration = {
-  /** Analysis window size; larger is spectrally steadier, smaller is lower latency. */
-  frameMs: number;
-  /** Detector update interval; smaller improves timing at higher CPU cost. */
-  hopMs: number;
-  /** Number of Mel bands; more bands add detail but can increase noise sensitivity. */
-  nMels: number;
-  /** Lowest analyzed frequency; raises rumble rejection below the piano range. */
-  fMin: number;
-  /** Highest analyzed frequency; keeps hammer transient content without excess hiss. */
-  fMax: number;
-  /** Number of frames to look back for spectral-flux comparison. */
-  lag: number;
-  /** Local Mel-bin maximum filter width used to suppress spectral wiggles. */
-  maxFilterSize: number;
-  /** Initial calibration time before attack events can emit. */
-  warmupMs: number;
-  /** Rolling RMS window length for adaptive background-noise estimation. */
-  noiseWindowSec: number;
-  /** Rolling onset-score window length for adaptive threshold estimation. */
-  scoreWindowSec: number;
-  /** Adaptive threshold multiplier; higher rejects more false positives. */
-  thresholdK: number;
-  /** Minimum onset threshold to prevent collapse in silence. */
-  absScoreFloor: number;
-  /** Minimum frame RMS dB required before attack/release state changes are trusted. */
-  absoluteFloorDb: number;
-  /** Required RMS margin above the noise floor before attack candidates pass. */
-  minSnrDb: number;
-  /** Time an attack candidate must persist before being emitted. */
-  confirmMs: number;
-  /** Refractory period after an attack to avoid double triggers. */
-  minAttackIntervalMs: number;
-  /** Release gate margin above the noise floor. */
-  releaseSnrDb: number;
-  /** Time signal must stay quiet before emitting a release. */
-  releaseHoldMs: number;
-  /** Large dB drop from active peak that can count toward release. */
-  releaseDropDb: number;
+  /** Reference analysis rate used to scale frame durations to the input format. */
+  fftSize: number;
+  hopSize: number;
+  highPassCutoffHz: number;
+  minimumFrequency: number;
+  maximumFrequency: number;
+  magnitudeCompression: number;
+  thresholdHistorySeconds: number;
+  thresholdMultiplier: number;
+  minimumFlux: number;
+  minimumProminence: number;
+  minimumThresholdRatio: number;
+  minimumRmsRiseDb: number;
+  cooldownMs: number;
+  useSquaredFlux: number;
+  normalizeSpectrum: number;
 };
 
 export type PianoAmbientLevelChangeEvent = {
@@ -74,6 +52,10 @@ export type PianoAttackEvent = {
   onsetStrengthDb: number;
   score: number;
   threshold: number;
+  spectralFlux: number;
+  prominence: number;
+  confidence: number;
+  frameRmsDbfs: number;
 };
 
 export type PianoAttackDetectorErrorCode =

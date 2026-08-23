@@ -26,25 +26,21 @@ type EventSubscription = {
 };
 
 export const DEFAULT_PIANO_ATTACK_DETECTOR_CONFIGURATION: PianoAttackDetectorConfiguration = {
-  frameMs: 32, // Analysis window size; larger is steadier, smaller reduces latency.
-  hopMs: 10, // Detector update interval; smaller improves timing at higher CPU cost.
-  nMels: 64, // Number of Mel bands; more bands add detail but can add sensitivity to noise.
-  fMin: 30, // Lowest analyzed frequency; avoids spending bins on low rumble.
-  fMax: 10_000, // Highest analyzed frequency; preserves hammer transients without excess hiss.
-  lag: 1, // Frames to look back when comparing the current log-Mel frame.
-  maxFilterSize: 3, // Local Mel-bin maximum filter width for SuperFlux-style suppression.
-  warmupMs: 400, // Initial calibration time before attack events can emit.
-  noiseWindowSec: 2, // Rolling RMS window used to estimate background noise.
-  scoreWindowSec: 1.5, // Rolling onset-score window used for adaptive thresholding.
-  thresholdK: 3.2, // Threshold strength; higher rejects more false positives.
-  absScoreFloor: 0.07, // Minimum onset threshold so silence does not collapse the gate.
-  absoluteFloorDb: -48, // Minimum frame RMS dB required before attack/release state changes are trusted.
-  minSnrDb: 6, // Required RMS margin above the noise floor for attack candidates.
-  confirmMs: 20, // Candidate survival time before emitting an attack.
-  minAttackIntervalMs: 70, // Refractory period after each attack.
-  releaseSnrDb: 5, // Release gate margin above the adaptive noise floor.
-  releaseHoldMs: 120, // Quiet duration required before emitting a release.
-  releaseDropDb: 24, // Large drop from active peak that can count toward release.
+  fftSize: 512,
+  hopSize: 128,
+  highPassCutoffHz: 80,
+  minimumFrequency: 100,
+  maximumFrequency: 7_500,
+  magnitudeCompression: 10,
+  thresholdHistorySeconds: 0.75,
+  thresholdMultiplier: 3,
+  minimumFlux: 0.00002,
+  minimumProminence: 0.02,
+  minimumThresholdRatio: 1.5,
+  minimumRmsRiseDb: 1.5,
+  cooldownMs: 120,
+  useSquaredFlux: 1,
+  normalizeSpectrum: 0,
 };
 
 type NativePianoAttackDetectorModule = {

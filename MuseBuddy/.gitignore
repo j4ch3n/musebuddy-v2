@@ -46,6 +46,9 @@ npm-debug.*
 yarn-debug.*
 yarn-error.*
 
+# Generated spectral-flux detector diagnostics
+scripts/generated-spectral-flux-diagnostics/
+
 # Tests and tooling caches
 coverage/
 .cache/
