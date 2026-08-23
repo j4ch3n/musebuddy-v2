@@ -14,6 +14,11 @@ export type ChordSyntaxColorRole =
 
 export type ChordToneColorRole = 'color' | 'essential' | 'optional' | 'root' | 'supporting';
 
+type ChordToneMarkerAppearance = {
+  fill: string;
+  label: string;
+};
+
 export const chordSyntaxRoleByTokenType: Record<ChordDisplayTokenType, ChordSyntaxColorRole> = {
   addition: 'addition',
   alteration: 'alteration',
@@ -51,62 +56,52 @@ export const chordToneRoleLabels: Record<ChordToneColorRole, string> = {
   supporting: 'Supporting',
 };
 
-export const chordSyntaxRoleColors: Record<ChordSyntaxColorRole, { accent: string; text: string }> =
-  {
-    addition: {
-      accent: museBuddyColors.chordAdditionAccent,
-      text: museBuddyColors.chordAdditionText,
-    },
-    alteration: {
-      accent: museBuddyColors.chordAlterationAccent,
-      text: museBuddyColors.chordAlterationText,
-    },
-    bass: { accent: museBuddyColors.chordBassAccent, text: museBuddyColors.chordBassText },
-    extension: {
-      accent: museBuddyColors.chordExtensionAccent,
-      text: museBuddyColors.chordExtensionText,
-    },
-    omission: { accent: museBuddyColors.mist, text: museBuddyColors.pine },
-    quality: {
-      accent: museBuddyColors.chordQualityAccent,
-      text: museBuddyColors.chordQualityText,
-    },
-    root: { accent: museBuddyColors.chordRootAccent, text: museBuddyColors.chordRootText },
-    separator: { accent: museBuddyColors.mist, text: museBuddyColors.pine },
-  };
-
-export const chordToneRoleColors: Record<
-  ChordToneColorRole,
-  { accent: string; fill: string; label: string; ring: string }
-> = {
+export const chordToneRoleColors: Record<ChordToneColorRole, { color: string; label: string }> = {
   color: {
-    accent: museBuddyColors.rhythmWeak,
-    fill: museBuddyColors.cyan,
+    color: museBuddyColors.chordColorTone,
     label: museBuddyColors.mist,
-    ring: museBuddyColors.cyanLight,
   },
   essential: {
-    accent: museBuddyColors.rhythmHold,
-    fill: museBuddyColors.pink,
+    color: museBuddyColors.chordEssential,
     label: museBuddyColors.mist,
-    ring: museBuddyColors.pinkLight,
   },
   optional: {
-    accent: museBuddyColors.rhythmHold,
-    fill: museBuddyColors.pink,
+    color: museBuddyColors.chordOptional,
     label: museBuddyColors.mist,
-    ring: museBuddyColors.pinkLight,
   },
   root: {
-    accent: museBuddyColors.rhythmStrong,
-    fill: museBuddyColors.blue,
+    color: museBuddyColors.chordRoot,
     label: museBuddyColors.mist,
-    ring: museBuddyColors.blueLight,
   },
   supporting: {
-    accent: museBuddyColors.rhythmRest,
-    fill: museBuddyColors.yellow,
+    color: museBuddyColors.chordSupporting,
     label: museBuddyColors.mist,
-    ring: museBuddyColors.yellowLight,
   },
 };
+
+const chordToneRoleBySyntaxRole: Record<ChordSyntaxColorRole, ChordToneColorRole> = {
+  addition: 'color',
+  alteration: 'optional',
+  bass: 'optional',
+  extension: 'color',
+  omission: 'supporting',
+  quality: 'essential',
+  root: 'root',
+  separator: 'supporting',
+};
+
+export const chordSyntaxRoleColors: Record<ChordSyntaxColorRole, { color: string }> =
+  Object.fromEntries(
+    Object.entries(chordToneRoleBySyntaxRole).map(([role, toneRole]) => [
+      role,
+      { color: chordToneRoleColors[toneRole].color },
+    ]),
+  ) as Record<ChordSyntaxColorRole, { color: string }>;
+
+export const chordToneMarkerAppearances: Record<ChordToneColorRole, ChordToneMarkerAppearance> =
+  Object.fromEntries(
+    Object.entries(chordToneRoleColors).map(([role, { color, label }]) => [
+      role,
+      { fill: color, label },
+    ]),
+  ) as Record<ChordToneColorRole, ChordToneMarkerAppearance>;

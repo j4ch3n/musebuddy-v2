@@ -29,7 +29,7 @@ export function ChordSyntaxLegend({ tokens }: ChordSyntaxLegendProps) {
     <View accessibilityLabel="Chord symbol color key" style={styles.legend}>
       {roles.map((role) => (
         <LegendItem
-          color={chordSyntaxRoleColors[role].accent}
+          color={chordSyntaxRoleColors[role].color}
           key={role}
           label={chordSyntaxRoleLabels[role]}
           outlined={role === 'omission'}
@@ -50,7 +50,7 @@ export function ChordToneLegend({ roles }: ChordToneLegendProps) {
     <View accessibilityLabel="Chord tone color key" style={styles.legend}>
       {uniqueRoles.map((role) => (
         <LegendItem
-          color={chordToneRoleColors[role].accent}
+          color={chordToneRoleColors[role].color}
           key={role}
           label={chordToneRoleLabels[role]}
         />

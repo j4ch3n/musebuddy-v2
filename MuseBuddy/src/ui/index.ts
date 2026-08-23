@@ -18,6 +18,7 @@ export { GraphicSheet, type GraphicSheetTone } from './graphic-sheet';
 export {
   getPianoKeyboardMarkers,
   PianoKeyboard,
+  type PianoKeyboardLiveKeyState,
   type PianoKeyboardMarker,
   type PianoKeyboardMarkerTone,
   type PianoKeyboardProps,

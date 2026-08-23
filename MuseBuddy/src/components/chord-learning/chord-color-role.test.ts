@@ -32,24 +32,24 @@ describe('chord color roles', () => {
     });
   });
 
-  it('uses the shared display palette for harmonic note colors', () => {
+  it('uses one display color for sheet, keyboard, and legend harmonic notes', () => {
     expect(chordToneRoleColors).toMatchObject({
-      color: { accent: museBuddyColors.yellow, fill: museBuddyColors.cyan },
-      essential: { accent: museBuddyColors.cyan, fill: museBuddyColors.pink },
-      optional: { accent: museBuddyColors.cyan, fill: museBuddyColors.pink },
-      root: { accent: museBuddyColors.pink, fill: museBuddyColors.blue },
-      supporting: { accent: museBuddyColors.blue, fill: museBuddyColors.yellow },
+      color: { color: museBuddyColors.chordColorTone },
+      essential: { color: museBuddyColors.chordEssential },
+      optional: { color: museBuddyColors.chordOptional },
+      root: { color: museBuddyColors.chordRoot },
+      supporting: { color: museBuddyColors.chordSupporting },
     });
   });
 
-  it('uses the same display colors for chord-name syntax', () => {
+  it('uses one display color for chord-name syntax and its legend', () => {
     expect(chordSyntaxRoleColors).toMatchObject({
-      addition: { accent: museBuddyColors.yellow, text: museBuddyColors.yellow },
-      alteration: { accent: museBuddyColors.cyan, text: museBuddyColors.cyan },
-      bass: { accent: museBuddyColors.cyan, text: museBuddyColors.cyan },
-      extension: { accent: museBuddyColors.yellow, text: museBuddyColors.yellow },
-      quality: { accent: museBuddyColors.pink, text: museBuddyColors.pink },
-      root: { accent: museBuddyColors.blue, text: museBuddyColors.blue },
+      addition: { color: museBuddyColors.chordColorTone },
+      alteration: { color: museBuddyColors.chordOptional },
+      bass: { color: museBuddyColors.chordOptional },
+      extension: { color: museBuddyColors.chordColorTone },
+      quality: { color: museBuddyColors.chordEssential },
+      root: { color: museBuddyColors.chordRoot },
     });
   });
 });

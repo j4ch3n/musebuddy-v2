@@ -43,7 +43,7 @@ const tokenStyles = StyleSheet.create(
   Object.fromEntries(
     Object.entries(chordSyntaxRoleByTokenType).map(([type, role]) => [
       type,
-      { color: chordSyntaxRoleColors[role].text },
+      { color: chordSyntaxRoleColors[role].color },
     ]),
   ) as Record<ChordDisplayTokenType, TextStyle>,
 );

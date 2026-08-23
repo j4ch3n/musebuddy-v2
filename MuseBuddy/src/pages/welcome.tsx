@@ -123,8 +123,8 @@ export function WelcomePage() {
           <FloatingParticle delay={1040} motion="sway-left" style={styles.cobaltRectangle}>
             <View style={styles.cobaltRectangleShape} />
           </FloatingParticle>
-          <FloatingParticle delay={1560} motion="drift-left" style={styles.blueLightDiamond}>
-            <View style={styles.blueLightDiamondShape} />
+          <FloatingParticle delay={1560} motion="drift-left" style={styles.blueDiamond}>
+            <View style={styles.blueDiamondShape} />
           </FloatingParticle>
           <FloatingParticle delay={1980} motion="sway-right" style={styles.yellowStar}>
             <Lucide color={museBuddyColors.yellow} name="star" size={23} />
@@ -496,13 +496,13 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '-12deg' }],
     width: 30,
   },
-  blueLightDiamond: {
+  blueDiamond: {
     opacity: 0.68,
     right: 24,
     top: 74,
   },
-  blueLightDiamondShape: {
-    backgroundColor: museBuddyColors.blueLight,
+  blueDiamondShape: {
+    backgroundColor: museBuddyColors.blue,
     borderColor: museBuddyColors.pine,
     borderRadius: 3,
     borderWidth: 2,

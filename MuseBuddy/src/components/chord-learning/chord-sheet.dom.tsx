@@ -70,7 +70,7 @@ export default function ChordSheet({ notes }: ChordSheetProps) {
 
       notes.forEach((note, noteIndex) => {
         const toneRole = note.isRoot ? 'root' : chordToneRoleByImportance[note.importance];
-        const color = chordToneRoleColors[toneRole].accent;
+        const color = chordToneRoleColors[toneRole].color;
         const noteStyle = { fillStyle: color, strokeStyle: color };
 
         staveNote.setKeyStyle(noteIndex, noteStyle);

@@ -12,18 +12,11 @@ export const museBuddyColors = {
   rhythmRest: museBuddyPalette.blue,
   rhythmCurrent: museBuddyPalette.wildflower,
   rhythmCorrect: museBuddyPalette.yellow,
-  chordRootText: museBuddyPalette.blue,
-  chordRootAccent: museBuddyPalette.blue,
-  chordQualityText: museBuddyPalette.pink,
-  chordQualityAccent: museBuddyPalette.pink,
-  chordExtensionText: museBuddyPalette.yellow,
-  chordExtensionAccent: museBuddyPalette.yellow,
-  chordAlterationText: museBuddyPalette.cyan,
-  chordAlterationAccent: museBuddyPalette.cyan,
-  chordAdditionText: museBuddyPalette.yellow,
-  chordAdditionAccent: museBuddyPalette.yellow,
-  chordBassText: museBuddyPalette.cyan,
-  chordBassAccent: museBuddyPalette.cyan,
+  chordRoot: museBuddyPalette.pink,
+  chordEssential: museBuddyPalette.cyan,
+  chordOptional: museBuddyPalette.coral,
+  chordColorTone: museBuddyPalette.yellow,
+  chordSupporting: museBuddyPalette.blue,
 } as const;
 
 export const museBuddyRadii = {

@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
 
-import { ChordLearning, ChordListenNotes, ChordSessionSummary } from '@/components/chord-learning';
+import { ChordLearning, ChordSessionSummary } from '@/components/chord-learning';
 import {
   PerformanceGuidanceButton,
   PerformanceGuidanceProvider,
@@ -83,7 +82,7 @@ export function ChordLearningPage() {
         );
       }
 
-      return <ChordLearning display={slide.display} />;
+      return <ChordLearning display={slide.display} isActive={index === currentSlideIndex} />;
     },
     [currentSlideIndex],
   );
@@ -113,16 +112,7 @@ export function ChordLearningPage() {
   const content = (
     <TrainingScreenShell
       currentStep="chord"
-      footer={
-        session ? (
-          <View style={styles.footer}>
-            {currentSlide?.type === 'chord' ? (
-              <ChordListenNotes display={currentSlide.display} />
-            ) : null}
-            <PerformanceGuidanceButton />
-          </View>
-        ) : null
-      }
+      footer={session ? <PerformanceGuidanceButton /> : null}
     >
       {session ? (
         <GuidedChordCarousel
@@ -172,9 +162,3 @@ function GuidedChordCarousel(props: CarouselProps<ChordLearningSlide>) {
 
   return <Carousel {...props} swipeEnabled={phase === 'pending'} />;
 }
-
-const styles = StyleSheet.create({
-  footer: {
-    gap: 14,
-  },
-});
