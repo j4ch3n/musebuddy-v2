@@ -15,11 +15,14 @@ export function CongratsPage() {
       eyebrow="Session complete"
       footer={
         <Button
+          backgroundColor={museBuddyColors.leafWash}
+          frameColor={museBuddyColors.pine}
           label="Back to home"
           onPress={() => {
             router.dismissTo('/');
           }}
-          tone="success"
+          shadowColor={museBuddyColors.sky}
+          surfaceColor={museBuddyColors.pine}
         />
       }
       subtitle="Today's complete piano pattern practice is finished."

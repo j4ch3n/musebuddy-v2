@@ -1,53 +1,161 @@
-import type { ReactNode } from 'react';
-import { StyleSheet } from 'react-native';
+/* eslint-disable react-hooks/immutability -- Reanimated shared values are intentionally mutated by event handlers and worklets. */
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { StyleSheet, type ColorValue, type TextStyle } from 'react-native';
+import Animated, {
+  cancelAnimation,
+  Easing,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { Text, YStack } from 'tamagui';
 
-import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
-
-type ButtonTone = 'default' | 'success' | 'danger';
+import { museBuddyBorders, museBuddyRadii } from '@/constants/design-tokens';
 
 type ButtonProps = {
+  backgroundColor: string;
   children?: ReactNode;
   disabled?: boolean;
+  fontWeight?: TextStyle['fontWeight'];
+  frameColor: string;
+  icon?: ReactNode;
   label?: string;
+  longPressSeconds?: number | null;
   onPress: () => void;
-  primary?: boolean;
-  tone?: ButtonTone;
+  progressColor?: ColorValue;
+  shadowColor: string;
+  surfaceColor: string;
 };
 
 export function Button({
+  backgroundColor,
   children,
   disabled = false,
+  fontWeight = '900',
+  frameColor,
+  icon,
   label,
+  longPressSeconds = null,
   onPress,
-  primary = true,
-  tone = 'default',
+  progressColor,
+  shadowColor,
+  surfaceColor,
 }: ButtonProps) {
+  const holdFill = useSharedValue(0);
+  const consumesReleaseRef = useRef(false);
+  const [isPressed, setIsPressed] = useState(false);
+  const holdDurationMs = Math.max(0, longPressSeconds ?? 0) * 1000;
+  const requiresLongPress = holdDurationMs > 0;
+  const resolvedProgressColor = progressColor ?? (surfaceColor as ColorValue);
+
+  useEffect(() => {
+    if (!requiresLongPress || disabled) {
+      cancelAnimation(holdFill);
+      holdFill.value = 0;
+    }
+  }, [disabled, holdFill, requiresLongPress]);
+
+  const holdFillStyle = useAnimatedStyle(() => ({
+    transform: [{ scaleX: holdFill.value }],
+  }));
+
+  function handlePressIn() {
+    if (disabled) {
+      return;
+    }
+
+    setIsPressed(true);
+    consumesReleaseRef.current = requiresLongPress;
+
+    if (!requiresLongPress) {
+      return;
+    }
+
+    cancelAnimation(holdFill);
+    holdFill.value = withTiming(
+      1,
+      { duration: holdDurationMs, easing: Easing.linear },
+      (finished) => {
+        if (finished) {
+          runOnJS(completeLongPress)();
+        }
+      },
+    );
+  }
+
+  function handlePressOut() {
+    if (disabled) {
+      return;
+    }
+
+    setIsPressed(false);
+
+    if (!requiresLongPress) {
+      return;
+    }
+
+    cancelAnimation(holdFill);
+    holdFill.value = withTiming(0, { duration: 140 });
+  }
+
+  function completeLongPress() {
+    onPress();
+  }
+
+  function handlePress() {
+    if (consumesReleaseRef.current) {
+      consumesReleaseRef.current = false;
+      return;
+    }
+
+    if (!requiresLongPress) {
+      onPress();
+    }
+  }
+
   return (
     <YStack
       accessibilityRole="button"
       accessibilityState={{ disabled }}
       disabled={disabled}
-      onPress={onPress}
-      pressStyle={disabled ? undefined : styles.buttonPressed}
+      onPress={handlePress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       style={[
         styles.button,
-        !primary && styles.secondaryButton,
-        !primary && tone === 'success' && styles.successButton,
-        !primary && tone === 'danger' && styles.dangerButton,
+        {
+          backgroundColor,
+          borderColor: frameColor,
+          boxShadow: `6px 6px 0 ${shadowColor}`,
+        },
+        isPressed &&
+          !disabled && {
+            boxShadow: `2px 2px 0 ${shadowColor}`,
+            transform: [{ translateX: 4 }, { translateY: 4 }],
+          },
         disabled && styles.disabledButton,
       ]}
     >
+      {requiresLongPress && (
+        <Animated.View
+          style={[styles.progressFill, { backgroundColor: resolvedProgressColor }, holdFillStyle]}
+        />
+      )}
       {children ?? (
-        <Text
-          color={primary && !disabled ? museBuddyColors.mist : museBuddyColors.pine}
-          fontSize={18}
-          fontWeight="900"
-          numberOfLines={1}
-          style={styles.buttonLabel}
-        >
-          {label}
-        </Text>
+        <YStack style={styles.content}>
+          {icon}
+          {label ? (
+            <Text
+              color={surfaceColor as never}
+              fontSize={18}
+              fontWeight={fontWeight as never}
+              numberOfLines={1}
+            >
+              {label}
+            </Text>
+          ) : null}
+        </YStack>
       )}
     </YStack>
   );
@@ -56,38 +164,31 @@ export function Button({
 const styles = StyleSheet.create({
   button: {
     alignItems: 'center',
-    backgroundColor: museBuddyColors.wildflower,
-    borderColor: museBuddyColors.frame,
     borderRadius: museBuddyRadii.medium,
     borderWidth: museBuddyBorders.standard,
-    boxShadow: `6px 6px 0 ${museBuddyColors.frame}`,
     justifyContent: 'center',
     minHeight: 58,
     overflow: 'hidden',
-    paddingHorizontal: 18,
+    paddingHorizontal: 12,
     paddingVertical: 14,
   },
-  secondaryButton: {
-    backgroundColor: museBuddyColors.secondaryFace,
-    boxShadow: `4px 4px 0 ${museBuddyColors.sky}`,
-  },
-  successButton: {
-    backgroundColor: museBuddyColors.successFace,
-  },
-  dangerButton: {
-    backgroundColor: museBuddyColors.dangerFace,
+  content: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'center',
+    zIndex: 1,
   },
   disabledButton: {
-    backgroundColor: museBuddyColors.mist,
     boxShadow: 'none',
     opacity: 0.62,
   },
-  buttonPressed: {
-    boxShadow: `2px 2px 0 ${museBuddyColors.frame}`,
-    transform: [{ translateX: 4 }, { translateY: 4 }],
-  },
-  buttonLabel: {
-    textAlign: 'center',
-    zIndex: 1,
+  progressFill: {
+    bottom: 0,
+    height: 6,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    transformOrigin: 'left',
   },
 });

@@ -33,7 +33,14 @@ export function PrepareTrainingSessionSplashPage() {
       eyebrow="Daily exercise"
       footer={
         phase === 'error' ? (
-          <Button label="Try again" onPress={() => void prepareTrainingSession()} />
+          <Button
+            backgroundColor={museBuddyColors.wildflower}
+            frameColor={museBuddyColors.pine}
+            label="Try again"
+            onPress={() => void prepareTrainingSession()}
+            shadowColor={museBuddyColors.pine}
+            surfaceColor={museBuddyColors.mist}
+          />
         ) : (
           <View style={styles.footerSpacer} />
         )

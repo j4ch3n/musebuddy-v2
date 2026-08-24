@@ -1,31 +1,21 @@
-/* eslint-disable react-hooks/immutability -- Reanimated shared values are intentionally mutated by event handlers and worklets. */
-import { useEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 import { useRouter } from 'expo-router';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, {
-  cancelAnimation,
-  Easing,
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-} from 'react-native-reanimated';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 
-import { museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
+import { museBuddyColors } from '@/constants/design-tokens';
+import { Button, TrainingControlDeck } from '@/ui';
+
 import { useTrainingSession } from '@/contexts/training-session-context';
-import { TrainingControlDeck } from '@/ui';
 
 import { usePerformanceGuidance } from './performance-guidance-context';
 
-const SKIP_HOLD_DURATION_MS = 1000;
-const STOP_HOLD_DURATION_MS = 800;
+const SKIP_HOLD_SECONDS = 1;
+const STOP_HOLD_SECONDS = 0.8;
 
 export function PerformanceGuidanceButton() {
   const {
     errorMessage,
-    finishDurationMs,
     isDisabled,
     isRetryingCurrentSegment,
     phase,
@@ -36,167 +26,25 @@ export function PerformanceGuidanceButton() {
   } = usePerformanceGuidance();
   const { setTraining } = useTrainingSession();
   const router = useRouter();
-  const prepareScale = useSharedValue(1);
-  const finishFill = useSharedValue(0);
-  const mainHoldFill = useSharedValue(0);
-  const skipFill = useSharedValue(0);
-  const abortFill = useSharedValue(0);
-  const [isMainHoldActive, setIsMainHoldActive] = useState(false);
-  const [isStartPressed, setIsStartPressed] = useState(false);
   const abortConfirmationVisibleRef = useRef(false);
-  const shouldSuppressNextMainPressRef = useRef(false);
   const isMainDisabled = phase === 'pending' && isDisabled;
-  const label = primaryButtonLabel;
+  const isMainLongPress = phase !== 'pending' && phase !== 'finish';
+  const mainBackgroundColor = isRetryingCurrentSegment
+    ? museBuddyColors.dangerFace
+    : phase === 'pending'
+      ? museBuddyColors.wildflower
+      : museBuddyColors.sky;
+  const mainSurfaceColor =
+    phase === 'pending' || isRetryingCurrentSegment ? museBuddyColors.mist : museBuddyColors.pine;
 
-  useEffect(() => {
-    if (phase === 'prepare') {
-      prepareScale.value = withRepeat(
-        withTiming(0.94, {
-          duration: 420,
-          easing: Easing.inOut(Easing.quad),
-        }),
-        -1,
-        true,
-      );
-      return;
-    }
-
-    cancelAnimation(prepareScale);
-    prepareScale.value = withTiming(1, { duration: 140 });
-  }, [phase, prepareScale]);
-
-  useEffect(() => {
-    cancelAnimation(finishFill);
-    finishFill.value = 0;
-
-    if (phase === 'finish') {
-      finishFill.value = withTiming(1, {
-        duration: finishDurationMs,
-        easing: Easing.linear,
-      });
-    }
-  }, [finishDurationMs, finishFill, phase]);
-
-  useEffect(() => {
-    if (phase !== 'pending') {
-      return;
-    }
-
-    cancelAnimation(mainHoldFill);
-    mainHoldFill.value = 0;
-  }, [mainHoldFill, phase]);
-
-  const mainAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: prepareScale.value },
-      { translateX: isStartPressed ? 4 : 0 },
-      { translateY: isStartPressed ? 4 : 0 },
-    ],
-  }));
-
-  const finishFillStyle = useAnimatedStyle(() => ({
-    transform: [{ scaleX: finishFill.value }],
-  }));
-
-  const mainHoldFillStyle = useAnimatedStyle(() => ({
-    transform: [{ scaleX: mainHoldFill.value }],
-  }));
-
-  const skipFillStyle = useAnimatedStyle(() => ({
-    transform: [{ scaleX: skipFill.value }],
-  }));
-
-  const abortFillStyle = useAnimatedStyle(() => ({
-    transform: [{ scaleX: abortFill.value }],
-  }));
-
-  function handleMainPressIn() {
-    if (phase === 'pending') {
-      setIsStartPressed(true);
-      return;
-    }
-
-    setIsMainHoldActive(true);
-    cancelAnimation(mainHoldFill);
-    mainHoldFill.value = withTiming(
-      1,
-      {
-        duration: STOP_HOLD_DURATION_MS,
-        easing: Easing.linear,
-      },
-      (finished) => {
-        if (finished) {
-          runOnJS(suppressNextMainPress)();
-          runOnJS(setIsMainHoldActive)(false);
-          runOnJS(pauseTraining)();
-        }
-      },
-    );
+  function startTraining() {
+    setTraining(true);
+    start();
   }
 
-  function suppressNextMainPress() {
-    shouldSuppressNextMainPressRef.current = true;
-  }
-
-  function handleMainPressOut() {
-    if (phase === 'pending') {
-      setIsStartPressed(false);
-      return;
-    }
-
-    setIsMainHoldActive(false);
-    cancelAnimation(mainHoldFill);
-    mainHoldFill.value = withTiming(0, { duration: 140 });
-  }
-
-  function handleSkipPressIn() {
-    if (phase === 'finish') {
-      return;
-    }
-
-    cancelAnimation(skipFill);
-    skipFill.value = withTiming(
-      1,
-      {
-        duration: SKIP_HOLD_DURATION_MS,
-        easing: Easing.linear,
-      },
-      (finished) => {
-        if (finished) {
-          runOnJS(requestSkip)();
-        }
-      },
-    );
-  }
-
-  function handleSkipPressOut() {
-    if (phase === 'finish') {
-      return;
-    }
-
-    cancelAnimation(skipFill);
-    skipFill.value = withTiming(0, { duration: 140 });
-  }
-
-  function handleAbortPressIn() {
-    cancelAnimation(abortFill);
-    abortFill.value = withTiming(
-      1,
-      {
-        duration: STOP_HOLD_DURATION_MS,
-        easing: Easing.linear,
-      },
-      (finished) => {
-        if (finished) {
-          runOnJS(showAbortConfirmation)();
-        }
-      },
-    );
-  }
-
-  function handleAbortPressOut() {
-    cancelAnimation(abortFill);
-    abortFill.value = withTiming(0, { duration: 140 });
+  function pauseTraining() {
+    setTraining(false);
+    reset();
   }
 
   function showAbortConfirmation() {
@@ -225,103 +73,55 @@ export function PerformanceGuidanceButton() {
     ]);
   }
 
-  function handleMainPress() {
-    if (shouldSuppressNextMainPressRef.current) {
-      shouldSuppressNextMainPressRef.current = false;
-      return;
-    }
-
-    setTraining(true);
-    start();
-  }
-
-  function pauseTraining() {
-    setTraining(false);
-    reset();
-  }
-
   return (
     <View style={styles.container}>
       <TrainingControlDeck
         primary={
-          <Pressable
-            accessibilityHint={
-              phase === 'pending'
-                ? 'Starts performance guidance.'
-                : 'Pauses the current playback control.'
-            }
-            accessibilityRole="button"
-            accessibilityState={{ busy: isMainHoldActive, disabled: isMainDisabled }}
+          <Button
+            backgroundColor={mainBackgroundColor}
             disabled={isMainDisabled}
-            onPress={phase === 'pending' ? handleMainPress : undefined}
-            onPressIn={handleMainPressIn}
-            onPressOut={handleMainPressOut}
-            style={styles.primaryPressable}
-          >
-            <Animated.View
-              style={[
-                styles.mainButton,
-                phase !== 'pending' && styles.pauseButton,
-                isRetryingCurrentSegment && styles.retryButton,
-                isMainDisabled && styles.disabledButton,
-                isStartPressed && styles.startPressedButton,
-                mainAnimatedStyle,
-              ]}
-            >
-              {phase === 'finish' && <Animated.View style={[styles.fill, finishFillStyle]} />}
-              {phase !== 'pending' && (
-                <Animated.View style={[styles.stopFill, mainHoldFillStyle]} />
-              )}
+            frameColor={museBuddyColors.pine}
+            icon={
               <MaterialDesignIcons
-                color={
-                  phase === 'pending' || isRetryingCurrentSegment
-                    ? museBuddyColors.mist
-                    : museBuddyColors.pine
-                }
+                color={mainSurfaceColor}
                 name={phase === 'pending' ? 'play' : 'pause'}
                 size={21}
               />
-              <Text
-                numberOfLines={1}
-                style={[
-                  styles.mainLabel,
-                  phase !== 'pending' && styles.pauseLabel,
-                  isRetryingCurrentSegment && styles.retryLabel,
-                  isMainDisabled && styles.disabledLabel,
-                ]}
-              >
-                {label}
-              </Text>
-            </Animated.View>
-          </Pressable>
+            }
+            label={primaryButtonLabel}
+            longPressSeconds={isMainLongPress ? STOP_HOLD_SECONDS : null}
+            onPress={phase === 'pending' ? startTraining : pauseTraining}
+            progressColor={phase === 'pending' ? museBuddyColors.leaf : museBuddyColors.mist}
+            shadowColor={museBuddyColors.pine}
+            surfaceColor={mainSurfaceColor}
+          />
         }
         skip={
-          <Pressable
-            accessibilityLabel="Skip training"
-            accessibilityHint="Hold for one second to skip this training page."
-            accessibilityRole="button"
+          <Button
+            backgroundColor={museBuddyColors.mist}
             disabled={phase === 'finish'}
-            onPressIn={handleSkipPressIn}
-            onPressOut={handleSkipPressOut}
-            style={[styles.skipButton, phase === 'finish' && styles.skipDisabled]}
-          >
-            <Animated.View style={[styles.skipFill, skipFillStyle]} />
-            <MaterialDesignIcons color={museBuddyColors.pine} name="skip-next" size={21} />
-            <Text style={styles.skipLabel}>Skip</Text>
-          </Pressable>
+            fontWeight="500"
+            frameColor={museBuddyColors.pine}
+            icon={<MaterialDesignIcons color={museBuddyColors.pine} name="skip-next" size={21} />}
+            label="Skip"
+            longPressSeconds={SKIP_HOLD_SECONDS}
+            onPress={requestSkip}
+            progressColor={museBuddyColors.sky}
+            shadowColor={museBuddyColors.sunWash}
+            surfaceColor={museBuddyColors.pine}
+          />
         }
         abort={
-          <Pressable
-            accessibilityLabel="Abort training"
-            accessibilityHint="Hold to quit this training activity."
-            accessibilityRole="button"
-            onPressIn={handleAbortPressIn}
-            onPressOut={handleAbortPressOut}
-            style={styles.abortButton}
-          >
-            <Animated.View style={[styles.abortFill, abortFillStyle]} />
-            <MaterialDesignIcons color={museBuddyColors.wildflower} name="close" size={21} />
-          </Pressable>
+          <Button
+            backgroundColor={museBuddyColors.mist}
+            frameColor={museBuddyColors.wildflower}
+            icon={<MaterialDesignIcons color={museBuddyColors.wildflower} name="close" size={21} />}
+            longPressSeconds={STOP_HOLD_SECONDS}
+            onPress={showAbortConfirmation}
+            progressColor={museBuddyColors.wildflower}
+            shadowColor={museBuddyColors.petal}
+            surfaceColor={museBuddyColors.wildflower}
+          />
         }
       />
 
@@ -331,38 +131,8 @@ export function PerformanceGuidanceButton() {
 }
 
 const styles = StyleSheet.create({
-  abortButton: {
-    alignItems: 'center',
-    backgroundColor: museBuddyColors.mist,
-    borderColor: museBuddyColors.wildflower,
-    borderRadius: museBuddyRadii.medium,
-    borderWidth: 1,
-    boxShadow: `4px 4px 0 ${museBuddyColors.wildflower}`,
-    flex: 1,
-    justifyContent: 'center',
-    minHeight: 58,
-    overflow: 'hidden',
-    paddingHorizontal: 4,
-  },
-  abortFill: {
-    backgroundColor: museBuddyColors.wildflower,
-    bottom: 0,
-    height: 5,
-    left: 0,
-    position: 'absolute',
-    right: 0,
-    transformOrigin: 'left',
-  },
   container: {
     gap: 10,
-  },
-  disabledButton: {
-    backgroundColor: museBuddyColors.mist,
-    boxShadow: 'none',
-    opacity: 0.72,
-  },
-  disabledLabel: {
-    color: museBuddyColors.pine,
   },
   errorText: {
     color: museBuddyColors.pine,
@@ -370,90 +140,5 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     lineHeight: 18,
     textAlign: 'center',
-  },
-  fill: {
-    bottom: 0,
-    backgroundColor: museBuddyColors.leaf,
-    height: 6,
-    left: 0,
-    position: 'absolute',
-    right: 0,
-    transformOrigin: 'left',
-  },
-  pauseButton: {
-    backgroundColor: museBuddyColors.sky,
-  },
-  pauseLabel: { color: museBuddyColors.pine },
-  retryButton: {
-    backgroundColor: museBuddyColors.dangerFace,
-  },
-  retryLabel: { color: museBuddyColors.mist },
-  mainButton: {
-    alignItems: 'center',
-    backgroundColor: museBuddyColors.wildflower,
-    borderColor: museBuddyColors.frame,
-    borderRadius: museBuddyRadii.medium,
-    borderWidth: 1,
-    boxShadow: `4px 4px 0 ${museBuddyColors.frame}`,
-    flexDirection: 'row',
-    gap: 8,
-    height: 58,
-    justifyContent: 'center',
-    flex: 1,
-    minHeight: 58,
-    overflow: 'hidden',
-    paddingHorizontal: 18,
-    paddingVertical: 0,
-  },
-  mainLabel: {
-    color: museBuddyColors.mist,
-    fontSize: 17,
-    fontVariant: ['tabular-nums'],
-    fontWeight: '900',
-    lineHeight: 22,
-    textAlign: 'center',
-  },
-  primaryPressable: { flex: 1 },
-  skipButton: {
-    alignItems: 'center',
-    backgroundColor: museBuddyColors.mist,
-    borderColor: museBuddyColors.frame,
-    borderRadius: museBuddyRadii.medium,
-    borderWidth: 1,
-    boxShadow: `4px 4px 0 ${museBuddyColors.sun}`,
-    flex: 1,
-    flexDirection: 'row',
-    gap: 4,
-    overflow: 'hidden',
-    justifyContent: 'center',
-    minHeight: 58,
-    paddingHorizontal: 4,
-  },
-  skipLabel: {
-    color: museBuddyColors.pine,
-    fontSize: 13,
-    fontWeight: '500',
-    lineHeight: 18,
-  },
-  skipDisabled: {
-    opacity: 0.48,
-  },
-  skipFill: {
-    backgroundColor: museBuddyColors.sky,
-    bottom: 0,
-    height: 5,
-    left: 0,
-    position: 'absolute',
-    right: 0,
-    transformOrigin: 'left',
-  },
-  startPressedButton: {
-    boxShadow: 'none',
-  },
-  stopFill: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: museBuddyColors.mist,
-    opacity: 0.22,
-    transformOrigin: 'left',
   },
 });

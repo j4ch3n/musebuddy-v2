@@ -63,11 +63,14 @@ export default function TranscriptionScreen() {
         ListHeaderComponent={
           <View style={styles.headerContent}>
             <Button
+              backgroundColor={museBuddyColors.mist}
+              frameColor={museBuddyColors.pine}
               label="Back"
               onPress={() => {
                 router.back();
               }}
-              primary={false}
+              shadowColor={museBuddyColors.sky}
+              surfaceColor={museBuddyColors.pine}
             />
 
             <View style={styles.header}>
@@ -118,17 +121,45 @@ export default function TranscriptionScreen() {
             </View>
 
             <View style={styles.controls}>
-              <Button disabled={!startEnabled} label="Start" onPress={start} tone="success" />
-              <Button disabled={!endEnabled} label="Stop" onPress={end} tone="danger" />
               <Button
+                backgroundColor={museBuddyColors.leafWash}
+                disabled={!startEnabled}
+                frameColor={museBuddyColors.pine}
+                label="Start"
+                onPress={start}
+                shadowColor={museBuddyColors.sky}
+                surfaceColor={museBuddyColors.pine}
+              />
+              <Button
+                backgroundColor={museBuddyColors.error}
+                disabled={!endEnabled}
+                frameColor={museBuddyColors.pine}
+                label="Stop"
+                onPress={end}
+                shadowColor={museBuddyColors.pine}
+                surfaceColor={museBuddyColors.mist}
+              />
+              <Button
+                backgroundColor={museBuddyColors.mist}
                 disabled={!downloadEnabled}
+                frameColor={museBuddyColors.pine}
                 label="Download recording"
                 onPress={() => {
                   void downloadRecording();
                 }}
-                primary={false}
+                shadowColor={museBuddyColors.sky}
+                surfaceColor={museBuddyColors.pine}
               />
-              {phase === 'modelError' && <Button label="Retry model loading" onPress={loadModel} />}
+              {phase === 'modelError' && (
+                <Button
+                  backgroundColor={museBuddyColors.wildflower}
+                  frameColor={museBuddyColors.pine}
+                  label="Retry model loading"
+                  onPress={loadModel}
+                  shadowColor={museBuddyColors.pine}
+                  surfaceColor={museBuddyColors.mist}
+                />
+              )}
             </View>
 
             <Text style={styles.logHeading}>

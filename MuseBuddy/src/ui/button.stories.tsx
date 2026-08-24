@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-native';
 
+import { museBuddyColors } from '@/constants/design-tokens';
+
 import { Button } from './button';
 
 const noop = () => {};
@@ -8,10 +10,12 @@ const meta = {
   title: 'UI/Button',
   component: Button,
   args: {
+    backgroundColor: museBuddyColors.wildflower,
+    frameColor: museBuddyColors.pine,
     label: 'Continue',
     onPress: noop,
-    primary: true,
-    tone: 'default',
+    shadowColor: museBuddyColors.pine,
+    surfaceColor: museBuddyColors.mist,
   },
 } satisfies Meta<typeof Button>;
 
@@ -19,42 +23,32 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Primary: Story = {};
+export const Magenta: Story = {};
 
-export const Secondary: Story = {
+export const IceWhite: Story = {
   args: {
     label: 'Random',
-    primary: false,
+    backgroundColor: museBuddyColors.mist,
+    frameColor: museBuddyColors.pine,
+    shadowColor: museBuddyColors.sky,
+    surfaceColor: museBuddyColors.pine,
   },
 };
 
-export const Success: Story = {
+export const Pistachio: Story = {
   args: {
     label: 'Back to home',
-    tone: 'success',
+    backgroundColor: museBuddyColors.leafWash,
+    frameColor: museBuddyColors.pine,
+    shadowColor: museBuddyColors.sky,
+    surfaceColor: museBuddyColors.pine,
   },
 };
 
-export const SuccessSecondary: Story = {
+export const LongPress: Story = {
   args: {
-    label: 'Completed',
-    primary: false,
-    tone: 'success',
-  },
-};
-
-export const Danger: Story = {
-  args: {
-    label: 'Stop rhythm',
-    tone: 'danger',
-  },
-};
-
-export const DangerSecondary: Story = {
-  args: {
-    label: 'Stop rhythm',
-    primary: false,
-    tone: 'danger',
+    label: 'Hold to continue',
+    longPressSeconds: 0.8,
   },
 };
 
@@ -62,6 +56,9 @@ export const Disabled: Story = {
   args: {
     disabled: true,
     label: 'Random',
-    primary: false,
+    backgroundColor: museBuddyColors.mist,
+    frameColor: museBuddyColors.pine,
+    shadowColor: museBuddyColors.sky,
+    surfaceColor: museBuddyColors.pine,
   },
 };

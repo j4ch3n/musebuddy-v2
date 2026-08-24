@@ -6,6 +6,7 @@ import {
   PerformanceGuidanceProvider,
   usePerformanceGuidance,
 } from '@/components/performance-guidance';
+import { museBuddyColors } from '@/constants/design-tokens';
 import { useTrainingSession } from '@/contexts/training-session-context';
 import { useTrainingSessionTransition } from '@/hooks/use-training-session-transition';
 import { buildPatternSoundFontPlaybackConfiguration } from '@/music-theory/sound-font-playback';
@@ -40,7 +41,16 @@ export function SessionGoalPage() {
           title="Today's goal"
         />
       )}
-      {!session && <Button label="Load training" onPress={() => void prepareTrainingSession()} />}
+      {!session && (
+        <Button
+          backgroundColor={museBuddyColors.wildflower}
+          frameColor={museBuddyColors.pine}
+          label="Load training"
+          onPress={() => void prepareTrainingSession()}
+          shadowColor={museBuddyColors.pine}
+          surfaceColor={museBuddyColors.mist}
+        />
+      )}
     </TrainingScreenShell>
   );
 
