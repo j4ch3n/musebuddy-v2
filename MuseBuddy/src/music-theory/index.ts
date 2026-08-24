@@ -20,6 +20,7 @@ export {
 export {
   prepareTrainingSessionDisplay,
   type PreparedTrainingSession,
+  type ScoreChordChange,
 } from './training-session-display';
 export {
   buildChordPreviewSoundFontPlaybackConfiguration,

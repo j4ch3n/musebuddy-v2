@@ -23,7 +23,7 @@ export function ImprovisePage() {
       footer={session ? <PerformanceGuidanceButton /> : null}
     >
       {session ? (
-        <PianoPatternScore score={session.score} />
+        <PianoPatternScore chordChanges={session.scoreChordChanges} score={session.score} />
       ) : (
         <PlaceholderPanel
           accent="wildflower"

@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { museBuddyColors } from '@/constants/design-tokens';
 import type { TrainingSessionScore } from '@/contexts/training-session-schema';
+import type { ScoreChordChange } from '@/music-theory';
 import { Carousel } from '@/ui';
 
 import {
@@ -13,12 +14,14 @@ import {
 import PianoPatternScoreSheet from './piano-pattern-score-sheet.dom';
 
 type PianoPatternScoreProps = {
+  chordChanges: readonly ScoreChordChange[];
   currentStepIndex?: number | null;
   score: TrainingSessionScore;
   swipeEnabled?: boolean;
 };
 
 export function PianoPatternScore({
+  chordChanges,
   currentStepIndex = null,
   score,
   swipeEnabled = true,
@@ -40,9 +43,19 @@ export function PianoPatternScore({
         items={pages}
         keyExtractor={(_, index) => `score-page-${index}`}
         onCurrentIndexChange={setManualPageIndex}
-        renderItem={(page) => (
-          <PianoPatternScorePage currentStepIndex={currentStepIndex} score={page} />
-        )}
+        renderItem={(page) => {
+          const pageChordChanges = chordChanges.filter((chordChange) =>
+            page.measures.some((measure) => measure.index === chordChange.measureIndex),
+          );
+
+          return (
+            <PianoPatternScorePage
+              chordChanges={pageChordChanges}
+              currentStepIndex={currentStepIndex}
+              score={page}
+            />
+          );
+        }}
         selectedIndex={selectedPageIndex}
         swipeEnabled={swipeEnabled}
       />
@@ -51,9 +64,11 @@ export function PianoPatternScore({
 }
 
 function PianoPatternScorePage({
+  chordChanges,
   currentStepIndex,
   score,
 }: {
+  chordChanges: readonly ScoreChordChange[];
   currentStepIndex: number | null;
   score: TrainingSessionScore;
 }) {
@@ -63,6 +78,7 @@ function PianoPatternScorePage({
       style={styles.score}
     >
       <PianoPatternScoreSheet
+        chordChanges={chordChanges}
         dom={{
           matchContents: true,
           scrollEnabled: false,

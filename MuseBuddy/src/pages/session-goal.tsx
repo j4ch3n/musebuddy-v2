@@ -33,7 +33,7 @@ export function SessionGoalPage() {
   const content = (
     <TrainingScreenShell currentStep="goal" footer={session ? <PerformanceGuidanceButton /> : null}>
       {session ? (
-        <GuidedPianoPatternScore score={session.score} />
+        <GuidedPianoPatternScore chordChanges={session.scoreChordChanges} score={session.score} />
       ) : (
         <PlaceholderPanel
           accent="wildflower"
@@ -82,14 +82,17 @@ export function SessionGoalPage() {
 }
 
 function GuidedPianoPatternScore({
+  chordChanges,
   score,
 }: {
+  chordChanges: NonNullable<ReturnType<typeof useTrainingSession>['session']>['scoreChordChanges'];
   score: NonNullable<ReturnType<typeof useTrainingSession>['session']>['score'];
 }) {
   const { currentStepIndex, phase } = usePerformanceGuidance();
 
   return (
     <PianoPatternScore
+      chordChanges={chordChanges}
       currentStepIndex={currentStepIndex}
       score={score}
       swipeEnabled={phase === 'pending'}

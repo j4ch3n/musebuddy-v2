@@ -5,10 +5,12 @@ import { Accidental, Dot, Factory, Stem, type StaveNote } from 'vexflow';
 
 import { museBuddyColors } from '@/constants/design-tokens';
 import type { TrainingSessionScore } from '@/contexts/training-session-schema';
+import type { ScoreChordChange } from '@/music-theory';
 
 import { getActiveScoreEventIds, groupScoreMeasures } from './piano-pattern-score-layout';
 
 type PianoPatternScoreSheetProps = {
+  chordChanges: readonly ScoreChordChange[];
   currentStepIndex: number | null;
   dom?: import('expo/dom').DOMProps;
   score: TrainingSessionScore;
@@ -21,9 +23,10 @@ const MIN_SCORE_WIDTH = 300;
 const HORIZONTAL_PADDING = 4;
 const ROW_HEIGHT = 200;
 const SCORE_SCALE = 0.8;
-const TOP_PADDING = 12;
+const TOP_PADDING = 28;
 
 export default function PianoPatternScoreSheet({
+  chordChanges,
   currentStepIndex,
   score,
 }: PianoPatternScoreSheetProps) {
@@ -44,7 +47,7 @@ export default function PianoPatternScoreSheet({
     }
 
     const render = () => {
-      renderScore(container, elementId, score, currentStepIndex);
+      renderScore(container, elementId, score, chordChanges, currentStepIndex);
     };
     const observer = new ResizeObserver(render);
     observer.observe(container);
@@ -54,7 +57,7 @@ export default function PianoPatternScoreSheet({
       observer.disconnect();
       container.replaceChildren();
     };
-  }, [currentStepIndex, elementId, score]);
+  }, [chordChanges, currentStepIndex, elementId, score]);
 
   return (
     <div
@@ -77,6 +80,7 @@ function renderScore(
   container: HTMLDivElement,
   elementId: string,
   score: TrainingSessionScore,
+  chordChanges: readonly ScoreChordChange[],
   currentStepIndex: number | null,
 ) {
   container.replaceChildren();
@@ -112,7 +116,7 @@ function renderScore(
 
       for (const staffName of ['treble', 'bass'] as const) {
         const staffData = measure.staves[staffName];
-        const voices = staffData.voices.map((voiceData) => {
+        const voices = staffData.voices.map((voiceData, voiceIndex) => {
           const notes = voiceData.events.map((event) => {
             const note = createNote(factory, event, staffData.clef);
             if (activeEventIds.has(event.id)) {
@@ -125,6 +129,15 @@ function renderScore(
             rowByEventId.set(event.id, rowIndex);
             return note;
           });
+
+          if (staffName === 'treble' && voiceIndex === 0) {
+            addChordSymbols(
+              factory,
+              notes,
+              voiceData.events,
+              chordChanges.filter((chordChange) => chordChange.measureIndex === measure.index),
+            );
+          }
 
           return factory.Voice({ time: score.time_signature }).addTickables(notes);
         });
@@ -174,6 +187,53 @@ function renderScore(
     svg.style.transform = `scale(${SCORE_SCALE})`;
     svg.style.transformOrigin = 'top left';
   }
+}
+
+function addChordSymbols(
+  factory: Factory,
+  notes: readonly StaveNote[],
+  events: readonly ScoreEvent[],
+  chordChanges: readonly ScoreChordChange[],
+) {
+  chordChanges.forEach((chordChange) => {
+    const note = notes[getEventIndexForChordChange(events, chordChange.beatIndex)];
+    note?.addModifier(
+      factory.ChordSymbol({ hJustify: 'left', vJustify: 'top' }).addGlyphOrText(chordChange.symbol),
+      0,
+    );
+  });
+}
+
+function getEventIndexForChordChange(events: readonly ScoreEvent[], beatIndex: 0 | 1) {
+  const totalDuration = events.reduce(
+    (total, event) => total + getEventDurationInThirtySeconds(event),
+    0,
+  );
+  const chordChangeOffset = (totalDuration * beatIndex) / 2;
+  let elapsed = 0;
+
+  for (const [eventIndex, event] of events.entries()) {
+    elapsed += getEventDurationInThirtySeconds(event);
+    if (chordChangeOffset < elapsed) {
+      return eventIndex;
+    }
+  }
+
+  return Math.max(events.length - 1, 0);
+}
+
+function getEventDurationInThirtySeconds(event: ScoreEvent) {
+  const baseDuration = {
+    '8': 4,
+    '16': 2,
+    '32': 1,
+    '64': 0.5,
+    h: 16,
+    q: 8,
+    w: 32,
+  }[event.duration];
+
+  return baseDuration * (2 - 1 / 2 ** event.dots);
 }
 
 function createNote(factory: Factory, event: ScoreEvent, clef: 'bass' | 'treble'): StaveNote {
