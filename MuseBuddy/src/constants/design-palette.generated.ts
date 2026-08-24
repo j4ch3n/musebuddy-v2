@@ -14,6 +14,8 @@ export const museBuddyPalette = {
   sunWash: '#FFFBD1',
   cobalt: '#4F6DF5',
   cobaltWash: '#E5E9FF',
+  error: '#C1121F',
+  success: '#A7C957',
   notation: '#0D1321',
   blue: '#0F8B8D',
   pink: '#F038FF',
@@ -23,6 +25,4 @@ export const museBuddyPalette = {
   violet: '#8C6DB1',
   violetWash: '#EAE1F3',
   cobaltInk: '#293C9A',
-  error: '#C1121F',
-  success: '#A7C957',
 } as const;

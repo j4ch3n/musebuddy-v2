@@ -1,4 +1,5 @@
 :root {
+  /* UX framework: shared surfaces, controls, cards, shadows, and feedback. */
   --mb-color-mist: #f2fafc;
   --mb-color-pine: #286467;
   --mb-color-pine-deep: #16484b;
@@ -12,6 +13,10 @@
   --mb-color-sun-wash: #fffbd1;
   --mb-color-cobalt: #4f6df5;
   --mb-color-cobalt-wash: #e5e9ff;
+  --mb-color-error: #c1121f;
+  --mb-color-success: #a7c957;
+
+  /* Teaching materials: notation, chord roles, keyboard highlights, and rhythm states. */
   --mb-color-notation: #0d1321;
   --mb-color-blue: #0f8b8d;
   --mb-color-pink: #f038ff;
@@ -21,8 +26,6 @@
   --mb-color-violet: #8c6db1;
   --mb-color-violet-wash: #eae1f3;
   --mb-color-cobalt-ink: #293c9a;
-  --mb-color-error: #c1121f;
-  --mb-color-success: #a7c957;
 
   --font-display:
     Spline Sans, Inter, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji,

@@ -10,7 +10,10 @@ Use this skill with `AGENTS.md`: this skill owns design direction, while `AGENTS
 ## Reference routing
 
 Read [references/foundations.md](references/foundations.md) for every UI task. It contains the
-design character, palette, and contrast rules.
+design character, palette, and contrast rules. Its palette inventory divides colors into the
+**UX framework** (shared surfaces, controls, cards, shadows, and feedback) and **teaching
+materials** (notation, chord roles, keyboard highlights, and rhythm states). Keep those uses
+separate; do not repurpose teaching-material colors for general UI chrome.
 
 Then read only the reference that matches the work:
 
