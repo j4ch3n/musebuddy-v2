@@ -65,7 +65,7 @@ export function RhythmTrainingPage({ staff }: RhythmTrainingPageProps) {
         isRetryingCurrentSegment ? 'Try again' : phase === 'pending' ? 'Start' : 'Pause'
       }
       key={`rhythm-${staff}-${pattern.join('')}`}
-      listeningMode={{ kind: 'piano-attack', allowedOffsetMs }}
+      listeningMode={{ kind: 'rhythm-tap' }}
       onFinish={() => {
         advance();
       }}
@@ -113,8 +113,8 @@ function RhythmTrainingContent({
   const listeningDurationMs = pattern.length * stepDurationMs;
   const {
     attackDots,
-    attackFlashId,
     currentStepIndex: listeningStepIndex,
+    recordTap,
   } = useRhythmListenProgress({
     allowedOffsetMs,
     flowId,
@@ -134,8 +134,9 @@ function RhythmTrainingContent({
     >
       <RhythmViewer
         attackDots={attackDots}
-        attackFlashId={attackFlashId}
         currentStepIndex={currentStepIndex}
+        isTapActive={phase === 'listening'}
+        onTap={recordTap}
         pattern={pattern}
         previewPattern={previewPattern}
         stepDurationMs={stepDurationMs}

@@ -3,17 +3,18 @@ import { StyleSheet, Text, View } from 'react-native';
 import { museBuddyColors } from '@/constants/design-tokens';
 
 import { NoteBarViewer } from './note-bar-viewer';
-import { RhythmAttackDebugIndicator } from './rhythm-attack-debug-indicator';
 import { convertRhythmPatternToVexflowBars } from './note-bar-vexflow';
 import { normalizeRhythmPattern, splitRhythmPatternBars } from './rhythm-pattern';
 import { RhythmBarViewer } from './rhythm-bar-viewer';
 import { RhythmLegend } from './rhythm-legend';
+import { RhythmTapTarget } from './rhythm-tap-target';
 import type { RhythmAttackDot, RhythmPattern } from './types';
 
 type RhythmViewerProps = {
   attackDots?: readonly RhythmAttackDot[];
-  attackFlashId?: number;
   currentStepIndex: number | null;
+  isTapActive?: boolean;
+  onTap?: (timestampMs: number) => void;
   pattern: RhythmPattern;
   previewPattern?: RhythmPattern;
   stepDurationMs?: number;
@@ -21,8 +22,9 @@ type RhythmViewerProps = {
 
 export function RhythmViewer({
   attackDots = [],
-  attackFlashId = 0,
   currentStepIndex,
+  isTapActive = false,
+  onTap,
   pattern,
   previewPattern = [],
   stepDurationMs = 1,
@@ -37,7 +39,6 @@ export function RhythmViewer({
 
   return (
     <View style={styles.container}>
-      <RhythmAttackDebugIndicator flashId={attackFlashId} />
       <RhythmLegend />
       <View style={styles.currentBars}>
         {bars.map((steps, barIndex) => {
@@ -79,6 +80,7 @@ export function RhythmViewer({
                 steps={previewBars[barIndex]!}
               />
             ))}
+            {onTap ? <RhythmTapTarget isActive={isTapActive} onTap={onTap} /> : null}
           </>
         ) : (
           <Text style={styles.completionLabel}>Final section — keep the groove going.</Text>

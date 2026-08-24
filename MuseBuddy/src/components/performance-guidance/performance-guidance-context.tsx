@@ -9,14 +9,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { AppState } from 'react-native';
-
 import { addDetectionFinishListener, BasicPitchError } from '@modules/basic-pitch';
-import {
-  PianoAttackDetectorError,
-  startListening as startPianoAttackDetector,
-  stopListening as stopPianoAttackDetector,
-} from '@modules/piano-attack-detector';
 import {
   addPlaybackFinishListener,
   SoundFontPlayerError,
@@ -51,7 +44,7 @@ type PerformanceGuidancePlayback =
 export type PerformanceGuidanceListeningMode =
   | { kind: 'none' }
   | { kind: 'basic-pitch' }
-  | { kind: 'piano-attack'; allowedOffsetMs: number };
+  | { kind: 'rhythm-tap' };
 
 export type PerformanceGuidanceContextValue = GuidanceState & {
   completeListening: (outcome?: 'pass' | 'retry') => Promise<void>;
@@ -121,9 +114,6 @@ export function PerformanceGuidanceProvider({
   const flowGenerationRef = useRef(0);
   const playbackIdRef = useRef<number | null>(null);
   const recognitionIdRef = useRef<number | null>(null);
-  const detectorListeningRef = useRef(false);
-  const detectorShouldRemainActiveRef = useRef(false);
-  const detectorStartPromiseRef = useRef<Promise<void> | null>(null);
   const completionInProgressRef = useRef(false);
   const internalSegmentTransitionRef = useRef(false);
   const clockTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -165,49 +155,9 @@ export function PerformanceGuidanceProvider({
     }
   }, []);
 
-  const stopAttackDetector = useCallback(async () => {
-    if (!detectorListeningRef.current) {
-      return;
-    }
-    detectorListeningRef.current = false;
-    try {
-      await stopPianoAttackDetector();
-    } catch (error) {
-      if (
-        !(error instanceof PianoAttackDetectorError) ||
-        error.code !== 'ERR_ATTACK_DETECTOR_NOT_LISTENING'
-      ) {
-        throw error;
-      }
-    }
-  }, []);
-
-  const ensureAttackDetector = useCallback(async () => {
-    if (listeningModeRef.current.kind !== 'piano-attack' || detectorListeningRef.current) {
-      return;
-    }
-    if (!detectorStartPromiseRef.current) {
-      detectorStartPromiseRef.current = startPianoAttackDetector()
-        .then(async () => {
-          detectorListeningRef.current = true;
-          if (!detectorShouldRemainActiveRef.current) {
-            await stopAttackDetector();
-          }
-        })
-        .finally(() => {
-          detectorStartPromiseRef.current = null;
-        });
-    }
-    await detectorStartPromiseRef.current;
-  }, [stopAttackDetector]);
-
   const releaseAllAudio = useCallback(async () => {
-    try {
-      await trainingAudioCoordinator.release(ownerIdRef.current);
-    } finally {
-      await stopAttackDetector();
-    }
-  }, [stopAttackDetector]);
+    await trainingAudioCoordinator.release(ownerIdRef.current);
+  }, []);
 
   const enterFinish = useCallback(
     (generation: number, message?: string) => {
@@ -295,7 +245,7 @@ export function PerformanceGuidanceProvider({
           currentPlayback.kind,
           currentConfiguration,
           {
-            keepAudioSessionActive: mode.kind === 'piano-attack',
+            keepAudioSessionActive: false,
             leadIn,
             repetitions,
           },
@@ -306,7 +256,7 @@ export function PerformanceGuidanceProvider({
         }
         playbackIdRef.current = result.playbackId;
         recognitionIdRef.current = null;
-        if (mode.kind === 'piano-attack') {
+        if (mode.kind === 'rhythm-tap') {
           const beatDurationMs = 60_000 / currentConfiguration.bpm;
           const demoStartedAtMs = result.startedAtMs + (leadIn ? 4 * beatDurationMs : 0);
           const listeningStartedAtMs =
@@ -378,13 +328,11 @@ export function PerformanceGuidanceProvider({
     didAutoStartRef.current = true;
     flowGenerationRef.current += 1;
     const generation = flowGenerationRef.current;
-    detectorShouldRemainActiveRef.current = listeningModeRef.current.kind === 'piano-attack';
     clearFinishTimer();
     setFinishMessageOverride(null);
     dispatch({ type: 'prepare', flowId: generation });
     void trainingAudioCoordinator
       .release(ownerIdRef.current)
-      .then(ensureAttackDetector)
       .then(() => {
         if (flowGenerationRef.current === generation) {
           void startDemo(generation, true);
@@ -394,11 +342,11 @@ export function PerformanceGuidanceProvider({
         if (flowGenerationRef.current === generation) {
           dispatch({
             type: 'pending',
-            errorMessage: messageFor(error, 'The attack detector could not start.'),
+            errorMessage: messageFor(error, 'Audio could not start.'),
           });
         }
       });
-  }, [clearFinishTimer, dispatch, ensureAttackDetector, startDemo]);
+  }, [clearFinishTimer, dispatch, startDemo]);
 
   const completeListening = useCallback(
     async (outcome: 'pass' | 'retry' = 'pass') => {
@@ -443,10 +391,6 @@ export function PerformanceGuidanceProvider({
             dispatch({ type: 'next-segment' });
             await startDemo(generation, false);
           } else {
-            detectorShouldRemainActiveRef.current = false;
-            if (mode.kind === 'piano-attack') {
-              await stopAttackDetector();
-            }
             enterFinish(generation);
           }
         } else {
@@ -463,12 +407,11 @@ export function PerformanceGuidanceProvider({
         }
       }
     },
-    [dispatch, enterFinish, startDemo, stopAttackDetector, totalCycleCount],
+    [dispatch, enterFinish, startDemo, totalCycleCount],
   );
 
   const reset = useCallback(() => {
     flowGenerationRef.current += 1;
-    detectorShouldRemainActiveRef.current = false;
     clearClock();
     clearFinishTimer();
     clearRetryTimer();
@@ -482,7 +425,6 @@ export function PerformanceGuidanceProvider({
 
   const requestSkip = useCallback(() => {
     flowGenerationRef.current += 1;
-    detectorShouldRemainActiveRef.current = false;
     clearClock();
     clearFinishTimer();
     clearRetryTimer();
@@ -496,7 +438,6 @@ export function PerformanceGuidanceProvider({
     (message?: string) => {
       flowGenerationRef.current += 1;
       const generation = flowGenerationRef.current;
-      detectorShouldRemainActiveRef.current = false;
       clearClock();
       clearRetryTimer();
       void releaseAllAudio().then(() => {
@@ -519,19 +460,6 @@ export function PerformanceGuidanceProvider({
   }, [listeningMode]);
 
   useEffect(() => {
-    const appStateSubscription = AppState.addEventListener('change', (nextAppState) => {
-      if (nextAppState === 'active') {
-        return;
-      }
-      detectorShouldRemainActiveRef.current = false;
-      void stopAttackDetector().catch(() => {});
-    });
-    return () => {
-      appStateSubscription.remove();
-    };
-  }, [stopAttackDetector]);
-
-  useEffect(() => {
     const playbackSubscription = addPlaybackFinishListener((event) => {
       if (!shouldHandlePlaybackEvent(playbackIdRef.current, event.playbackId)) {
         return;
@@ -548,7 +476,7 @@ export function PerformanceGuidanceProvider({
           const mode = listeningModeRef.current;
           if (mode.kind === 'basic-pitch') {
             void startRecognition(generation);
-          } else if (mode.kind === 'piano-attack') {
+          } else if (mode.kind === 'rhythm-tap') {
             const startedAtMs = stateRef.current.listeningStartedAtMs;
             if (startedAtMs === null) {
               dispatch({ type: 'pending', errorMessage: 'Listening timing was unavailable.' });
@@ -611,7 +539,6 @@ export function PerformanceGuidanceProvider({
     dispatch({ type: 'prepare', flowId: generation });
     void trainingAudioCoordinator
       .release(ownerIdRef.current)
-      .then(ensureAttackDetector)
       .then(() => {
         if (flowGenerationRef.current === generation) {
           void startDemo(generation, true);
@@ -622,7 +549,7 @@ export function PerformanceGuidanceProvider({
           dispatch({ type: 'pending', errorMessage: messageFor(error, 'Audio restart failed.') });
         }
       });
-  }, [clearClock, clearFinishTimer, configuration, dispatch, ensureAttackDetector, startDemo]);
+  }, [clearClock, clearFinishTimer, configuration, dispatch, startDemo]);
 
   useEffect(() => {
     if (startPhase === 'prepare' && !didAutoStartRef.current) {
@@ -634,7 +561,6 @@ export function PerformanceGuidanceProvider({
   useEffect(
     () => () => {
       flowGenerationRef.current += 1;
-      detectorShouldRemainActiveRef.current = false;
       clearClock();
       clearFinishTimer();
       clearRetryTimer();
@@ -692,11 +618,7 @@ export function usePerformanceGuidance(): PerformanceGuidanceContextValue {
 }
 
 function messageFor(error: unknown, fallback: string): string {
-  if (
-    error instanceof SoundFontPlayerError ||
-    error instanceof BasicPitchError ||
-    error instanceof PianoAttackDetectorError
-  ) {
+  if (error instanceof SoundFontPlayerError || error instanceof BasicPitchError) {
     if (__DEV__ && error.nativeMessage) {
       return `${error.message} ${error.nativeMessage}`;
     }

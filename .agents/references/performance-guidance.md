@@ -15,11 +15,11 @@ Every provider supplies a `playback` value and a required listening mode:
 type PerformanceGuidanceListeningMode =
   | { kind: 'none' }
   | { kind: 'basic-pitch' }
-  | { kind: 'piano-attack'; allowedOffsetMs: number };
+  | { kind: 'rhythm-tap' };
 ```
 
 Session goal uses `none` and two playback cycles. Chords use `basic-pitch`. Rhythm uses
-`piano-attack` and three demo/listen cycles. Provider keys identify the exercise only; BPM
+`rhythm-tap` and one demo/listen cycle per segment. Provider keys identify the exercise only; BPM
 must not be part of a provider key.
 
 `usePerformanceGuidance()` exposes phase/progress state, the current demo step, Basic Pitch's
@@ -40,12 +40,10 @@ Session goal starts only after Start, plays two piano repetitions in one native 
 enters `finish`. Chords play one demo, then start Basic Pitch only after SoundFont finishes;
 the UI enters `listening` only after Basic Pitch returns a recognition ID.
 
-Rhythm starts the piano attack detector once before its first SoundFont request. SoundFont
-events anchor listening start at `startedAtMs + leadInDurationMs + demoDurationMs`. The
-detector remains active across all three demo/listen cycles. Its input-tap clock supplies
-absolute onset times that remain continuous across audio-session interruptions.
-`use-rhythm-listen-progress.ts` owns attack subscriptions and 30 ms listening updates derived
-from `Date.now()`.
+SoundFont events anchor rhythm listening at
+`startedAtMs + leadInDurationMs + demoDurationMs`. `RhythmTapTarget` overlays the next-bar
+preview and emits the absolute `Date.now()` tap time. `use-rhythm-listen-progress.ts` owns
+those tap timestamps and 30 ms listening updates derived from `Date.now()`.
 
 ## Page Integration
 
@@ -54,9 +52,9 @@ from `Date.now()`.
   existing matching/completion behavior.
 - Rhythm derives a thirty-second-note step (`0.125 × 60,000 / BPM`), uses half a step as its allowed offset, and
   listens for `pattern.length * stepDurationMs`.
-- Rhythm's pure progress helper creates expected hits only for `s` and `w`, derives one-to-one
-  nearest matches from raw absolute attacks, and recomputes misses and combo transitions so
-  bridge delivery delay cannot change the result.
+- Rhythm records the system time at each next-bar tap, then derives one-to-one nearest matches
+  in the page's ±20 ms tolerance window and recomputes misses/combo transitions from those
+  timestamps.
 - `rhythm-pattern.ts` owns the canonical attack/hold/rest timeline decoder. Notation merges
   attacks with their owned holds, while groove playback and the grid expand the same timeline
   back to normalized steps. Orphan holds normalize to rests and adjacent attacks stay separate.
@@ -64,18 +62,13 @@ from `Date.now()`.
 
 Changing BPM while active invalidates the flow, releases the exact active SoundFont or Basic
 Pitch ID, clears progress/input/errors, and automatically restarts round one with a lead-in.
-Rhythm retains its already running detector but resets combo/matching state. Stale generations
-and stale native IDs are ignored.
+Rhythm resets combo/matching state. Stale generations and stale native IDs are ignored.
 
 ## Audio Ownership And Cleanup
 
 The shared training-audio coordinator serializes SoundFont playback and Basic Pitch
 recognition. Commands carry a monotonically assigned provider owner ID so old cleanup cannot
 stop newer audio.
-
-Rhythm separately owns piano attack detection so input can overlap SoundFont output. Pause,
-skip, unmount, final completion, and app backgrounding stop the detector. This deactivates
-the shared session after any current SoundFont graph has been released.
 
 Playback or microphone failures return to `pending`, preserve no progress, and show the
 mapped error. Permission denial never advances a round.

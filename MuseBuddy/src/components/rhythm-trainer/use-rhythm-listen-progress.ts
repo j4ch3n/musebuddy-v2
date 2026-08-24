@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { addAttackListener } from '@modules/piano-attack-detector';
-
 import {
   createRhythmListenProgress,
   deriveRhythmListenProgress,
@@ -52,7 +50,6 @@ export function useRhythmListenProgress({
 }: UseRhythmListenProgressOptions) {
   const [round, setRound] = useState<RhythmRoundState>(() => createRoundState(flowId));
   const roundRef = useRef(round);
-  const [attackFlashId, setAttackFlashId] = useState(0);
   const [currentStepIndex, setCurrentStepIndex] = useState<number | null>(null);
   const completionStartedRef = useRef(false);
   const latestConfigurationRef = useRef<LatestConfiguration>({
@@ -155,35 +152,27 @@ export function useRhythmListenProgress({
     stepDurationMs,
   ]);
 
-  useEffect(() => {
-    const subscription = addAttackListener((attack) => {
-      const latest = latestConfigurationRef.current;
-      const startedAtMs = latest.listeningStartedAtMs;
-      setAttackFlashId((current) => current + 1);
-      if (latest.phase !== 'listening') {
-        return;
-      }
-      if (startedAtMs === null) {
-        return;
-      }
+  const nextTapIdRef = useRef(1);
+  const recordTap = (timestampMs: number) => {
+    const latest = latestConfigurationRef.current;
+    const startedAtMs = latest.listeningStartedAtMs;
+    if (latest.phase !== 'listening' || startedAtMs === null) {
+      return;
+    }
 
-      const activeRound = activateRoundState(roundRef.current, latest.flowId, startedAtMs);
-      if (activeRound.attacks.some(({ id }) => id === attack.id)) {
-        return;
-      }
-      const nextRound = {
-        ...activeRound,
-        attacks: [...activeRound.attacks, { absoluteTimeMs: attack.absoluteTimeMs, id: attack.id }],
-      };
-      const progress = deriveRoundProgress(nextRound, latest);
-      const updatedRound = { ...nextRound, combo: progress.combo };
-      roundRef.current = updatedRound;
-      setRound(updatedRound);
-    });
-    return () => {
-      subscription.remove();
+    const activeRound = activateRoundState(roundRef.current, latest.flowId, startedAtMs);
+    const nextRound = {
+      ...activeRound,
+      attacks: [
+        ...activeRound.attacks,
+        { absoluteTimeMs: timestampMs, id: nextTapIdRef.current++ },
+      ],
     };
-  }, []);
+    const progress = deriveRoundProgress(nextRound, latest);
+    const updatedRound = { ...nextRound, combo: progress.combo };
+    roundRef.current = updatedRound;
+    setRound(updatedRound);
+  };
 
   const progress = useMemo(
     () =>
@@ -198,9 +187,9 @@ export function useRhythmListenProgress({
 
   return {
     attackDots: phase === 'listening' ? progress.dots : [],
-    attackFlashId,
     combo: round.combo,
     currentStepIndex: phase === 'listening' ? currentStepIndex : null,
+    recordTap,
   };
 }
 

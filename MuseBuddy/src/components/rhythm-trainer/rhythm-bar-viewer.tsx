@@ -73,7 +73,7 @@ export function RhythmBarViewer({
         </View>
       </View>
       <View
-        accessibilityLabel="Detected piano attacks"
+        accessibilityLabel="Recorded rhythm taps"
         style={[styles.markerRow, { width: gridWidth }]}
       >
         {positionedDots.map((dot) => (
