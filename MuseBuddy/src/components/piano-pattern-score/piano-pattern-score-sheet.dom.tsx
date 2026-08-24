@@ -21,9 +21,10 @@ type ScoreEvent =
 
 const MIN_SCORE_WIDTH = 300;
 const HORIZONTAL_PADDING = 4;
-const ROW_HEIGHT = 200;
-const SCORE_SCALE = 0.8;
-const TOP_PADDING = 28;
+const STAFF_HEIGHT = 95;
+const CLEF_BASS_GAP_SIZE = 10;
+const SCORE_SCALE = 0.9;
+const SCORE_HEIGHT = STAFF_HEIGHT * 2 + CLEF_BASS_GAP_SIZE;
 
 export default function PianoPatternScoreSheet({
   chordChanges,
@@ -66,8 +67,7 @@ export default function PianoPatternScoreSheet({
       ref={containerRef}
       style={{
         background: museBuddyColors.mist,
-        height:
-          (groupScoreMeasures(score.measures).length * ROW_HEIGHT + TOP_PADDING) * SCORE_SCALE,
+        height: groupScoreMeasures(score.measures).length * SCORE_HEIGHT * SCORE_SCALE,
         overflow: 'hidden',
         position: 'relative',
         width: '100%',
@@ -87,7 +87,7 @@ function renderScore(
 
   const width = Math.max(MIN_SCORE_WIDTH, Math.floor(container.clientWidth / SCORE_SCALE));
   const rows = groupScoreMeasures(score.measures);
-  const height = rows.length * ROW_HEIGHT + TOP_PADDING;
+  const height = rows.length * SCORE_HEIGHT;
   const factory = new Factory({
     renderer: {
       elementId,
@@ -108,10 +108,10 @@ function renderScore(
       const x = HORIZONTAL_PADDING + columnIndex * measureWidth;
       const system = factory.System({
         formatOptions: { alignRests: true },
-        spaceBetweenStaves: 10,
+        spaceBetweenStaves: CLEF_BASS_GAP_SIZE,
         width: measureWidth,
         x,
-        y: TOP_PADDING + rowIndex * ROW_HEIGHT,
+        y: rowIndex * SCORE_HEIGHT,
       });
 
       for (const staffName of ['treble', 'bass'] as const) {

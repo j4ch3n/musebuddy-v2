@@ -33,7 +33,6 @@ export function PianoPatternScore({
     getActiveScoreMeasureIndex(currentStepIndex),
   );
   const selectedPageIndex = playbackPageIndex ?? manualPageIndex;
-
   return (
     <View style={styles.pager}>
       <Carousel

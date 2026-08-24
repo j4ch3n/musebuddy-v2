@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 import { useRouter } from 'expo-router';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ChordKeyboardCard, ChordName } from '@/components/chord-learning';
 import { PianoPatternScore } from '@/components/piano-pattern-score';
@@ -164,10 +165,11 @@ export function BarDetailsSection() {
   }));
 
   return (
-    <View style={styles.page}>
+    <SafeAreaView style={styles.page}>
       <View style={styles.cards}>
         <FocusCard
           focused={focusedCard === 'sheet'}
+          layout="score"
           onPress={() => setFocusedCard('sheet')}
           shadowColor={museBuddyColors.sky}
         >
@@ -184,7 +186,7 @@ export function BarDetailsSection() {
           onPageChange={setChordIndex}
           selectedPageIndex={chordIndex}
           shadowColor={museBuddyColors.sun}
-          size="compact"
+          layout="stable"
         >
           {focusedCard !== 'chord' ? (
             <View style={styles.collapsedChordList}>
@@ -259,43 +261,45 @@ export function BarDetailsSection() {
         />
         <BpmControl direction="up" onChange={setBpm} value={learningConfig.bpm} />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 function FocusCard({
   children,
   focused,
+  layout = 'responsive',
   onPress,
   onPageChange,
   pages,
   selectedPageIndex,
   shadowColor,
-  size = 'flexible',
 }: {
   children: ReactNode;
   focused: boolean;
+  layout?: 'responsive' | 'score' | 'stable';
   onPress: () => void;
   onPageChange?: (pageIndex: number) => void;
   pages?: readonly FlashCardPage[];
   selectedPageIndex?: number;
   shadowColor: string;
-  size?: 'compact' | 'flexible';
 }) {
   return (
     <Pressable
       onPress={onPress}
       style={
-        size === 'compact'
-          ? styles.compactChordCard
-          : focused
-            ? styles.focusedCard
-            : styles.collapsedCard
+        layout === 'score'
+          ? styles.scoreCard
+          : layout === 'stable'
+            ? styles.stableCard
+            : focused
+              ? styles.focusedCard
+              : styles.collapsedCard
       }
     >
       <FlashCard
         onPageChange={onPageChange}
-        padded={focused}
+        padded={layout !== 'score' && focused}
         pages={pages}
         selectedPageIndex={selectedPageIndex}
         shadowColor={shadowColor}
@@ -336,8 +340,9 @@ function SmallArrow({
 const styles = StyleSheet.create({
   page: { backgroundColor: museBuddyColors.mist, flex: 1, gap: 10, padding: 12 },
   cards: { flex: 1, gap: 10, minHeight: 0 },
+  scoreCard: { flex: 1, minHeight: 0 },
   focusedCard: { flex: 1.8, minHeight: 0 },
-  compactChordCard: { height: 196 },
+  stableCard: { flex: 1, minHeight: 0 },
   fillCard: { flex: 1 },
   collapsedCard: { flex: 0.45, minHeight: 64 },
   cardInner: { flex: 1, justifyContent: 'center' },
