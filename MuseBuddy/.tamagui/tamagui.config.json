@@ -72734,8 +72734,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light"
       },
       "light_Button": {
@@ -72992,8 +72990,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_Button"
       },
       "light_SliderThumb": {
@@ -73250,8 +73246,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_SliderThumb"
       },
       "light_Switch": {
@@ -73508,8 +73502,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_Switch"
       },
       "light_surface2": {
@@ -73766,8 +73758,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_surface2"
       },
       "light_white_Button": {
@@ -74024,8 +74014,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_white_Button"
       },
       "light_white_SliderThumb": {
@@ -74282,8 +74270,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_white_SliderThumb"
       },
       "light_white_Switch": {
@@ -74540,8 +74526,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_white_Switch"
       },
       "light_white_surface2": {
@@ -74798,8 +74782,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_white_surface2"
       },
       "light_Input": {
@@ -75056,8 +75038,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_Input"
       },
       "light_Progress": {
@@ -75314,8 +75294,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_Progress"
       },
       "light_Slider": {
@@ -75572,8 +75550,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_Slider"
       },
       "light_TextArea": {
@@ -75830,8 +75806,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_TextArea"
       },
       "light_surface1": {
@@ -76088,8 +76062,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_surface1"
       },
       "light_white_Input": {
@@ -76346,8 +76318,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_white_Input"
       },
       "light_white_Progress": {
@@ -76604,8 +76574,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_white_Progress"
       },
       "light_white_Slider": {
@@ -76862,8 +76830,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_white_Slider"
       },
       "light_white_TextArea": {
@@ -77120,8 +77086,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_white_TextArea"
       },
       "light_white_surface1": {
@@ -77378,8 +77342,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_white_surface1"
       },
       "light_ProgressIndicator": {
@@ -77636,8 +77598,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_ProgressIndicator"
       },
       "light_SliderActive": {
@@ -77894,8 +77854,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_SliderActive"
       },
       "light_white_ProgressIndicator": {
@@ -78152,8 +78110,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_white_ProgressIndicator"
       },
       "light_white_SliderActive": {
@@ -78410,8 +78366,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_white_SliderActive"
       },
       "light_SwitchThumb": {
@@ -78668,8 +78622,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_SwitchThumb"
       },
       "light_Tooltip": {
@@ -78926,8 +78878,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_Tooltip"
       },
       "light_white_SwitchThumb": {
@@ -79184,8 +79134,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_white_SwitchThumb"
       },
       "light_white_Tooltip": {
@@ -79442,8 +79390,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_white_Tooltip"
       },
       "light_white_accent": {
@@ -79700,8 +79646,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_white_accent"
       },
       "light_accent": {
@@ -79958,8 +79902,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_accent"
       },
       "light_black": {
@@ -80216,8 +80158,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_black"
       },
       "light_black_Button": {
@@ -80474,8 +80414,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_black_Button"
       },
       "light_black_SliderThumb": {
@@ -80732,8 +80670,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_black_SliderThumb"
       },
       "light_black_Switch": {
@@ -80990,8 +80926,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_black_Switch"
       },
       "light_black_surface2": {
@@ -81248,8 +81182,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_black_surface2"
       },
       "light_black_Input": {
@@ -81506,8 +81438,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_black_Input"
       },
       "light_black_Progress": {
@@ -81764,8 +81694,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_black_Progress"
       },
       "light_black_Slider": {
@@ -82022,8 +81950,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_black_Slider"
       },
       "light_black_TextArea": {
@@ -82280,8 +82206,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_black_TextArea"
       },
       "light_black_surface1": {
@@ -82538,8 +82462,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_black_surface1"
       },
       "light_black_ProgressIndicator": {
@@ -82796,8 +82718,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_black_ProgressIndicator"
       },
       "light_black_SliderActive": {
@@ -83054,8 +82974,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_black_SliderActive"
       },
       "light_black_SwitchThumb": {
@@ -83312,8 +83230,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_black_SwitchThumb"
       },
       "light_black_Tooltip": {
@@ -83570,8 +83486,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_black_Tooltip"
       },
       "light_black_accent": {
@@ -83828,8 +83742,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_black_accent"
       },
       "light_blue": {
@@ -84086,8 +83998,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_blue"
       },
       "light_blue_Button": {
@@ -84344,8 +84254,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_blue_Button"
       },
       "light_blue_SliderThumb": {
@@ -84602,8 +84510,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_blue_SliderThumb"
       },
       "light_blue_Switch": {
@@ -84860,8 +84766,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_blue_Switch"
       },
       "light_blue_surface2": {
@@ -85118,8 +85022,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_blue_surface2"
       },
       "light_blue_Input": {
@@ -85376,8 +85278,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_blue_Input"
       },
       "light_blue_Progress": {
@@ -85634,8 +85534,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_blue_Progress"
       },
       "light_blue_Slider": {
@@ -85892,8 +85790,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_blue_Slider"
       },
       "light_blue_TextArea": {
@@ -86150,8 +86046,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_blue_TextArea"
       },
       "light_blue_surface1": {
@@ -86408,8 +86302,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_blue_surface1"
       },
       "light_blue_ProgressIndicator": {
@@ -86666,8 +86558,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_blue_ProgressIndicator"
       },
       "light_blue_SliderActive": {
@@ -86924,8 +86814,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_blue_SliderActive"
       },
       "light_blue_SwitchThumb": {
@@ -87182,8 +87070,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_blue_SwitchThumb"
       },
       "light_blue_Tooltip": {
@@ -87440,8 +87326,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_blue_Tooltip"
       },
       "light_blue_accent": {
@@ -87698,8 +87582,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_blue_accent"
       },
       "light_gray": {
@@ -87956,8 +87838,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_gray"
       },
       "light_gray_Button": {
@@ -88214,8 +88094,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_gray_Button"
       },
       "light_gray_SliderThumb": {
@@ -88472,8 +88350,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_gray_SliderThumb"
       },
       "light_gray_Switch": {
@@ -88730,8 +88606,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_gray_Switch"
       },
       "light_gray_surface2": {
@@ -88988,8 +88862,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_gray_surface2"
       },
       "light_gray_Input": {
@@ -89246,8 +89118,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_gray_Input"
       },
       "light_gray_Progress": {
@@ -89504,8 +89374,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_gray_Progress"
       },
       "light_gray_Slider": {
@@ -89762,8 +89630,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_gray_Slider"
       },
       "light_gray_TextArea": {
@@ -90020,8 +89886,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_gray_TextArea"
       },
       "light_gray_surface1": {
@@ -90278,8 +90142,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_gray_surface1"
       },
       "light_gray_ProgressIndicator": {
@@ -90536,8 +90398,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_gray_ProgressIndicator"
       },
       "light_gray_SliderActive": {
@@ -90794,8 +90654,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_gray_SliderActive"
       },
       "light_gray_SwitchThumb": {
@@ -91052,8 +90910,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_gray_SwitchThumb"
       },
       "light_gray_Tooltip": {
@@ -91310,8 +91166,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_gray_Tooltip"
       },
       "light_gray_accent": {
@@ -91568,8 +91422,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_gray_accent"
       },
       "light_green": {
@@ -91826,8 +91678,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_green"
       },
       "light_green_Button": {
@@ -92084,8 +91934,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_green_Button"
       },
       "light_green_SliderThumb": {
@@ -92342,8 +92190,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_green_SliderThumb"
       },
       "light_green_Switch": {
@@ -92600,8 +92446,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_green_Switch"
       },
       "light_green_surface2": {
@@ -92858,8 +92702,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_green_surface2"
       },
       "light_green_Input": {
@@ -93116,8 +92958,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_green_Input"
       },
       "light_green_Progress": {
@@ -93374,8 +93214,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_green_Progress"
       },
       "light_green_Slider": {
@@ -93632,8 +93470,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_green_Slider"
       },
       "light_green_TextArea": {
@@ -93890,8 +93726,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_green_TextArea"
       },
       "light_green_surface1": {
@@ -94148,8 +93982,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_green_surface1"
       },
       "light_green_ProgressIndicator": {
@@ -94406,8 +94238,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_green_ProgressIndicator"
       },
       "light_green_SliderActive": {
@@ -94664,8 +94494,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_green_SliderActive"
       },
       "light_green_SwitchThumb": {
@@ -94922,8 +94750,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_green_SwitchThumb"
       },
       "light_green_Tooltip": {
@@ -95180,8 +95006,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_green_Tooltip"
       },
       "light_green_accent": {
@@ -95438,8 +95262,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_green_accent"
       },
       "light_neutral": {
@@ -95696,8 +95518,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_neutral"
       },
       "light_neutral_Button": {
@@ -95954,8 +95774,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_neutral_Button"
       },
       "light_neutral_SliderThumb": {
@@ -96212,8 +96030,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_neutral_SliderThumb"
       },
       "light_neutral_Switch": {
@@ -96470,8 +96286,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_neutral_Switch"
       },
       "light_neutral_surface2": {
@@ -96728,8 +96542,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_neutral_surface2"
       },
       "light_neutral_Input": {
@@ -96986,8 +96798,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_neutral_Input"
       },
       "light_neutral_Progress": {
@@ -97244,8 +97054,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_neutral_Progress"
       },
       "light_neutral_Slider": {
@@ -97502,8 +97310,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_neutral_Slider"
       },
       "light_neutral_TextArea": {
@@ -97760,8 +97566,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_neutral_TextArea"
       },
       "light_neutral_surface1": {
@@ -98018,8 +97822,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_neutral_surface1"
       },
       "light_neutral_ProgressIndicator": {
@@ -98276,8 +98078,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_neutral_ProgressIndicator"
       },
       "light_neutral_SliderActive": {
@@ -98534,8 +98334,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_neutral_SliderActive"
       },
       "light_neutral_SwitchThumb": {
@@ -98792,8 +98590,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_neutral_SwitchThumb"
       },
       "light_neutral_Tooltip": {
@@ -99050,8 +98846,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_neutral_Tooltip"
       },
       "light_neutral_accent": {
@@ -99308,8 +99102,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_neutral_accent"
       },
       "light_orange": {
@@ -99566,8 +99358,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_orange"
       },
       "light_orange_Button": {
@@ -99824,8 +99614,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_orange_Button"
       },
       "light_orange_SliderThumb": {
@@ -100082,8 +99870,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_orange_SliderThumb"
       },
       "light_orange_Switch": {
@@ -100340,8 +100126,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_orange_Switch"
       },
       "light_orange_surface2": {
@@ -100598,8 +100382,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_orange_surface2"
       },
       "light_orange_Input": {
@@ -100856,8 +100638,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_orange_Input"
       },
       "light_orange_Progress": {
@@ -101114,8 +100894,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_orange_Progress"
       },
       "light_orange_Slider": {
@@ -101372,8 +101150,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_orange_Slider"
       },
       "light_orange_TextArea": {
@@ -101630,8 +101406,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_orange_TextArea"
       },
       "light_orange_surface1": {
@@ -101888,8 +101662,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_orange_surface1"
       },
       "light_orange_ProgressIndicator": {
@@ -102146,8 +101918,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_orange_ProgressIndicator"
       },
       "light_orange_SliderActive": {
@@ -102404,8 +102174,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_orange_SliderActive"
       },
       "light_orange_SwitchThumb": {
@@ -102662,8 +102430,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_orange_SwitchThumb"
       },
       "light_orange_Tooltip": {
@@ -102920,8 +102686,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_orange_Tooltip"
       },
       "light_orange_accent": {
@@ -103178,8 +102942,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_orange_accent"
       },
       "light_pink": {
@@ -103436,8 +103198,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_pink"
       },
       "light_pink_Button": {
@@ -103694,8 +103454,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_pink_Button"
       },
       "light_pink_SliderThumb": {
@@ -103952,8 +103710,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_pink_SliderThumb"
       },
       "light_pink_Switch": {
@@ -104210,8 +103966,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_pink_Switch"
       },
       "light_pink_surface2": {
@@ -104468,8 +104222,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_pink_surface2"
       },
       "light_pink_Input": {
@@ -104726,8 +104478,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_pink_Input"
       },
       "light_pink_Progress": {
@@ -104984,8 +104734,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_pink_Progress"
       },
       "light_pink_Slider": {
@@ -105242,8 +104990,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_pink_Slider"
       },
       "light_pink_TextArea": {
@@ -105500,8 +105246,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_pink_TextArea"
       },
       "light_pink_surface1": {
@@ -105758,8 +105502,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_pink_surface1"
       },
       "light_pink_ProgressIndicator": {
@@ -106016,8 +105758,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_pink_ProgressIndicator"
       },
       "light_pink_SliderActive": {
@@ -106274,8 +106014,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_pink_SliderActive"
       },
       "light_pink_SwitchThumb": {
@@ -106532,8 +106270,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_pink_SwitchThumb"
       },
       "light_pink_Tooltip": {
@@ -106790,8 +106526,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_pink_Tooltip"
       },
       "light_pink_accent": {
@@ -107048,8 +106782,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_pink_accent"
       },
       "light_purple": {
@@ -107306,8 +107038,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_purple"
       },
       "light_purple_Button": {
@@ -107564,8 +107294,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_purple_Button"
       },
       "light_purple_SliderThumb": {
@@ -107822,8 +107550,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_purple_SliderThumb"
       },
       "light_purple_Switch": {
@@ -108080,8 +107806,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_purple_Switch"
       },
       "light_purple_surface2": {
@@ -108338,8 +108062,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_purple_surface2"
       },
       "light_purple_Input": {
@@ -108596,8 +108318,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_purple_Input"
       },
       "light_purple_Progress": {
@@ -108854,8 +108574,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_purple_Progress"
       },
       "light_purple_Slider": {
@@ -109112,8 +108830,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_purple_Slider"
       },
       "light_purple_TextArea": {
@@ -109370,8 +109086,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_purple_TextArea"
       },
       "light_purple_surface1": {
@@ -109628,8 +109342,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_purple_surface1"
       },
       "light_purple_ProgressIndicator": {
@@ -109886,8 +109598,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_purple_ProgressIndicator"
       },
       "light_purple_SliderActive": {
@@ -110144,8 +109854,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_purple_SliderActive"
       },
       "light_purple_SwitchThumb": {
@@ -110402,8 +110110,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_purple_SwitchThumb"
       },
       "light_purple_Tooltip": {
@@ -110660,8 +110366,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_purple_Tooltip"
       },
       "light_purple_accent": {
@@ -110918,8 +110622,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_purple_accent"
       },
       "light_red": {
@@ -111176,8 +110878,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_red"
       },
       "light_red_Button": {
@@ -111434,8 +111134,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_red_Button"
       },
       "light_red_SliderThumb": {
@@ -111692,8 +111390,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_red_SliderThumb"
       },
       "light_red_Switch": {
@@ -111950,8 +111646,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_red_Switch"
       },
       "light_red_surface2": {
@@ -112208,8 +111902,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_red_surface2"
       },
       "light_red_Input": {
@@ -112466,8 +112158,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_red_Input"
       },
       "light_red_Progress": {
@@ -112724,8 +112414,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_red_Progress"
       },
       "light_red_Slider": {
@@ -112982,8 +112670,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_red_Slider"
       },
       "light_red_TextArea": {
@@ -113240,8 +112926,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_red_TextArea"
       },
       "light_red_surface1": {
@@ -113498,8 +113182,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_red_surface1"
       },
       "light_red_ProgressIndicator": {
@@ -113756,8 +113438,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_red_ProgressIndicator"
       },
       "light_red_SliderActive": {
@@ -114014,8 +113694,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_red_SliderActive"
       },
       "light_red_SwitchThumb": {
@@ -114272,8 +113950,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_red_SwitchThumb"
       },
       "light_red_Tooltip": {
@@ -114530,8 +114206,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_red_Tooltip"
       },
       "light_red_accent": {
@@ -114788,8 +114462,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_red_accent"
       },
       "light_teal": {
@@ -115046,8 +114718,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_teal"
       },
       "light_teal_Button": {
@@ -115304,8 +114974,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_teal_Button"
       },
       "light_teal_SliderThumb": {
@@ -115562,8 +115230,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_teal_SliderThumb"
       },
       "light_teal_Switch": {
@@ -115820,8 +115486,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_teal_Switch"
       },
       "light_teal_surface2": {
@@ -116078,8 +115742,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_teal_surface2"
       },
       "light_teal_Input": {
@@ -116336,8 +115998,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_teal_Input"
       },
       "light_teal_Progress": {
@@ -116594,8 +116254,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_teal_Progress"
       },
       "light_teal_Slider": {
@@ -116852,8 +116510,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_teal_Slider"
       },
       "light_teal_TextArea": {
@@ -117110,8 +116766,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_teal_TextArea"
       },
       "light_teal_surface1": {
@@ -117368,8 +117022,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_teal_surface1"
       },
       "light_teal_ProgressIndicator": {
@@ -117626,8 +117278,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_teal_ProgressIndicator"
       },
       "light_teal_SliderActive": {
@@ -117884,8 +117534,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_teal_SliderActive"
       },
       "light_teal_SwitchThumb": {
@@ -118142,8 +117790,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_teal_SwitchThumb"
       },
       "light_teal_Tooltip": {
@@ -118400,8 +118046,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_teal_Tooltip"
       },
       "light_teal_accent": {
@@ -118658,8 +118302,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_teal_accent"
       },
       "light_white": {
@@ -118916,8 +118558,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_white"
       },
       "light_yellow": {
@@ -119174,8 +118814,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_yellow"
       },
       "light_yellow_Button": {
@@ -119432,8 +119070,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_yellow_Button"
       },
       "light_yellow_SliderThumb": {
@@ -119690,8 +119326,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_yellow_SliderThumb"
       },
       "light_yellow_Switch": {
@@ -119948,8 +119582,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_yellow_Switch"
       },
       "light_yellow_surface2": {
@@ -120206,8 +119838,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_yellow_surface2"
       },
       "light_yellow_Input": {
@@ -120464,8 +120094,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_yellow_Input"
       },
       "light_yellow_Progress": {
@@ -120722,8 +120350,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_yellow_Progress"
       },
       "light_yellow_Slider": {
@@ -120980,8 +120606,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_yellow_Slider"
       },
       "light_yellow_TextArea": {
@@ -121238,8 +120862,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_yellow_TextArea"
       },
       "light_yellow_surface1": {
@@ -121496,8 +121118,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_yellow_surface1"
       },
       "light_yellow_ProgressIndicator": {
@@ -121754,8 +121374,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_yellow_ProgressIndicator"
       },
       "light_yellow_SliderActive": {
@@ -122012,8 +121630,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_yellow_SliderActive"
       },
       "light_yellow_SwitchThumb": {
@@ -122270,8 +121886,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_yellow_SwitchThumb"
       },
       "light_yellow_Tooltip": {
@@ -122528,8 +122142,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_yellow_Tooltip"
       },
       "light_yellow_accent": {
@@ -122786,8 +122398,6 @@
         "pink": "#F038FF",
         "yellow": "#FFBD00",
         "cyan": "#5FA8D3",
-        "violet": "#8C6DB1",
-        "violetWash": "#EAE1F3",
         "id": "light_yellow_accent"
       }
     },

@@ -1,27 +1,23 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
+import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
+import { useRouter } from 'expo-router';
+import { Alert, StyleSheet, View } from 'react-native';
 
 import { PianoPatternScore } from '@/components/piano-pattern-score';
 import {
-  PerformanceGuidanceButton,
   PerformanceGuidanceProvider,
   usePerformanceGuidance,
 } from '@/components/performance-guidance';
 import { museBuddyColors } from '@/constants/design-tokens';
 import { useTrainingSession } from '@/contexts/training-session-context';
-import { useTrainingSessionTransition } from '@/hooks/use-training-session-transition';
 import { buildPatternSoundFontPlaybackConfiguration } from '@/music-theory/sound-font-playback';
-import { Button } from '@/ui';
+import { BpmControl, Button } from '@/ui';
 
 import { PlaceholderPanel } from './placeholder-panel';
 import { TrainingScreenShell } from './training-screen-shell';
 
 export function SessionGoalPage() {
-  const { learningConfig, prepareTrainingSession, session, training } = useTrainingSession();
-  const { advance, skipSection } = useTrainingSessionTransition({
-    onScreenChange: () => {},
-    screenId: 'goal',
-    sectionId: 'goal',
-  });
+  const { learningConfig, prepareTrainingSession, session } = useTrainingSession();
   const playbackConfiguration = useMemo(
     () =>
       session
@@ -31,7 +27,7 @@ export function SessionGoalPage() {
   );
 
   const content = (
-    <TrainingScreenShell currentStep="goal" footer={session ? <PerformanceGuidanceButton /> : null}>
+    <TrainingScreenShell currentStep="goal" footer={session ? <PreviewControlDock /> : null}>
       {session ? (
         <GuidedPianoPatternScore chordChanges={session.scoreChordChanges} score={session.score} />
       ) : (
@@ -64,20 +60,95 @@ export function SessionGoalPage() {
       finishText="I'm excited, let's go!"
       key="session-goal"
       listeningMode={{ kind: 'none' }}
-      onFinish={() => {
-        advance();
-      }}
-      onSkip={() => {
-        skipSection();
-      }}
+      onFinish={() => {}}
+      onSkip={() => {}}
       playback={{
         configuration: playbackConfiguration,
         kind: 'piano',
       }}
-      startPhase={training ? 'prepare' : 'pending'}
+      startPhase="pending"
     >
       {content}
     </PerformanceGuidanceProvider>
+  );
+}
+
+function PreviewControlDock() {
+  const { isDisabled, phase, reset, start } = usePerformanceGuidance();
+  const { learningConfig, setBpm } = useTrainingSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (phase === 'finish') {
+      reset();
+    }
+  }, [phase, reset]);
+
+  const isPlaying = phase === 'prepare' || phase === 'demo';
+
+  return (
+    <View style={styles.controls}>
+      <Button
+        backgroundColor={museBuddyColors.mist}
+        frameColor={museBuddyColors.wildflower}
+        icon={<MaterialDesignIcons color={museBuddyColors.wildflower} name="close" size={20} />}
+        onPress={() =>
+          Alert.alert('Quit training?', 'Your current practice will end.', [
+            { text: 'Keep practicing', style: 'cancel' },
+            { text: 'Quit', style: 'destructive', onPress: () => router.replace('/') },
+          ])
+        }
+        shadowColor={museBuddyColors.petal}
+        surfaceColor={museBuddyColors.wildflower}
+      />
+      <PreviewArrow direction="left" disabled />
+      <Button
+        backgroundColor={isPlaying ? museBuddyColors.sky : museBuddyColors.wildflower}
+        disabled={phase === 'pending' && isDisabled}
+        frameColor={museBuddyColors.pine}
+        icon={
+          <MaterialDesignIcons
+            color={museBuddyColors.mist}
+            name={isPlaying ? 'pause' : 'play'}
+            size={20}
+          />
+        }
+        label={`${isPlaying ? 'Pause' : 'Start'} 1/1`}
+        onPress={isPlaying ? reset : start}
+        shadowColor={museBuddyColors.pine}
+        surfaceColor={museBuddyColors.mist}
+      />
+      <PreviewArrow direction="right" onPress={() => router.replace('/bar-details')} />
+      <BpmControl direction="up" onChange={setBpm} value={learningConfig.bpm} />
+    </View>
+  );
+}
+
+function PreviewArrow({
+  direction,
+  disabled = false,
+  onPress = () => {},
+}: {
+  direction: 'left' | 'right';
+  disabled?: boolean;
+  onPress?: () => void;
+}) {
+  return (
+    <Button
+      backgroundColor={museBuddyColors.mist}
+      disabled={disabled}
+      frameColor={museBuddyColors.pine}
+      icon={
+        <MaterialDesignIcons
+          color={museBuddyColors.pine}
+          name={direction === 'left' ? 'chevron-left' : 'chevron-right'}
+          size={24}
+        />
+      }
+      onPress={onPress}
+      shadowColor={museBuddyColors.sky}
+      surfaceColor={museBuddyColors.pine}
+    />
   );
 }
 
@@ -99,3 +170,7 @@ function GuidedPianoPatternScore({
     />
   );
 }
+
+const styles = StyleSheet.create({
+  controls: { alignItems: 'center', flexDirection: 'row', gap: 7 },
+});

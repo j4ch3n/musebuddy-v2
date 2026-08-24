@@ -15,6 +15,7 @@ import { ChordToneLegend } from './chord-role-legend';
 
 type ChordKeyboardCardProps = {
   display: ChordDisplay;
+  displayMode?: 'full' | 'notation';
   errorMessage?: string;
   liveKeys?: Partial<Record<PianoPitchClass, PianoKeyboardLiveKeyState>>;
   showKeyHighlightDots?: boolean;
@@ -23,6 +24,7 @@ type ChordKeyboardCardProps = {
 
 export function ChordKeyboardCard({
   display,
+  displayMode = 'full',
   errorMessage,
   liveKeys = {},
   showKeyHighlightDots = true,
@@ -49,6 +51,20 @@ export function ChordKeyboardCard({
   const toneRoles = display.notes.map<ChordToneColorRole>((note) =>
     note.isRoot ? 'root' : chordToneRoleByImportance[note.importance],
   );
+
+  if (displayMode === 'notation') {
+    return (
+      <View
+        accessibilityLabel={`Sheet notes: ${display.notes.map((note) => note.text).join(', ')}`}
+        style={styles.compactSheetFrame}
+      >
+        <ChordSheet
+          dom={{ scrollEnabled: false, style: styles.compactSheet }}
+          notes={display.notes}
+        />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.content}>
@@ -115,6 +131,8 @@ const styles = StyleSheet.create({
     height: 120,
     width: '100%',
   },
+  compactSheet: { backgroundColor: museBuddyColors.mist, height: 92, width: '100%' },
+  compactSheetFrame: { height: 92, overflow: 'hidden' },
   sheetFrame: {
     backgroundColor: museBuddyColors.mist,
     height: 120,

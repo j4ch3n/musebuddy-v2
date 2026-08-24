@@ -358,25 +358,27 @@ export function Carousel<T>({
           </View>
         </View>
       </GestureDetector>
-      <View
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-        style={styles.indicator}
-      >
-        {items.map((item, index) => (
-          <View
-            key={`indicator-${keyExtractor(item, index)}`}
-            style={[
-              styles.indicatorMark,
-              index === safeCurrentIndex && styles.indicatorMarkActive,
-              {
-                backgroundColor:
-                  index === safeCurrentIndex ? indicatorActiveColor : indicatorInactiveColor,
-              },
-            ]}
-          />
-        ))}
-      </View>
+      {itemCount > 1 ? (
+        <View
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={styles.indicator}
+        >
+          {items.map((item, index) => (
+            <View
+              key={`indicator-${keyExtractor(item, index)}`}
+              style={[
+                styles.indicatorMark,
+                index === safeCurrentIndex && styles.indicatorMarkActive,
+                {
+                  backgroundColor:
+                    index === safeCurrentIndex ? indicatorActiveColor : indicatorInactiveColor,
+                },
+              ]}
+            />
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }

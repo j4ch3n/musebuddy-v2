@@ -23,6 +23,7 @@ export {
   type ScoreChordChange,
 } from './training-session-display';
 export {
+  buildChordBreakdownSoundFontPlaybackConfiguration,
   buildChordPreviewSoundFontPlaybackConfiguration,
   buildPatternSoundFontPlaybackConfiguration,
   buildRhythmSoundFontPlaybackConfiguration,

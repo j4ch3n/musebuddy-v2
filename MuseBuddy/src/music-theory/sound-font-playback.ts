@@ -95,6 +95,27 @@ export function buildChordPreviewSoundFontPlaybackConfiguration(
   };
 }
 
+/** Plays the voiced chord once, then introduces its actual chord tones from low to high. */
+export function buildChordBreakdownSoundFontPlaybackConfiguration(
+  display: ChordDisplay,
+  bpm: number,
+): SoundFontPlaybackConfiguration {
+  const notes = [...display.notes].sort((left, right) => left.midi - right.midi);
+  const steps = Array.from({ length: 8 + notes.length * 4 }, () => [] as SoundFontPlaybackCell[]);
+  steps[0] = notes.map((note) => ({ midi: note.midi, velocity: CHORD_NOTE_VELOCITY }));
+  for (let index = 1; index < 8; index += 1) {
+    steps[index] = notes.map(() => HOLD_CELL);
+  }
+  notes.forEach((note, noteIndex) => {
+    const start = 8 + noteIndex * 4;
+    steps[start] = [{ midi: note.midi, velocity: CHORD_NOTE_VELOCITY }];
+    for (let step = start + 1; step < start + 4; step += 1) {
+      steps[step] = [HOLD_CELL];
+    }
+  });
+  return { bpm, tracks: { treble: [steps] } };
+}
+
 function buildTracksFromPatternBeats(
   beats: readonly TrainingSessionPatternBeat[],
 ): SoundFontPlaybackConfiguration['tracks'] {

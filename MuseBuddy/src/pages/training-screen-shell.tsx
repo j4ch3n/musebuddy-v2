@@ -3,10 +3,6 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
-import { useTrainingSession } from '@/contexts/training-session-context';
-import { BpmControl, DailyProgressNavigator, type DailyProgressNavigatorStep } from '@/ui';
-
-type TrainingStepId = DailyProgressNavigatorStep;
 
 type BaseTrainingScreenShellProps = {
   children: ReactNode;
@@ -14,7 +10,7 @@ type BaseTrainingScreenShellProps = {
 };
 
 type StepTrainingScreenShellProps = BaseTrainingScreenShellProps & {
-  currentStep: TrainingStepId;
+  currentStep: string;
   eyebrow?: never;
   subtitle?: never;
   title?: never;
@@ -32,18 +28,10 @@ type TrainingScreenShellProps = StepTrainingScreenShellProps | HeaderTrainingScr
 
 export function TrainingScreenShell(props: TrainingScreenShellProps) {
   const { children, footer } = props;
-  const { learningConfig, setBpm } = useTrainingSession();
   const isTrainingScreen = props.currentStep !== undefined;
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {isTrainingScreen ? (
-        <View style={styles.trainingHeader}>
-          <DailyProgressNavigator currentStep={props.currentStep} />
-          <BpmControl onChange={setBpm} value={learningConfig.bpm} />
-        </View>
-      ) : null}
-
       {isTrainingScreen ? (
         <View style={styles.trainingContent}>
           <View style={styles.learningArena}>{children}</View>
@@ -98,14 +86,6 @@ const styles = StyleSheet.create({
     paddingLeft: 15,
     paddingRight: 9,
     paddingTop: 28,
-  },
-  trainingHeader: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingTop: 10,
-    zIndex: 20,
   },
   trainingContent: {
     flex: 1,

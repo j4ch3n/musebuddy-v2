@@ -18,8 +18,6 @@ type TrainingSessionContextValue = {
   prepareTrainingSession: () => Promise<void>;
   session: PreparedTrainingSession | null;
   setBpm: (bpm: number) => void;
-  setTraining: (training: boolean) => void;
-  training: boolean;
 };
 
 const TrainingSessionContext = createContext<TrainingSessionContextValue | null>(null);
@@ -50,7 +48,6 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
     useState<TrainingLearningConfig>(DEFAULT_LEARNING_CONFIG);
   const [phase, setPhase] = useState<TrainingSessionPhase>('idle');
   const [session, setSession] = useState<PreparedTrainingSession | null>(null);
-  const [training, setTraining] = useState(false);
 
   const setBpm = useCallback((bpm: number) => {
     setLearningConfig((currentConfig) => ({
@@ -87,10 +84,8 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
       prepareTrainingSession,
       session,
       setBpm,
-      setTraining,
-      training,
     }),
-    [errorMessage, learningConfig, phase, prepareTrainingSession, session, setBpm, training],
+    [errorMessage, learningConfig, phase, prepareTrainingSession, session, setBpm],
   );
 
   return (

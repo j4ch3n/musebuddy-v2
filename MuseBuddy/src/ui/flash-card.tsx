@@ -1,19 +1,31 @@
 import { useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
 import { YStack } from 'tamagui';
 
 import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 
+import { Carousel } from './carousel';
+
 type FlashCardSurface = 'hero' | 'supporting';
+
+export type FlashCardPage = {
+  content: ReactNode;
+  id: string;
+  label: string;
+};
 
 type FlashCardProps = {
   accessibilityLabel?: string;
   isFlipped?: boolean;
   onFlipChange?: (isFlipped: boolean) => void;
+  onPageChange?: (pageIndex: number) => void;
   padded?: boolean;
+  pages?: readonly FlashCardPage[];
+  selectedPageIndex?: number;
   sideA: ReactNode;
   sideB?: ReactNode;
   shadowColor: string;
+  style?: StyleProp<ViewStyle>;
   surface?: FlashCardSurface;
 };
 
@@ -21,24 +33,41 @@ export function FlashCard({
   accessibilityLabel,
   isFlipped: controlledIsFlipped,
   onFlipChange,
+  onPageChange,
   padded = true,
+  pages,
+  selectedPageIndex,
   sideA,
   sideB,
   shadowColor,
+  style,
   surface = 'hero',
 }: FlashCardProps) {
   const [uncontrolledIsFlipped, setUncontrolledIsFlipped] = useState(false);
   const isFlipped = controlledIsFlipped ?? uncontrolledIsFlipped;
   const backgroundStyle = surface === 'supporting' ? styles.supportingSurface : styles.heroSurface;
   const activeSide = isFlipped && sideB ? sideB : sideA;
+  const content = pages ? (
+    <Carousel
+      accessibilityLabel={accessibilityLabel ?? 'Flash card pages'}
+      getItemAccessibilityLabel={(page) => page.label}
+      items={pages}
+      keyExtractor={(page) => page.id}
+      onCurrentIndexChange={onPageChange}
+      renderItem={(page) => page.content}
+      selectedIndex={selectedPageIndex}
+    />
+  ) : (
+    activeSide
+  );
 
   return (
     <YStack
       accessibilityLabel={accessibilityLabel}
-      style={[styles.card, backgroundStyle, { boxShadow: `6px 6px 0 ${shadowColor}` }]}
+      style={[styles.card, backgroundStyle, { boxShadow: `6px 6px 0 ${shadowColor}` }, style]}
     >
       <YStack style={[styles.inner, backgroundStyle, padded ? styles.padded : null]}>
-        {activeSide}
+        {content}
         {sideB ? (
           <Pressable
             accessibilityLabel={isFlipped ? 'Show front of card' : 'Show back of card'}
@@ -97,6 +126,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   inner: {
+    flex: 1,
     gap: 0,
     overflow: 'hidden',
   },

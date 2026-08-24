@@ -14,13 +14,14 @@ import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/d
 import { BPM_OPTIONS } from '@/music-theory';
 
 type BpmControlProps = {
+  direction?: 'down' | 'up';
   onChange: (bpm: number) => void;
   value: number;
 };
 
 const DRAWER_ANIMATION_MS = 180;
 
-export function BpmControl({ onChange, value }: BpmControlProps) {
+export function BpmControl({ direction = 'down', onChange, value }: BpmControlProps) {
   const [isOpen, setIsOpen] = useState(false);
   const drawerProgress = useSharedValue(0);
 
@@ -63,7 +64,9 @@ export function BpmControl({ onChange, value }: BpmControlProps) {
       </Pressable>
 
       {isOpen ? (
-        <Animated.View style={[styles.drawer, drawerStyle]}>
+        <Animated.View
+          style={[styles.drawer, direction === 'up' ? styles.drawerUp : null, drawerStyle]}
+        >
           <YStack accessibilityLabel="BPM options" accessibilityRole="tablist" gap="$2">
             {BPM_OPTIONS.map((option) => {
               const isSelected = option.bpm === value;
@@ -152,6 +155,7 @@ const styles = StyleSheet.create({
     right: 0,
     top: 40,
   },
+  drawerUp: { bottom: 40, top: undefined },
   option: {
     alignItems: 'center',
     backgroundColor: museBuddyColors.mist,

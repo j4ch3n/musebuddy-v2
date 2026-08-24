@@ -16,6 +16,7 @@ export const museBuddyPalette = {
   error: '#C1121F',
   success: '#A7C957',
   notation: '#0D1321',
+  notationGray: '#415A77',
   blue: '#0F8B8D',
   pink: '#F038FF',
   yellow: '#FFBD00',

@@ -15,6 +15,7 @@ type RhythmBarViewerProps = {
   currentStepIndex: number | null;
   stepDurationMs?: number;
   steps: readonly RhythmStep[];
+  muted?: boolean;
 };
 
 export function RhythmBarViewer({
@@ -23,6 +24,7 @@ export function RhythmBarViewer({
   currentStepIndex,
   stepDurationMs = 1,
   steps,
+  muted = false,
 }: RhythmBarViewerProps) {
   const [gridWidth, setGridWidth] = useState(0);
   const positionedDots =
@@ -66,6 +68,7 @@ export function RhythmBarViewer({
             <StepPart
               key={stepIndex}
               isCurrent={currentStepIndex === stepIndex}
+              muted={muted}
               step={step}
               stepIndex={stepIndex}
             />
@@ -102,11 +105,12 @@ export function RhythmBarViewer({
 
 type StepPartProps = {
   isCurrent: boolean;
+  muted: boolean;
   step: RhythmStep;
   stepIndex: number;
 };
 
-function StepPart({ isCurrent, step, stepIndex }: StepPartProps) {
+function StepPart({ isCurrent, muted, step, stepIndex }: StepPartProps) {
   const label =
     step === null ? 'rest' : step === 's' ? 'strong beat' : step === 'w' ? 'weak beat' : 'hold';
 
@@ -125,6 +129,7 @@ function StepPart({ isCurrent, step, stepIndex }: StepPartProps) {
           step === 'w' && styles.weakStepBar,
           step === 'h' && styles.holdStepBar,
           step === null && styles.restStepBar,
+          muted && styles.mutedStepBar,
         ]}
       />
     </View>
@@ -220,6 +225,7 @@ const styles = StyleSheet.create({
     height: 6,
     width: '55%',
   },
+  mutedStepBar: { backgroundColor: museBuddyColors.notationGray },
   currentPointer: {
     borderLeftColor: 'transparent',
     borderLeftWidth: 5,

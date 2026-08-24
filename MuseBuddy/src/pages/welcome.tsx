@@ -55,28 +55,10 @@ const practicePathSteps: readonly PracticePathStep[] = [
     label: 'Preview',
   },
   {
-    description: 'Learn the chord colours that shape it.',
-    icon: 'chord',
-    id: 'chords',
-    label: 'Chords',
-  },
-  {
-    description: 'Build the rhythm in your right hand.',
-    icon: 'rhythm-treble',
-    id: 'right-rhythm',
-    label: 'Right rhythm',
-  },
-  {
-    description: 'Add a steady left-hand foundation.',
-    icon: 'rhythm-bass',
-    id: 'left-rhythm',
-    label: 'Left rhythm',
-  },
-  {
-    description: 'Put it all together and make it your own.',
-    icon: 'freestyle',
-    id: 'improvise',
-    label: 'Improvise',
+    description: 'Explore each bar’s score, chords, and rhythm at your own pace.',
+    icon: 'bars',
+    id: 'bars',
+    label: 'Bars',
   },
 ];
 
