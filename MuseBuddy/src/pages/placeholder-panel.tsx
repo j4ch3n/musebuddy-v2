@@ -24,8 +24,8 @@ export function PlaceholderPanel({ accent = 'sky', body, title }: PlaceholderPan
           </Text>
         </YStack>
       }
+      shadowColor={museBuddyColors.leaf}
       surface="supporting"
-      tone={accent}
     />
   );
 }

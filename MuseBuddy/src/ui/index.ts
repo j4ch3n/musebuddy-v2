@@ -13,8 +13,7 @@ export {
   TrainingStageIcon,
   type TrainingStageIconId,
 } from './daily-progress-navigator';
-export { FlashCard, type FlashCardTone } from './flash-card';
-export { GraphicSheet, type GraphicSheetTone } from './graphic-sheet';
+export { FlashCard } from './flash-card';
 export {
   getPianoKeyboardMarkers,
   PianoKeyboard,

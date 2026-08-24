@@ -3,7 +3,6 @@
 export const museBuddyPalette = {
   mist: '#F2FAFC',
   pine: '#286467',
-  pineDeep: '#16484B',
   wildflower: '#DA438C',
   sky: '#65C1D5',
   leaf: '#C8DB9E',
@@ -22,7 +21,5 @@ export const museBuddyPalette = {
   yellow: '#FFBD00',
   cyan: '#5FA8D3',
   coral: '#E56B6F',
-  violet: '#8C6DB1',
-  violetWash: '#EAE1F3',
   cobaltInk: '#293C9A',
 } as const;

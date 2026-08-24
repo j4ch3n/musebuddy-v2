@@ -58,8 +58,6 @@ const lightTheme = {
   pink: museBuddyColors.pink,
   yellow: museBuddyColors.yellow,
   cyan: museBuddyColors.cyan,
-  violet: museBuddyColors.violet,
-  violetWash: museBuddyColors.violetWash,
 } as const;
 
 const tamaguiConfig = createTamagui({

@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { museBuddyColors } from '@/constants/design-tokens';
-import { Button, GraphicSheet } from '@/ui';
+import { Button, FlashCard } from '@/ui';
 
 import { TrainingScreenShell } from './training-screen-shell';
 
@@ -42,12 +42,17 @@ export function CongratsPage() {
             <Lucide color={museBuddyColors.mist} name="check" size={18} />
           </View>
         </View>
-        <GraphicSheet tone="mist">
-          <Text style={styles.completionTitle}>{"You finished today's practice"}</Text>
-          <Text style={styles.completionBody}>
-            Your full piano pattern is complete. Keep this warm-up feeling for the next session.
-          </Text>
-        </GraphicSheet>
+        <FlashCard
+          shadowColor={museBuddyColors.sky}
+          sideA={
+            <>
+              <Text style={styles.completionTitle}>{"You finished today's practice"}</Text>
+              <Text style={styles.completionBody}>
+                Your full piano pattern is complete. Keep this warm-up feeling for the next session.
+              </Text>
+            </>
+          }
+        />
       </View>
     </TrainingScreenShell>
   );

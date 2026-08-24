@@ -25,7 +25,6 @@ group identifies where a color belongs, rather than creating a new naming conven
 | --- | --- | --- |
 | UX framework | `mist` | `#F2FAFC` |
 | UX framework | `pine` | `#286467` |
-| UX framework | `pineDeep` | `#16484B` |
 | UX framework | `wildflower` | `#DA438C` |
 | UX framework | `sky` | `#65C1D5` |
 | UX framework | `leaf` | `#C8DB9E` |
@@ -44,8 +43,6 @@ group identifies where a color belongs, rather than creating a new naming conven
 | Teaching materials | `yellow` | `#FFBD00` |
 | Teaching materials | `cyan` | `#5FA8D3` |
 | Teaching materials | `coral` | `#E56B6F` |
-| Teaching materials | `violet` | `#8C6DB1` |
-| Teaching materials | `violetWash` | `#EAE1F3` |
 | Teaching materials | `cobaltInk` | `#293C9A` |
 
 Use UX-framework colors for buttons, cards, surfaces, shadows, navigation, and feedback. Reserve

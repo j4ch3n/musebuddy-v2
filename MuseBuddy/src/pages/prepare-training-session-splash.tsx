@@ -6,7 +6,7 @@ import type { Href } from 'expo-router';
 
 import { museBuddyColors } from '@/constants/design-tokens';
 import { useTrainingSession } from '@/contexts/training-session-context';
-import { Button, GraphicSheet } from '@/ui';
+import { Button, FlashCard } from '@/ui';
 
 import { TrainingScreenShell } from './training-screen-shell';
 
@@ -41,32 +41,35 @@ export function PrepareTrainingSessionSplashPage() {
       subtitle="Preparing today's piano practice."
       title="MuseBuddy"
     >
-      <GraphicSheet tone="sky">
-        <View style={styles.content}>
-          {phase === 'error' ? (
-            <>
-              <Lucide color={museBuddyColors.pine} name="triangle-alert" size={36} />
-              <Text style={styles.title}>Could not prepare training</Text>
-              <Text style={styles.message}>{errorMessage}</Text>
-            </>
-          ) : (
-            <>
-              <View
-                accessibilityElementsHidden
-                importantForAccessibility="no-hide-descendants"
-                style={styles.loadingScore}
-              >
-                {[0.72, 1, 0.84, 0.58].map((width, index) => (
-                  <View key={index} style={[styles.loadingLine, { width: `${width * 100}%` }]} />
-                ))}
-                <View style={styles.scanBar} />
-              </View>
-              <Text style={styles.title}>{"Loading today's session"}</Text>
-              <Text style={styles.message}>Model and training material are getting ready.</Text>
-            </>
-          )}
-        </View>
-      </GraphicSheet>
+      <FlashCard
+        shadowColor={museBuddyColors.cobalt}
+        sideA={
+          <View style={styles.content}>
+            {phase === 'error' ? (
+              <>
+                <Lucide color={museBuddyColors.pine} name="triangle-alert" size={36} />
+                <Text style={styles.title}>Could not prepare training</Text>
+                <Text style={styles.message}>{errorMessage}</Text>
+              </>
+            ) : (
+              <>
+                <View
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
+                  style={styles.loadingScore}
+                >
+                  {[0.72, 1, 0.84, 0.58].map((width, index) => (
+                    <View key={index} style={[styles.loadingLine, { width: `${width * 100}%` }]} />
+                  ))}
+                  <View style={styles.scanBar} />
+                </View>
+                <Text style={styles.title}>{"Loading today's session"}</Text>
+                <Text style={styles.message}>Model and training material are getting ready.</Text>
+              </>
+            )}
+          </View>
+        }
+      />
     </TrainingScreenShell>
   );
 }

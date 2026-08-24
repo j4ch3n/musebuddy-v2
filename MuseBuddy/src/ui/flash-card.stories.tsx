@@ -5,8 +5,6 @@ import { museBuddyColors } from '@/constants/design-tokens';
 
 import { FlashCard } from './flash-card';
 
-const noop = () => {};
-
 const meta = {
   title: 'UI/FlashCard',
   component: FlashCard,
@@ -24,6 +22,7 @@ const meta = {
         </Text>
       </YStack>
     ),
+    shadowColor: museBuddyColors.sky,
     surface: 'hero',
   },
 } satisfies Meta<typeof FlashCard>;
@@ -37,43 +36,6 @@ export const Hero: Story = {};
 export const Supporting: Story = {
   args: {
     surface: 'supporting',
-  },
-};
-
-export const WildflowerTone: Story = {
-  args: {
-    tone: 'wildflower',
-  },
-};
-
-export const SkyTone: Story = {
-  args: {
-    tone: 'sky',
-  },
-};
-
-export const LeafTone: Story = {
-  args: {
-    tone: 'leaf',
-  },
-};
-
-export const SunTone: Story = {
-  args: {
-    tone: 'sun',
-  },
-};
-
-export const VioletTone: Story = {
-  args: {
-    tone: 'violet',
-  },
-};
-
-export const Pressable: Story = {
-  args: {
-    accessibilityLabel: 'Pressable flash card',
-    onPress: noop,
   },
 };
 

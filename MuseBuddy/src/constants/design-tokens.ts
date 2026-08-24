@@ -2,7 +2,7 @@ import { museBuddyPalette } from './design-palette.generated';
 
 export const museBuddyColors = {
   ...museBuddyPalette,
-  frame: museBuddyPalette.pineDeep,
+  frame: museBuddyPalette.pine,
   secondaryFace: museBuddyPalette.skyWash,
   successFace: museBuddyPalette.leafWash,
   dangerFace: museBuddyPalette.error,

@@ -2,7 +2,6 @@
   /* UX framework: shared surfaces, controls, cards, shadows, and feedback. */
   --mb-color-mist: #f2fafc;
   --mb-color-pine: #286467;
-  --mb-color-pine-deep: #16484b;
   --mb-color-wildflower: #da438c;
   --mb-color-sky: #65c1d5;
   --mb-color-leaf: #c8db9e;
@@ -23,8 +22,6 @@
   --mb-color-yellow: #ffbd00;
   --mb-color-cyan: #5fa8d3;
   --mb-color-coral: #e56b6f;
-  --mb-color-violet: #8c6db1;
-  --mb-color-violet-wash: #eae1f3;
   --mb-color-cobalt-ink: #293c9a;
 
   --font-display:
