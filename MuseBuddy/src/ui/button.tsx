@@ -1,6 +1,13 @@
 /* eslint-disable react-hooks/immutability -- Reanimated shared values are intentionally mutated by event handlers and worklets. */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { StyleSheet, type ColorValue, type TextStyle } from 'react-native';
+import {
+  StyleSheet,
+  type AccessibilityState,
+  type ColorValue,
+  type StyleProp,
+  type TextStyle,
+  type ViewStyle,
+} from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -14,6 +21,8 @@ import { Text, YStack } from 'tamagui';
 import { museBuddyBorders, museBuddyRadii } from '@/constants/design-tokens';
 
 type ButtonProps = {
+  accessibilityLabel?: string;
+  accessibilityState?: AccessibilityState;
   backgroundColor: string;
   children?: ReactNode;
   disabled?: boolean;
@@ -25,10 +34,14 @@ type ButtonProps = {
   onPress: () => void;
   progressColor?: ColorValue;
   shadowColor: string;
+  shadowEnabled?: boolean;
+  style?: StyleProp<ViewStyle>;
   surfaceColor: string;
 };
 
 export function Button({
+  accessibilityLabel,
+  accessibilityState,
   backgroundColor,
   children,
   disabled = false,
@@ -40,6 +53,8 @@ export function Button({
   onPress,
   progressColor,
   shadowColor,
+  shadowEnabled = true,
+  style,
   surfaceColor,
 }: ButtonProps) {
   const holdFill = useSharedValue(0);
@@ -117,7 +132,8 @@ export function Button({
   return (
     <YStack
       accessibilityRole="button"
-      accessibilityState={{ disabled }}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ ...accessibilityState, disabled }}
       disabled={disabled}
       onPress={handlePress}
       onPressIn={handlePressIn}
@@ -127,14 +143,17 @@ export function Button({
         {
           backgroundColor,
           borderColor: frameColor,
-          boxShadow: `6px 6px 0 ${shadowColor}`,
+          boxShadow: shadowEnabled ? `6px 6px 0 ${shadowColor}` : 'none',
         },
         isPressed &&
-          !disabled && {
+          !disabled &&
+          shadowEnabled && {
             boxShadow: `2px 2px 0 ${shadowColor}`,
             transform: [{ translateX: 4 }, { translateY: 4 }],
           },
+        isPressed && !disabled && !shadowEnabled && styles.flatPressed,
         disabled && styles.disabledButton,
+        style,
       ]}
     >
       {requiresLongPress && (
@@ -183,6 +202,7 @@ const styles = StyleSheet.create({
     boxShadow: 'none',
     opacity: 0.62,
   },
+  flatPressed: { opacity: 0.72 },
   progressFill: {
     bottom: 0,
     height: 6,

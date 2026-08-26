@@ -16,6 +16,7 @@ export type FlashCardPage = {
 
 type FlashCardProps = {
   accessibilityLabel?: string;
+  footer?: ReactNode;
   isFlipped?: boolean;
   onFlipChange?: (isFlipped: boolean) => void;
   onPageChange?: (pageIndex: number) => void;
@@ -31,6 +32,7 @@ type FlashCardProps = {
 
 export function FlashCard({
   accessibilityLabel,
+  footer,
   isFlipped: controlledIsFlipped,
   onFlipChange,
   onPageChange,
@@ -68,6 +70,7 @@ export function FlashCard({
     >
       <YStack style={[styles.inner, backgroundStyle, padded ? styles.padded : null]}>
         {content}
+        {footer ? <YStack style={styles.footer}>{footer}</YStack> : null}
         {sideB ? (
           <Pressable
             accessibilityLabel={isFlipped ? 'Show front of card' : 'Show back of card'}
@@ -124,6 +127,9 @@ const styles = StyleSheet.create({
     color: museBuddyColors.pine,
     fontSize: 14,
     fontWeight: '900',
+  },
+  footer: {
+    marginTop: 12,
   },
   inner: {
     flex: 1,

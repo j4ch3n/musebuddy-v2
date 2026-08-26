@@ -4,7 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { PianoPatternScore } from '@/components/piano-pattern-score';
 import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 import { useTrainingSession } from '@/contexts/training-session-context';
-import { FlashCard } from '@/ui';
+import { PhraseStageCard } from '@/components/phrase-stage-card';
 
 import { SessionUnavailable } from './session-score-route';
 import { TrainingSessionShell } from './training-session-shell';
@@ -12,7 +12,8 @@ import { TrainingSessionShell } from './training-session-shell';
 const PHRASE_SHEET_SLOT_HEIGHT = 180;
 
 export function PhraseSection() {
-  const { selectedPhraseIndex, session } = useTrainingSession();
+  const { selectedPhraseIndex, selectedPhraseStage, session, setSelectedPhraseStage } =
+    useTrainingSession();
   const bars = session?.bars ?? [];
   const phraseIndex = Math.min(selectedPhraseIndex, Math.max(bars.length - 1, 0));
   const currentBar = bars[phraseIndex];
@@ -29,11 +30,9 @@ export function PhraseSection() {
             <PhraseSheetSlot bar={previousBar} notationColor={museBuddyColors.notationGray} />
             <PhraseSheetSlot bar={currentBar} notationColor={museBuddyColors.notation} />
           </View>
-          <FlashCard
-            accessibilityLabel="Phrase learning stage"
-            shadowColor={museBuddyColors.sky}
-            sideA={<View />}
-            style={styles.stage}
+          <PhraseStageCard
+            onStageChange={setSelectedPhraseStage}
+            selectedStage={selectedPhraseStage}
           />
         </View>
       ) : (
@@ -99,5 +98,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
   },
-  stage: { flex: 1, minHeight: 0 },
 });

@@ -1,10 +1,11 @@
+import { Lucide } from '@react-native-vector-icons/lucide';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { PianoPatternScore } from '@/components/piano-pattern-score';
 import type { TrainingSessionRoute } from '@/components/training-session';
 import { museBuddyColors } from '@/constants/design-tokens';
 import { useTrainingSession } from '@/contexts/training-session-context';
-import { FlashCard } from '@/ui';
+import { Button, FlashCard } from '@/ui';
 
 import { TrainingSessionShell } from './training-session-shell';
 
@@ -29,6 +30,22 @@ export function SessionScoreRoute({
                 surfaceColor={museBuddyColors.paper}
               />
             }
+            footer={
+              <View style={styles.playControl}>
+                <Button
+                  accessibilityLabel={
+                    activeRoute === 'preview' ? 'Play preview' : 'Play full session'
+                  }
+                  backgroundColor={museBuddyColors.wildflower}
+                  frameColor={museBuddyColors.pine}
+                  icon={<Lucide color={museBuddyColors.mist} name="play" size={20} />}
+                  label="Play"
+                  onPress={() => {}}
+                  shadowColor={museBuddyColors.pine}
+                  surfaceColor={museBuddyColors.mist}
+                />
+              </View>
+            }
             style={styles.scoreCard}
           />
         </View>
@@ -49,6 +66,7 @@ export function SessionUnavailable() {
 
 const styles = StyleSheet.create({
   cardArea: { flex: 1, minHeight: 0, padding: 12, paddingBottom: 18 },
+  playControl: { alignSelf: 'center', width: '100%' },
   scoreCard: { flex: 1 },
   unavailable: { alignItems: 'center', flex: 1, justifyContent: 'center', padding: 24 },
   unavailableText: { color: museBuddyColors.pine, fontSize: 16, fontWeight: '800' },

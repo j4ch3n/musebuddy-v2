@@ -7,6 +7,8 @@ import { fetchDailyTrainingSession } from './training-session-api';
 
 type TrainingSessionPhase = 'idle' | 'loading' | 'ready' | 'error';
 
+export type PhraseStage = 'ideas' | 'chords' | 'rhythms';
+
 export type TrainingLearningConfig = {
   bpm: number;
 };
@@ -16,9 +18,11 @@ type TrainingSessionContextValue = {
   learningConfig: TrainingLearningConfig;
   phase: TrainingSessionPhase;
   prepareTrainingSession: () => Promise<void>;
+  selectedPhraseStage: PhraseStage;
   selectedPhraseIndex: number;
   session: PreparedTrainingSession | null;
   setBpm: (bpm: number) => void;
+  setSelectedPhraseStage: (stage: PhraseStage) => void;
   setSelectedPhraseIndex: (phraseIndex: number) => void;
 };
 
@@ -50,6 +54,7 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
     useState<TrainingLearningConfig>(DEFAULT_LEARNING_CONFIG);
   const [phase, setPhase] = useState<TrainingSessionPhase>('idle');
   const [selectedPhraseIndex, setSelectedPhraseIndex] = useState(0);
+  const [selectedPhraseStage, setSelectedPhraseStage] = useState<PhraseStage>('ideas');
   const [session, setSession] = useState<PreparedTrainingSession | null>(null);
 
   const setBpm = useCallback((bpm: number) => {
@@ -78,6 +83,7 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
       const preparedSession = prepareTrainingSessionDisplay(loadedSession);
       setSession(preparedSession);
       setSelectedPhraseIndex(0);
+      setSelectedPhraseStage('ideas');
       setPhase('ready');
     } catch (error) {
       logger.error('Daily training preparation failed.', {
@@ -94,9 +100,11 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
       learningConfig,
       phase,
       prepareTrainingSession,
+      selectedPhraseStage,
       selectedPhraseIndex,
       session,
       setBpm,
+      setSelectedPhraseStage,
       setSelectedPhraseIndex: selectPhrase,
     }),
     [
@@ -104,6 +112,7 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
       learningConfig,
       phase,
       prepareTrainingSession,
+      selectedPhraseStage,
       selectPhrase,
       selectedPhraseIndex,
       session,
