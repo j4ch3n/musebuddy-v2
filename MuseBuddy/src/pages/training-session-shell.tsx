@@ -34,7 +34,7 @@ export function TrainingSessionShell({
             onPress={() =>
               Alert.alert('Quit training?', 'Your current practice will end.', [
                 { text: 'Keep practicing', style: 'cancel' },
-                { text: 'Quit', style: 'destructive', onPress: () => router.replace('/') },
+                { text: 'Quit', style: 'destructive', onPress: () => router.dismissTo('/') },
               ])
             }
             style={({ pressed }) => [styles.exitButton, pressed && styles.exitButtonPressed]}
