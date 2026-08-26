@@ -56,10 +56,20 @@ export function BpmControl({ direction = 'down', onChange, value }: BpmControlPr
         style={({ pressed }) => [styles.trigger, pressed && styles.triggerPressed]}
       >
         <XStack style={styles.triggerContent}>
-          <Text color={museBuddyColors.pine} fontSize={11} fontWeight="900" style={styles.bpmText}>
-            {value} BPM
-          </Text>
-          <MaterialDesignIcons color={museBuddyColors.pine} name="metronome" size={14} />
+          <MaterialDesignIcons color={museBuddyColors.mist} name="metronome" size={16} />
+          <XStack style={styles.bpmLabel}>
+            <Text
+              color={museBuddyColors.mist}
+              fontSize={14}
+              fontWeight="600"
+              style={styles.bpmText}
+            >
+              {value}
+            </Text>
+            <Text color={museBuddyColors.mist} fontSize={10} fontWeight="400">
+              BPM
+            </Text>
+          </XStack>
         </XStack>
       </Pressable>
 
@@ -124,18 +134,18 @@ const styles = StyleSheet.create({
   },
   trigger: {
     alignItems: 'center',
-    backgroundColor: museBuddyColors.mist,
+    backgroundColor: museBuddyColors.wildflower,
     borderColor: museBuddyColors.frame,
     borderRadius: museBuddyRadii.round,
-    borderWidth: 1,
-    boxShadow: `4px 4px 0 ${museBuddyColors.frame}`,
+    borderWidth: museBuddyBorders.standard,
+    boxShadow: `4px 4px 0 ${museBuddyColors.petal}`,
     justifyContent: 'center',
-    height: 38,
+    height: 40,
     minWidth: 84,
     paddingHorizontal: 8,
   },
   triggerPressed: {
-    boxShadow: `1px 1px 0 ${museBuddyColors.frame}`,
+    boxShadow: `1px 1px 0 ${museBuddyColors.petal}`,
     transform: [{ translateX: 3 }, { translateY: 3 }],
   },
   triggerContent: {
@@ -148,7 +158,7 @@ const styles = StyleSheet.create({
     borderColor: museBuddyColors.frame,
     borderRadius: museBuddyRadii.medium,
     borderWidth: 1,
-    boxShadow: `4px 4px 0 ${museBuddyColors.frame}`,
+    boxShadow: `4px 4px 0 ${museBuddyColors.petal}`,
     minWidth: 210,
     padding: 10,
     position: 'absolute',
@@ -192,4 +202,5 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
     textAlign: 'center',
   },
+  bpmLabel: { alignItems: 'baseline', flexDirection: 'row', gap: 2 },
 });

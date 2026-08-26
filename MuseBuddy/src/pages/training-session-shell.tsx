@@ -56,14 +56,14 @@ const styles = StyleSheet.create({
     borderColor: museBuddyColors.wildflower,
     borderRadius: museBuddyRadii.medium,
     borderWidth: museBuddyBorders.standard,
-    boxShadow: `3px 3px 0 ${museBuddyColors.wildflower}`,
+    boxShadow: `3px 3px 0 ${museBuddyColors.petal}`,
     height: 40,
     justifyContent: 'center',
     width: 40,
   },
   exitButtonPressed: {
-    backgroundColor: museBuddyColors.petal,
-    boxShadow: `1px 1px 0 ${museBuddyColors.wildflower}`,
+    backgroundColor: museBuddyColors.mist,
+    boxShadow: `1px 1px 0 ${museBuddyColors.petal}`,
     transform: [{ translateX: 2 }, { translateY: 2 }],
   },
   header: {

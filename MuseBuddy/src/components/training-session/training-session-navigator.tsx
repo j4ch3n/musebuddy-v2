@@ -17,11 +17,18 @@ export function TrainingSessionNavigator({ activeRoute }: { activeRoute: Trainin
   const { selectedPhraseIndex, session, setSelectedPhraseIndex } = useTrainingSession();
   const phraseCount = session?.bars.length ?? 0;
   const phraseIndex = Math.min(selectedPhraseIndex, Math.max(phraseCount - 1, 0));
-  const canMoveBack = activeRoute === 'phrase' && phraseIndex > 0;
-  const canMoveForward = activeRoute === 'phrase' && phraseIndex < phraseCount - 1;
+  const canMoveBack = phraseIndex > 0;
+  const canMoveForward = phraseIndex < phraseCount - 1;
 
   function openRoute(route: TrainingSessionRoute) {
     router.replace(`/${route}` as Href);
+  }
+
+  function moveToPhrase(index: number) {
+    setSelectedPhraseIndex(index);
+    if (activeRoute !== 'phrase') {
+      router.push('/phrase' as Href);
+    }
   }
 
   return (
@@ -52,7 +59,7 @@ export function TrainingSessionNavigator({ activeRoute }: { activeRoute: Trainin
           accessibilityState={{ disabled: !canMoveBack }}
           disabled={!canMoveBack}
           hitSlop={6}
-          onPress={() => setSelectedPhraseIndex(phraseIndex - 1)}
+          onPress={() => moveToPhrase(phraseIndex - 1)}
           style={({ pressed }) => [styles.phraseArrow, pressed && styles.phrasePressed]}
         >
           <FontAwesome5
@@ -70,7 +77,11 @@ export function TrainingSessionNavigator({ activeRoute }: { activeRoute: Trainin
           onPress={() => openRoute('phrase')}
           style={({ pressed }) => [styles.phraseIndicator, pressed && styles.phrasePressed]}
         >
-          <Lucide color={getIconColor('phrase', activeRoute)} name="music" size={18} />
+          <Ionicons
+            color={getIconColor('phrase', activeRoute)}
+            name="musical-note-sharp"
+            size={20}
+          />
           <Text style={[styles.phraseCurrent, { color: getIconColor('phrase', activeRoute) }]}>
             {phraseIndex + 1} /
           </Text>
@@ -84,7 +95,7 @@ export function TrainingSessionNavigator({ activeRoute }: { activeRoute: Trainin
           accessibilityState={{ disabled: !canMoveForward }}
           disabled={!canMoveForward}
           hitSlop={6}
-          onPress={() => setSelectedPhraseIndex(phraseIndex + 1)}
+          onPress={() => moveToPhrase(phraseIndex + 1)}
           style={({ pressed }) => [styles.phraseArrow, pressed && styles.phrasePressed]}
         >
           <FontAwesome5
@@ -181,7 +192,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     height: 38,
     justifyContent: 'center',
-    width: 30,
+    width: 34,
   },
   phraseCurrent: { fontSize: 16, fontWeight: '900', lineHeight: 19 },
   phraseGroup: {
@@ -192,7 +203,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     height: 42,
   },
-  phraseIndicator: { alignItems: 'center', flexDirection: 'row', gap: 3, height: 38 },
+  phraseIndicator: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 3,
+    height: 38,
+    paddingHorizontal: 3,
+  },
   phraseTotal: { fontSize: 12, fontWeight: '800', lineHeight: 15 },
   phrasePressed: { opacity: 0.72 },
   routeButton: {
