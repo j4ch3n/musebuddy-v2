@@ -195,6 +195,15 @@ export function getPlaybackClockState({
   const demoDurationMs = getSoundFontDemoDurationMs(configuration);
   const stepDurationMs = 0.125 * beatDurationMs;
   const stepCount = getSoundFontStepCount(configuration);
+  const totalDemoDurationMs = demoDurationMs * repetitions;
+  if (demoDurationMs > 0 && demoElapsedMs >= totalDemoDurationMs) {
+    return {
+      completedCycles: repetitions > 1 ? repetitions - 1 : completedCycles,
+      countdownValue: 1,
+      currentStepIndex: null,
+      phase: 'demo',
+    };
+  }
   const repetitionIndex = Math.min(
     Math.max(0, repetitions - 1),
     demoDurationMs > 0 ? Math.floor(demoElapsedMs / demoDurationMs) : 0,

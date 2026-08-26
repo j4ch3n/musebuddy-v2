@@ -81,6 +81,30 @@ describe('performance guidance state', () => {
     ).toBe(1);
   });
 
+  it('clears the active step once the JS playback clock reaches its scheduled end', () => {
+    expect(
+      getPlaybackClockState({
+        completedCycles: 0,
+        configuration,
+        leadIn: true,
+        nowMs: 16_000,
+        repetitions: 1,
+        startedAtMs: 10_000,
+      }),
+    ).toMatchObject({ currentStepIndex: null, phase: 'demo' });
+
+    expect(
+      getPlaybackClockState({
+        completedCycles: 0,
+        configuration,
+        leadIn: false,
+        nowMs: 18_000,
+        repetitions: 2,
+        startedAtMs: 10_000,
+      }),
+    ).toMatchObject({ completedCycles: 1, currentStepIndex: null, phase: 'demo' });
+  });
+
   it('resets progress, input, and errors on a fresh prepare', () => {
     const dirtyState = {
       ...createGuidanceState('pending'),
