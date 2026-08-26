@@ -42,8 +42,9 @@ export default function RootLayout() {
               name="prepare-training-session-splash"
               options={{ gestureEnabled: false }}
             />
-            <Stack.Screen name="session-goal" options={{ gestureEnabled: false }} />
-            <Stack.Screen name="bar-details" options={{ gestureEnabled: false }} />
+            <Stack.Screen name="preview" options={{ gestureEnabled: false }} />
+            <Stack.Screen name="phrase" options={{ gestureEnabled: false }} />
+            <Stack.Screen name="full-play" options={{ gestureEnabled: false }} />
             <Stack.Screen name="basic-pitch-debug" />
           </Stack>
         </TrainingSessionProvider>

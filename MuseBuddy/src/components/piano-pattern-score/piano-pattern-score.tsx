@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, type StyleProp, View, type ViewStyle } from 'react-native';
 
 import { museBuddyColors } from '@/constants/design-tokens';
 import type { TrainingSessionScore } from '@/contexts/training-session-schema';
@@ -16,14 +16,22 @@ import PianoPatternScoreSheet from './piano-pattern-score-sheet.dom';
 type PianoPatternScoreProps = {
   chordChanges: readonly ScoreChordChange[];
   currentStepIndex?: number | null;
+  notationColor?: string;
+  renderHeight?: number;
   score: TrainingSessionScore;
+  style?: StyleProp<ViewStyle>;
+  surfaceColor?: string;
   swipeEnabled?: boolean;
 };
 
 export function PianoPatternScore({
   chordChanges,
   currentStepIndex = null,
+  notationColor = museBuddyColors.notation,
+  renderHeight,
   score,
+  style,
+  surfaceColor = museBuddyColors.mist,
   swipeEnabled = true,
 }: PianoPatternScoreProps) {
   const pages = useMemo(() => paginateScore(score), [score]);
@@ -34,7 +42,7 @@ export function PianoPatternScore({
   );
   const selectedPageIndex = playbackPageIndex ?? manualPageIndex;
   return (
-    <View style={styles.pager}>
+    <View style={[styles.pager, style]}>
       <Carousel
         accessibilityLabel="Music score pages"
         getItemAccessibilityLabel={(_, index) => `Score page ${index + 1} of ${pages.length}`}
@@ -51,7 +59,10 @@ export function PianoPatternScore({
             <PianoPatternScorePage
               chordChanges={pageChordChanges}
               currentStepIndex={currentStepIndex}
+              notationColor={notationColor}
+              renderHeight={renderHeight}
               score={page}
+              surfaceColor={surfaceColor}
             />
           );
         }}
@@ -65,26 +76,35 @@ export function PianoPatternScore({
 function PianoPatternScorePage({
   chordChanges,
   currentStepIndex,
+  notationColor,
+  renderHeight,
   score,
+  surfaceColor,
 }: {
   chordChanges: readonly ScoreChordChange[];
   currentStepIndex: number | null;
+  notationColor: string;
+  renderHeight: number | undefined;
   score: TrainingSessionScore;
+  surfaceColor: string;
 }) {
   return (
     <View
       accessibilityLabel={`Piano score with ${score.measures.length} measures`}
-      style={styles.score}
+      style={[styles.score, { backgroundColor: surfaceColor }]}
     >
       <PianoPatternScoreSheet
         chordChanges={chordChanges}
         dom={{
           matchContents: true,
           scrollEnabled: false,
-          style: styles.sheet,
+          style: [styles.sheet, { backgroundColor: surfaceColor }],
         }}
         currentStepIndex={currentStepIndex}
+        notationColor={notationColor}
+        renderHeight={renderHeight}
         score={score}
+        surfaceColor={surfaceColor}
       />
     </View>
   );
@@ -101,8 +121,5 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     width: '100%',
   },
-  sheet: {
-    backgroundColor: museBuddyColors.mist,
-    width: '100%',
-  },
+  sheet: { width: '100%' },
 });

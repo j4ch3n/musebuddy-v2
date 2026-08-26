@@ -134,6 +134,6 @@ const styles = StyleSheet.create({
     padding: 18,
   },
   heroSurface: {
-    backgroundColor: museBuddyColors.mist,
+    backgroundColor: museBuddyColors.paper,
   },
 });

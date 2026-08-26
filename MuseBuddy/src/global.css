@@ -1,6 +1,7 @@
 :root {
   /* UX framework: shared surfaces, controls, cards, shadows, and feedback. */
   --mb-color-mist: #f2fafc;
+  --mb-color-paper: #ffffff;
   --mb-color-pine: #286467;
   --mb-color-wildflower: #da438c;
   --mb-color-sky: #65c1d5;

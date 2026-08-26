@@ -2,6 +2,7 @@
 
 export const museBuddyPalette = {
   mist: '#F2FAFC',
+  paper: '#FFFFFF',
   pine: '#286467',
   wildflower: '#DA438C',
   sky: '#65C1D5',

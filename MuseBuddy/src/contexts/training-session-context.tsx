@@ -16,8 +16,10 @@ type TrainingSessionContextValue = {
   learningConfig: TrainingLearningConfig;
   phase: TrainingSessionPhase;
   prepareTrainingSession: () => Promise<void>;
+  selectedPhraseIndex: number;
   session: PreparedTrainingSession | null;
   setBpm: (bpm: number) => void;
+  setSelectedPhraseIndex: (phraseIndex: number) => void;
 };
 
 const TrainingSessionContext = createContext<TrainingSessionContextValue | null>(null);
@@ -47,6 +49,7 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
   const [learningConfig, setLearningConfig] =
     useState<TrainingLearningConfig>(DEFAULT_LEARNING_CONFIG);
   const [phase, setPhase] = useState<TrainingSessionPhase>('idle');
+  const [selectedPhraseIndex, setSelectedPhraseIndex] = useState(0);
   const [session, setSession] = useState<PreparedTrainingSession | null>(null);
 
   const setBpm = useCallback((bpm: number) => {
@@ -55,6 +58,14 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
       bpm,
     }));
   }, []);
+
+  const selectPhrase = useCallback(
+    (phraseIndex: number) => {
+      const highestPhraseIndex = Math.max((session?.bars.length ?? 1) - 1, 0);
+      setSelectedPhraseIndex(Math.max(0, Math.min(phraseIndex, highestPhraseIndex)));
+    },
+    [session],
+  );
 
   const prepareTrainingSession = useCallback(async () => {
     setErrorMessage('');
@@ -66,6 +77,7 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
       const [, loadedSession] = await Promise.all([initialize(), fetchDailyTrainingSession()]);
       const preparedSession = prepareTrainingSessionDisplay(loadedSession);
       setSession(preparedSession);
+      setSelectedPhraseIndex(0);
       setPhase('ready');
     } catch (error) {
       logger.error('Daily training preparation failed.', {
@@ -82,10 +94,21 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
       learningConfig,
       phase,
       prepareTrainingSession,
+      selectedPhraseIndex,
       session,
       setBpm,
+      setSelectedPhraseIndex: selectPhrase,
     }),
-    [errorMessage, learningConfig, phase, prepareTrainingSession, session, setBpm],
+    [
+      errorMessage,
+      learningConfig,
+      phase,
+      prepareTrainingSession,
+      selectPhrase,
+      selectedPhraseIndex,
+      session,
+      setBpm,
+    ],
   );
 
   return (

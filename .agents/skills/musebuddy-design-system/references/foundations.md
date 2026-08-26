@@ -24,6 +24,7 @@ group identifies where a color belongs, rather than creating a new naming conven
 | Group | Token name | Value |
 | --- | --- | --- |
 | UX framework | `mist` | `#F2FAFC` |
+| UX framework | `paper` | `#FFFFFF` |
 | UX framework | `pine` | `#286467` |
 | UX framework | `wildflower` | `#DA438C` |
 | UX framework | `sky` | `#65C1D5` |
@@ -38,6 +39,7 @@ group identifies where a color belongs, rather than creating a new naming conven
 | UX framework | `error` | `#C1121F` |
 | UX framework | `success` | `#A7C957` |
 | Teaching materials | `notation` | `#0D1321` |
+| Teaching materials | `notationGray` | `#415A77` |
 | Teaching materials | `blue` | `#0F8B8D` |
 | Teaching materials | `pink` | `#F038FF` |
 | Teaching materials | `yellow` | `#FFBD00` |
@@ -73,6 +75,10 @@ Deep teal is the structural color. Use it for primary text, icons, thin outlines
 ### Ice white — `#F2FAFC`
 
 Ice white is the principal content surface. Use it for notation, training arenas, cards, piano keys, secondary buttons, upcoming states, and modals. Deep teal is the default text and icon color.
+
+### Paper — `#FFFFFF`
+
+Paper is the neutral session and notation background. Use it for the plain training-session canvas and VexFlow score surfaces when the score must read as unframed material rather than a card. Deep teal is the default text and icon color.
 
 ## Contrast rules
 

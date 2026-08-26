@@ -43,6 +43,7 @@ const lightTheme = {
   placeholderColor: museBuddyColors.pine,
   shadowColor: museBuddyColors.frame,
   mist: museBuddyColors.mist,
+  paper: museBuddyColors.paper,
   pine: museBuddyColors.pine,
   wildflower: museBuddyColors.wildflower,
   sky: museBuddyColors.sky,

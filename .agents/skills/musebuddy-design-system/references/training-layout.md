@@ -1,31 +1,69 @@
-# MuseBuddy Training Layout
+# MuseBuddy Training Session Layout
 
-## Training shell
+## Current session shell
 
-Use a fixed three-region shell: compact session navigator at the top, flexible learning arena in the middle, and a fixed control dock above the safe area. Keep navigation visually separate from learning content.
+`/preview`, `/phrase`, and `/full-play` share `TrainingSessionShell`: a compact safe-area header
+above a flexible learning arena. The header holds session navigation, BPM control, and exit. The
+arena takes the remaining viewport height, with 12-point outer padding and 18 points of bottom
+breathing room. There is no bottom control dock in the current product.
 
-The navigator contains one connected sequence of stage icons, a compact BPM control, and optionally a minimal current-stage label. Do not add a second progress bar, stage numbers, “x of y” text, back/settings buttons, or duplicated mode controls. Target 72–88 points including safe-area spacing.
+Do not add a second progress bar, duplicate navigation, floating controls, or a bottom action
+dock unless a feature supplies its behavior. The screen must remain usable without scrolling.
 
-The learning arena receives the remaining space. Use one large ice-white surface rather than nested cards. Separate concepts with spacing, faint dividers, or a small surface-tone shift.
+## Routes and progression
 
-The control dock contains one dominant Start, Continue, or Pause action; optional status; Skip; and Abort. Target 76–92 points. It must never cover the learning arena.
+The routes are fixed in this order:
 
-## Progression
+| Route | Purpose | Navigator behavior |
+| --- | --- | --- |
+| `/preview` | Read the full score before practice. | Opens the full-score arena. |
+| `/phrase` | Compare and practice a single bar. | Provides previous/next bar controls and `current / total`. |
+| `/full-play` | Return to the full score for the final run. | Opens the full-score arena. |
 
-Progression is both navigation and progress feedback; never add separate progress UI.
+The navigator is the session-level progression UI. Do not repeat its meaning with another step
+indicator. Phrase arrows disable at the first and final bars while the Phrase route remains
+available.
 
-Use connected stage pictograms:
+## Learning arenas
 
-* Completed: pistachio tile with integrated check.
-* Current: larger or raised magenta tile.
-* Upcoming: ice-white tile with deep-teal outline.
-* Completed connection: pistachio line.
-* Upcoming connection: thin deep-teal or muted line.
+Preview and Full Play use one full-height FlashCard containing the paginated `PianoPatternScore`.
+The score is the dominant activity: do not nest it in additional cards, overlay controls on it,
+or make the overall screen scroll.
 
-Only the current stage may receive a short label. If space is limited, hide it before shrinking touch targets. A local indicator for a stage with multiple views may use two dots or short segments, but must not resemble global progress. The progression row must fit the viewport without horizontal scrolling.
+Phrase uses a fixed comparison stack above a flexible stage:
+
+1. Previous-bar score slot — 180 points high, muted notation.
+2. Current-bar score slot — 180 points high, standard notation.
+3. Phrase learning FlashCard — fills the remaining arena height.
+
+Keep the score slots separated by a minimal 4-point gap. For the first bar, use an equally sized
+placeholder reading “First bar” and “No previous sheet”; it is an intentional empty state, not a
+loading or error state. Do not reduce the score-slot height to enlarge the lower stage.
+
+## Button customization
+
+Header route controls remain compact, icon-led, and consistently sized. The Phrase control keeps
+its two arrows and compact counter together as one route group. The BPM control remains a compact
+trigger that reveals its options without reflowing the session. Exit stays a dedicated icon action
+that asks for confirmation before leaving.
+
+When customizing a button, preserve its role, touch target, accessibility label/state, and pressed
+feedback. Add labels only when an icon alone is ambiguous; avoid creating a second primary action
+in the header or learning arena.
+
+## Drop-shadow customization
+
+Tactile controls and FlashCards use one solid, offset drop shadow; do not use blurred elevation.
+Keep shadow size proportional to hierarchy: compact header controls use a small offset, while a
+large FlashCard may use a stronger offset. The shadow should compress and the element should move
+toward it when pressed, then return on release.
+
+When changing a component’s surface or state, customize its shadow through the component’s
+existing `shadowColor` or style contract. Do not add multiple shadows, detach the shadow direction
+from the pressed translation, or use shadows as decorative background effects.
 
 ## Content grouping
 
-Group through proximity and surface, not repeated borders. Use one primary arena, conceptual spacing, thin dividers only when useful, small metadata badges, consistent alignment, and color-linked musical elements.
-
-Avoid nested cards, borders around every item, repeated navigation/content labels, large explanatory paragraphs during training, and multiple equally prominent focal points. For teaching screens, show relationships through repeated musical color and geometry.
+Use one dominant learning activity per route. Group related material through proximity, the primary
+arena, and restrained spacing rather than repeated nested cards, explanatory labels, or competing
+focal points. Keep navigation, content, and session controls visibly separate.

@@ -13,7 +13,10 @@ type PianoPatternScoreSheetProps = {
   chordChanges: readonly ScoreChordChange[];
   currentStepIndex: number | null;
   dom?: import('expo/dom').DOMProps;
+  notationColor: string;
+  renderHeight?: number;
   score: TrainingSessionScore;
+  surfaceColor: string;
 };
 
 type ScoreEvent =
@@ -29,15 +32,18 @@ const SCORE_HEIGHT = STAFF_HEIGHT * 2 + CLEF_BASS_GAP_SIZE;
 export default function PianoPatternScoreSheet({
   chordChanges,
   currentStepIndex,
+  notationColor,
+  renderHeight,
   score,
+  surfaceColor,
 }: PianoPatternScoreSheetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const elementId = useId().replaceAll(':', '-');
 
   useEffect(() => {
-    document.documentElement.style.backgroundColor = museBuddyColors.mist;
+    document.documentElement.style.backgroundColor = surfaceColor;
     document.documentElement.style.height = '100%';
-    document.body.style.backgroundColor = museBuddyColors.mist;
+    document.body.style.backgroundColor = surfaceColor;
     document.body.style.height = '100%';
     document.body.style.margin = '0';
     document.body.style.padding = '0';
@@ -48,7 +54,16 @@ export default function PianoPatternScoreSheet({
     }
 
     const render = () => {
-      renderScore(container, elementId, score, chordChanges, currentStepIndex);
+      renderScore(
+        container,
+        elementId,
+        score,
+        chordChanges,
+        currentStepIndex,
+        notationColor,
+        renderHeight,
+        surfaceColor,
+      );
     };
     const observer = new ResizeObserver(render);
     observer.observe(container);
@@ -58,7 +73,7 @@ export default function PianoPatternScoreSheet({
       observer.disconnect();
       container.replaceChildren();
     };
-  }, [chordChanges, currentStepIndex, elementId, score]);
+  }, [chordChanges, currentStepIndex, elementId, notationColor, renderHeight, score, surfaceColor]);
 
   return (
     <div
@@ -66,8 +81,9 @@ export default function PianoPatternScoreSheet({
       id={elementId}
       ref={containerRef}
       style={{
-        background: museBuddyColors.mist,
-        height: groupScoreMeasures(score.measures).length * SCORE_HEIGHT * SCORE_SCALE,
+        background: surfaceColor,
+        height:
+          renderHeight ?? groupScoreMeasures(score.measures).length * SCORE_HEIGHT * SCORE_SCALE,
         overflow: 'hidden',
         position: 'relative',
         width: '100%',
@@ -82,12 +98,15 @@ function renderScore(
   score: TrainingSessionScore,
   chordChanges: readonly ScoreChordChange[],
   currentStepIndex: number | null,
+  notationColor: string,
+  renderHeight: number | undefined,
+  surfaceColor: string,
 ) {
   container.replaceChildren();
 
   const width = Math.max(MIN_SCORE_WIDTH, Math.floor(container.clientWidth / SCORE_SCALE));
   const rows = groupScoreMeasures(score.measures);
-  const height = rows.length * SCORE_HEIGHT;
+  const height = renderHeight ? Math.ceil(renderHeight / SCORE_SCALE) : rows.length * SCORE_HEIGHT;
   const factory = new Factory({
     renderer: {
       elementId,
@@ -95,8 +114,8 @@ function renderScore(
       width,
     },
   });
-  factory.getContext().setFillStyle(museBuddyColors.notation);
-  factory.getContext().setStrokeStyle(museBuddyColors.notation);
+  factory.getContext().setFillStyle(notationColor);
+  factory.getContext().setStrokeStyle(notationColor);
   const notesById = new Map<string, StaveNote>();
   const rowByEventId = new Map<string, number>();
   const activeEventIds = getActiveScoreEventIds(score, currentStepIndex);
@@ -182,7 +201,7 @@ function renderScore(
 
   const svg = container.querySelector('svg');
   if (svg) {
-    svg.style.backgroundColor = museBuddyColors.mist;
+    svg.style.backgroundColor = surfaceColor;
     svg.style.position = 'absolute';
     svg.style.transform = `scale(${SCORE_SCALE})`;
     svg.style.transformOrigin = 'top left';
