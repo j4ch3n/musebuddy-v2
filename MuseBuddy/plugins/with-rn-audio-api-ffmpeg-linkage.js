@@ -1,4 +1,4 @@
-const { createRunOncePlugin, withPodfile } = require('@expo/config-plugins');
+const { createRunOncePlugin, withPodfile } = require('expo/config-plugins');
 
 const pkg = require('../package.json');
 
