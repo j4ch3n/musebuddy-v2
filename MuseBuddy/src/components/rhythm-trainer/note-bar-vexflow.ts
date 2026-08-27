@@ -2,7 +2,17 @@ import { STEPS_PER_BAR } from './constants';
 import { collectRhythmEvents } from './rhythm-pattern';
 import type { RhythmStep } from './types';
 
-export const RHYTHM_NOTE_KEY = 'f/5';
+/**
+ * The rhythm preview is drawn on a one-line staff, but VexFlow still lays it
+ * out as a conventional five-line stave so that each clef glyph is anchored
+ * to the correct reference line. These pitches put the notehead on line 3 in
+ * its respective clef.
+ */
+export const RHYTHM_NOTE_KEY_BY_CLEF = {
+  bass: 'd/3',
+  treble: 'b/4',
+} as const;
+export const RHYTHM_NOTE_KEY = RHYTHM_NOTE_KEY_BY_CLEF.treble;
 export const BAR_STEP_COUNT = STEPS_PER_BAR;
 
 export type VexflowDuration = '32' | '16' | '8' | 'q' | 'h' | 'w';
@@ -20,6 +30,7 @@ export type NoteBarVexflowEvent = {
 };
 
 type ConvertOptions = {
+  clef?: 'bass' | 'treble';
   noteKey?: string;
 };
 
@@ -56,7 +67,7 @@ export function convertRhythmPatternToVexflowBars(
   if (steps.length === 0 || steps.length % BAR_STEP_COUNT !== 0) {
     throw new Error(`Expected a non-empty multiple of ${BAR_STEP_COUNT} steps.`);
   }
-  const noteKey = options.noteKey ?? RHYTHM_NOTE_KEY;
+  const noteKey = options.noteKey ?? RHYTHM_NOTE_KEY_BY_CLEF[options.clef ?? 'treble'];
   const bars = Array.from(
     { length: steps.length / BAR_STEP_COUNT },
     () => [] as NoteBarVexflowEvent[],

@@ -21,7 +21,10 @@ export function NoteBarViewer({
   events: suppliedEvents,
   steps,
 }: NoteBarViewerProps) {
-  const derivedEvents = useMemo(() => convertRhythmBarToVexflowEvents(steps), [steps]);
+  const derivedEvents = useMemo(
+    () => convertRhythmBarToVexflowEvents(steps, { clef }),
+    [clef, steps],
+  );
   const events = suppliedEvents ?? derivedEvents;
 
   return (

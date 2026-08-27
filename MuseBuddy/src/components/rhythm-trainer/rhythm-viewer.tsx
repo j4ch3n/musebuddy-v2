@@ -24,7 +24,7 @@ export function RhythmViewer({
 }: RhythmViewerProps) {
   const normalizedPattern = normalizeRhythmPattern(pattern);
   const bars = splitRhythmPatternBars(normalizedPattern);
-  const notationBars = convertRhythmPatternToVexflowBars(normalizedPattern);
+  const notationBars = convertRhythmPatternToVexflowBars(normalizedPattern, { clef });
 
   return (
     <View style={styles.container}>

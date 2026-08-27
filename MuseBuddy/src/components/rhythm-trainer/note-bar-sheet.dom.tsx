@@ -6,7 +6,7 @@ import { Dot, Factory, StaveNote, TimeSignature } from 'vexflow';
 import { museBuddyColors } from '@/constants/design-tokens';
 
 import { RHYTHM_SHEET_HEIGHT_PX } from './constants';
-import { RHYTHM_NOTE_KEY, type NoteBarVexflowEvent } from './note-bar-vexflow';
+import { RHYTHM_NOTE_KEY_BY_CLEF, type NoteBarVexflowEvent } from './note-bar-vexflow';
 
 type NoteBarSheetProps = {
   clef: 'bass' | 'treble';
@@ -16,7 +16,14 @@ type NoteBarSheetProps = {
 };
 
 const STAVE_WIDTH = 328;
-const SINGLE_LINE_NOTE_POSITION = 5;
+const MIDDLE_STAFF_LINE = 2;
+const SINGLE_LINE_STAFF_CONFIG = [
+  { visible: false },
+  { visible: false },
+  { visible: true },
+  { visible: false },
+  { visible: false },
+];
 
 export default function NoteBarSheet({ clef, currentStepIndex, events }: NoteBarSheetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -50,17 +57,25 @@ export default function NoteBarSheet({ clef, currentStepIndex, events }: NoteBar
     context.setStrokeStyle(museBuddyColors.notation);
     const stave = factory.Stave({
       options: {
-        numLines: 1,
+        // Keep VexFlow's five-line geometry for the treble G and bass F clef
+        // glyphs, then expose only their shared middle line for the rhythm
+        // preview.
+        numLines: 5,
         spaceAboveStaffLn: 4,
         spaceBelowStaffLn: 4,
       },
       width: STAVE_WIDTH - 16,
       x: 8,
-      y: 4,
+      y: 10,
     });
+    // Stave construction resets line config, so apply the one-line visibility
+    // after creating it rather than passing it through the constructor.
+    stave.setConfigForLines(SINGLE_LINE_STAFF_CONFIG);
     const timeSignature = new TimeSignature('4/4', 10);
-    timeSignature.topLine = -1;
-    timeSignature.bottomLine = 1;
+    // Keep the numerator and denominator equally spaced above and below the
+    // one visible middle line, so the complete 4/4 glyph is centered on it.
+    timeSignature.topLine = MIDDLE_STAFF_LINE - 1;
+    timeSignature.bottomLine = MIDDLE_STAFF_LINE + 1;
     stave.addClef(clef).addModifier(timeSignature);
     stave.setContext(context).draw();
 
@@ -69,11 +84,15 @@ export default function NoteBarSheet({ clef, currentStepIndex, events }: NoteBar
       const staveNote = new StaveNote({
         clef,
         duration,
-        keys: [event.kind === 'note' ? (event.noteKey ?? RHYTHM_NOTE_KEY) : RHYTHM_NOTE_KEY],
+        keys: [
+          event.kind === 'note'
+            ? (event.noteKey ?? RHYTHM_NOTE_KEY_BY_CLEF[clef])
+            : RHYTHM_NOTE_KEY_BY_CLEF[clef],
+        ],
       });
 
       if (event.kind === 'rest') {
-        staveNote.setKeyLine(0, SINGLE_LINE_NOTE_POSITION);
+        staveNote.setKeyLine(0, MIDDLE_STAFF_LINE);
       }
 
       Array.from({ length: event.dots }).forEach(() => {

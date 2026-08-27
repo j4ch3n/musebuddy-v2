@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  RHYTHM_NOTE_KEY_BY_CLEF,
   convertRhythmBarToVexflowEvents,
   convertRhythmPatternToVexflowBars,
 } from './note-bar-vexflow';
@@ -11,6 +12,11 @@ function bar(...initial: RhythmStep[]): RhythmStep[] {
 }
 
 describe('convertRhythmBarToVexflowEvents', () => {
+  it('uses a middle-line pitch for each clef in the one-line preview', () => {
+    expect(RHYTHM_NOTE_KEY_BY_CLEF).toEqual({ bass: 'd/3', treble: 'b/4' });
+    expect(convertRhythmBarToVexflowEvents(bar('s'), { clef: 'bass' })[0]?.noteKey).toBe('d/3');
+  });
+
   it('renders one source step as a thirty-second note', () => {
     const events = convertRhythmBarToVexflowEvents(bar('s', 'w'));
 
