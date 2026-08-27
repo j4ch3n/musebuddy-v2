@@ -61,7 +61,7 @@
           "androidForegroundService": false
         }
       ],
-      "./plugins/with-rn-audio-api-ffmpeg-linkage"
+      "./plugins/with-rn-audio-api-ffmpeg-linkage.js"
     ],
     "experiments": {
       "typedRoutes": true,
