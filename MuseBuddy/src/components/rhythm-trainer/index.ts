@@ -7,9 +7,6 @@ export {
 } from './rhythm-pattern';
 export type { RhythmEvent } from './rhythm-pattern';
 export { RhythmSpeedControl } from './rhythm-speed-control';
-export { RhythmTapTarget } from './rhythm-tap-target';
 export { RhythmViewer } from './rhythm-viewer';
 export { RhythmBarViewer } from './rhythm-bar-viewer';
-export { getRhythmTiming } from './rhythm-listen-progress';
-export { useRhythmListenProgress } from './use-rhythm-listen-progress';
-export type { RhythmAttack, RhythmAttackDot, RhythmPattern, RhythmStep } from './types';
+export type { RhythmPattern, RhythmStep } from './types';

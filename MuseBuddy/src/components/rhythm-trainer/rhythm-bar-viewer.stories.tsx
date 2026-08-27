@@ -96,15 +96,3 @@ export const RestHeavy: Story = {
     ],
   },
 };
-
-export const DetectedHits: Story = {
-  args: {
-    attackDots: [
-      { attackOffsetMs: 0, id: 1, matched: true },
-      { attackOffsetMs: 845, id: 2, matched: true },
-      { attackOffsetMs: 1_325, id: 3, matched: false },
-    ],
-    currentStepIndex: 13,
-    stepDurationMs: 100,
-  },
-};

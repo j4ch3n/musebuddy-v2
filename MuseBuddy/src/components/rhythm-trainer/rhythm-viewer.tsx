@@ -5,24 +5,22 @@ import { convertRhythmPatternToVexflowBars } from './note-bar-vexflow';
 import { normalizeRhythmPattern, splitRhythmPatternBars } from './rhythm-pattern';
 import { RhythmBarViewer } from './rhythm-bar-viewer';
 import { RhythmLegend } from './rhythm-legend';
-import type { RhythmAttackDot, RhythmPattern } from './types';
+import type { RhythmPattern } from './types';
 
 type RhythmViewerProps = {
-  attackDots?: readonly RhythmAttackDot[];
+  clef?: 'bass' | 'treble';
   currentStepIndex: number | null;
   pattern: RhythmPattern;
   showLegend?: boolean;
   showNotation?: boolean;
-  stepDurationMs?: number;
 };
 
 export function RhythmViewer({
-  attackDots = [],
+  clef = 'treble',
   currentStepIndex,
   pattern,
   showLegend = true,
   showNotation = true,
-  stepDurationMs = 1,
 }: RhythmViewerProps) {
   const normalizedPattern = normalizeRhythmPattern(pattern);
   const bars = splitRhythmPatternBars(normalizedPattern);
@@ -45,18 +43,13 @@ export function RhythmViewer({
             <View key={barIndex} style={styles.barGroup}>
               {showNotation ? (
                 <NoteBarViewer
+                  clef={clef}
                   currentStepIndex={currentStepInBar}
                   events={notationBars[barIndex]}
                   steps={steps}
                 />
               ) : null}
-              <RhythmBarViewer
-                attackDots={attackDots}
-                barIndex={barIndex}
-                currentStepIndex={currentStepInBar}
-                stepDurationMs={stepDurationMs}
-                steps={steps}
-              />
+              <RhythmBarViewer currentStepIndex={currentStepInBar} steps={steps} />
             </View>
           );
         })}

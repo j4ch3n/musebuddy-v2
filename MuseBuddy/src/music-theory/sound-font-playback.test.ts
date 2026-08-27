@@ -5,7 +5,7 @@ import type { ChordDisplay } from '@/music-theory/chord-display';
 import type { PianoPitchClass } from '@schema/music-theory-schema';
 
 import {
-  buildChordPreviewSoundFontPlaybackConfiguration,
+  buildChordPhrasePreviewSoundFontPlaybackConfiguration,
   buildPatternSoundFontPlaybackConfiguration,
   buildRhythmSoundFontPlaybackConfiguration,
 } from './sound-font-playback';
@@ -98,9 +98,9 @@ describe('buildPatternSoundFontPlaybackConfiguration', () => {
   });
 });
 
-describe('buildChordPreviewSoundFontPlaybackConfiguration', () => {
-  it('plays one chord as four even quarter-note hits with alternating velocities and a C2 root', () => {
-    const configuration = buildChordPreviewSoundFontPlaybackConfiguration(
+describe('buildChordPhrasePreviewSoundFontPlaybackConfiguration', () => {
+  it('holds the enriched chord for half a bar before quarter-bar individual tones', () => {
+    const configuration = buildChordPhrasePreviewSoundFontPlaybackConfiguration(
       chordDisplay('C', [60, 64, 67]),
       88,
     );
@@ -109,7 +109,7 @@ describe('buildChordPreviewSoundFontPlaybackConfiguration', () => {
     expect(configuration.tracks.treble).toHaveLength(1);
 
     const part = configuration.tracks.treble[0];
-    expect(part).toHaveLength(32);
+    expect(part).toHaveLength(40);
 
     const noteStep = (velocity: number) => [
       { midi: 60, velocity },
@@ -120,12 +120,17 @@ describe('buildChordPreviewSoundFontPlaybackConfiguration', () => {
     const holdStep = Array.from({ length: 4 }, () => ({ midi: -50, velocity: null }));
 
     expect(part?.[0]).toEqual(noteStep(96));
-    expect(part?.[8]).toEqual(noteStep(65));
-    expect(part?.[16]).toEqual(noteStep(96));
-    expect(part?.[24]).toEqual(noteStep(65));
+    expect(part?.[8]).toEqual(holdStep);
+    expect(part?.[15]).toEqual(holdStep);
+    expect(part?.[16]).toEqual([{ midi: 60, velocity: 96 }]);
+    expect(part?.[24]).toEqual([{ midi: 64, velocity: 96 }]);
+    expect(part?.[32]).toEqual([{ midi: 67, velocity: 96 }]);
 
-    [1, 7, 9, 15, 17, 23, 25, 31].forEach((stepIndex) => {
+    [1, 7, 8, 15].forEach((stepIndex) => {
       expect(part?.[stepIndex]).toEqual(holdStep);
+    });
+    [17, 23, 25, 31, 33, 39].forEach((stepIndex) => {
+      expect(part?.[stepIndex]).toEqual([{ midi: -50, velocity: null }]);
     });
   });
 });

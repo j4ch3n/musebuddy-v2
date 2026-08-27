@@ -9,12 +9,14 @@ import { convertRhythmBarToVexflowEvents, type NoteBarVexflowEvent } from './not
 import type { RhythmStep } from './types';
 
 type NoteBarViewerProps = {
+  clef?: 'bass' | 'treble';
   currentStepIndex: number | null;
   events?: readonly NoteBarVexflowEvent[];
   steps: readonly RhythmStep[];
 };
 
 export function NoteBarViewer({
+  clef = 'treble',
   currentStepIndex,
   events: suppliedEvents,
   steps,
@@ -25,6 +27,7 @@ export function NoteBarViewer({
   return (
     <View accessibilityLabel="Note preview for rhythm bar" style={styles.container}>
       <NoteBarSheet
+        clef={clef}
         currentStepIndex={currentStepIndex}
         dom={{
           scrollEnabled: false,

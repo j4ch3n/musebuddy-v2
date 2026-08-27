@@ -11,8 +11,13 @@ import { TrainingSessionShell } from './training-session-shell';
 const PHRASE_SHEET_SLOT_HEIGHT = 180;
 
 export function PhraseSection() {
-  const { selectedPhraseIndex, selectedPhraseStage, session, setSelectedPhraseStage } =
-    useTrainingSession();
+  const {
+    learningConfig,
+    selectedPhraseIndex,
+    selectedPhraseStage,
+    session,
+    setSelectedPhraseStage,
+  } = useTrainingSession();
   const bars = session?.bars ?? [];
   const phraseIndex = Math.min(selectedPhraseIndex, Math.max(bars.length - 1, 0));
   const currentBar = bars[phraseIndex];
@@ -33,6 +38,8 @@ export function PhraseSection() {
             />
           </View>
           <PhraseStageCard
+            bar={currentBar}
+            bpm={learningConfig.bpm}
             onStageChange={setSelectedPhraseStage}
             selectedStage={selectedPhraseStage}
           />

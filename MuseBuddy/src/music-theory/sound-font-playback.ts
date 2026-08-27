@@ -76,44 +76,38 @@ export function buildRhythmSoundFontPlaybackConfiguration(
   };
 }
 
-export function buildChordPreviewSoundFontPlaybackConfiguration(
+/** Plays the enriched chord voicing, then introduces its C4-area tones from low to high. */
+export function buildChordPhrasePreviewSoundFontPlaybackConfiguration(
   display: ChordDisplay,
   bpm: number,
 ): SoundFontPlaybackConfiguration {
+  const notes = [...display.notes].sort((left, right) => left.midi - right.midi);
+
   return {
     bpm,
     tracks: {
       treble: [
-        buildChordPart(display, [
-          { durationSteps: 8, startStep: 0, velocity: CHORD_NOTE_STRONG_VELOCITY },
-          { durationSteps: 8, startStep: 8, velocity: CHORD_NOTE_WEAK_VELOCITY },
-          { durationSteps: 8, startStep: 16, velocity: CHORD_NOTE_STRONG_VELOCITY },
-          { durationSteps: 8, startStep: 24, velocity: CHORD_NOTE_WEAK_VELOCITY },
-        ]),
+        [
+          ...buildChordPart(display, [
+            { durationSteps: 16, startStep: 0, velocity: CHORD_NOTE_STRONG_VELOCITY },
+          ]).slice(0, 16),
+          ...buildChordBreakdownSteps(notes),
+        ],
       ],
     },
   };
 }
 
-/** Plays the voiced chord once, then introduces its actual chord tones from low to high. */
-export function buildChordBreakdownSoundFontPlaybackConfiguration(
-  display: ChordDisplay,
-  bpm: number,
-): SoundFontPlaybackConfiguration {
-  const notes = [...display.notes].sort((left, right) => left.midi - right.midi);
-  const steps = Array.from({ length: 8 + notes.length * 4 }, () => [] as SoundFontPlaybackCell[]);
-  steps[0] = notes.map((note) => ({ midi: note.midi, velocity: CHORD_NOTE_VELOCITY }));
-  for (let index = 1; index < 8; index += 1) {
-    steps[index] = notes.map(() => HOLD_CELL);
-  }
+function buildChordBreakdownSteps(notes: readonly ChordDisplay['notes'][number][]) {
+  const steps = Array.from({ length: notes.length * 8 }, () => [] as SoundFontPlaybackCell[]);
   notes.forEach((note, noteIndex) => {
-    const start = 8 + noteIndex * 4;
+    const start = noteIndex * 8;
     steps[start] = [{ midi: note.midi, velocity: CHORD_NOTE_VELOCITY }];
-    for (let step = start + 1; step < start + 4; step += 1) {
+    for (let step = start + 1; step < start + 8; step += 1) {
       steps[step] = [HOLD_CELL];
     }
   });
-  return { bpm, tracks: { treble: [steps] } };
+  return steps;
 }
 
 function buildTracksFromPatternBeats(

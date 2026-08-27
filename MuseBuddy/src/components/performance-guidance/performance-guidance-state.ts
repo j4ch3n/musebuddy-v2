@@ -19,9 +19,7 @@ export type GuidanceState = {
   currentSegmentIndex: number;
   countdownValue: number;
   currentStepIndex: number | null;
-  demoStartedAtMs: number | null;
   latestDetection: DetectionResult | null;
-  listeningStartedAtMs: number | null;
   errorMessage: string;
   flowId: number;
   isRetryingCurrentSegment: boolean;
@@ -30,7 +28,6 @@ export type GuidanceState = {
 export type GuidanceAction =
   | { type: 'prepare'; flowId?: number }
   | { type: 'demo' }
-  | { type: 'schedule-listening'; demoStartedAtMs: number; startedAtMs: number }
   | { type: 'listening'; startedAtMs?: number }
   | { type: 'finish' }
   | { type: 'detection'; detection: DetectionResult }
@@ -54,9 +51,7 @@ export function createGuidanceState(phase: PerformanceGuidanceStartPhase): Guida
     currentSegmentIndex: 0,
     countdownValue: 4,
     currentStepIndex: null,
-    demoStartedAtMs: null,
     latestDetection: null,
-    listeningStartedAtMs: null,
     errorMessage: '',
     flowId: 0,
     isRetryingCurrentSegment: false,
@@ -68,20 +63,13 @@ export function guidanceReducer(state: GuidanceState, action: GuidanceAction): G
     case 'prepare':
       return { ...createGuidanceState('prepare'), flowId: action.flowId ?? state.flowId };
     case 'demo':
-      return { ...state, phase: 'demo', currentStepIndex: null, listeningStartedAtMs: null };
-    case 'schedule-listening':
-      return {
-        ...state,
-        demoStartedAtMs: action.demoStartedAtMs,
-        listeningStartedAtMs: action.startedAtMs,
-      };
+      return { ...state, phase: 'demo', currentStepIndex: null };
     case 'listening':
       return {
         ...state,
         phase: 'listening',
         currentStepIndex: null,
         latestDetection: null,
-        listeningStartedAtMs: action.startedAtMs ?? null,
       };
     case 'finish':
       return {
@@ -89,8 +77,6 @@ export function guidanceReducer(state: GuidanceState, action: GuidanceAction): G
         phase: 'finish',
         currentStepIndex: null,
         latestDetection: null,
-        listeningStartedAtMs: null,
-        demoStartedAtMs: null,
         isRetryingCurrentSegment: false,
       };
     case 'detection':
@@ -101,8 +87,6 @@ export function guidanceReducer(state: GuidanceState, action: GuidanceAction): G
         completedCycles: action.completedCycles,
         currentStepIndex: null,
         latestDetection: null,
-        listeningStartedAtMs: null,
-        demoStartedAtMs: null,
       };
     case 'next-segment':
       return {
@@ -111,8 +95,6 @@ export function guidanceReducer(state: GuidanceState, action: GuidanceAction): G
         currentSegmentIndex: state.currentSegmentIndex + 1,
         currentStepIndex: null,
         latestDetection: null,
-        listeningStartedAtMs: null,
-        demoStartedAtMs: null,
         isRetryingCurrentSegment: false,
       };
     case 'retry':
@@ -121,7 +103,6 @@ export function guidanceReducer(state: GuidanceState, action: GuidanceAction): G
         phase: 'retry',
         currentStepIndex: null,
         latestDetection: null,
-        listeningStartedAtMs: null,
         isRetryingCurrentSegment: true,
       };
     case 'clock':

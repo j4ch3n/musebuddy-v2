@@ -135,29 +135,6 @@ describe('performance guidance state', () => {
     expect(state).toMatchObject({ currentSegmentIndex: 1, phase: 'retry' });
   });
 
-  it('publishes a scheduled rhythm boundary without entering listening', () => {
-    const demoState = guidanceReducer(createGuidanceState('prepare'), { type: 'demo' });
-    const scheduledState = guidanceReducer(demoState, {
-      demoStartedAtMs: 12_000,
-      type: 'schedule-listening',
-      startedAtMs: 14_000,
-    });
-
-    expect(scheduledState).toMatchObject({
-      listeningStartedAtMs: 14_000,
-      phase: 'demo',
-    });
-    expect(
-      guidanceReducer(scheduledState, {
-        completedCycles: 0,
-        countdownValue: 1,
-        currentStepIndex: 4,
-        phase: 'demo',
-        type: 'clock',
-      }).listeningStartedAtMs,
-    ).toBe(14_000);
-  });
-
   it('filters stale playback and recognition events by active id', () => {
     expect(shouldHandlePlaybackEvent(null, 4)).toBe(false);
     expect(shouldHandlePlaybackEvent(4, 3)).toBe(false);

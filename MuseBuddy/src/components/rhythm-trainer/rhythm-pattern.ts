@@ -4,10 +4,10 @@ import {
   RHYTHM_PATTERN_PROBABILITY_CONFIG,
   STEPS_PER_BAR,
 } from './constants';
-import type { RhythmAttack, RhythmPattern, RhythmStep } from './types';
+import type { RhythmPattern, RhythmStep } from './types';
 
 export type RhythmEvent = {
-  attack: RhythmAttack | null;
+  attack: 's' | 'w' | null;
   kind: 'attack' | 'rest';
   startStep: number;
   stepCount: number;
@@ -107,7 +107,7 @@ export function normalizeRhythmPattern(steps: readonly RhythmStep[]): RhythmStep
   return expandRhythmEvents(collectRhythmEvents(steps));
 }
 
-function isRhythmAttack(step: RhythmStep): step is RhythmAttack {
+function isRhythmAttack(step: RhythmStep): step is 's' | 'w' {
   return step === 's' || step === 'w';
 }
 

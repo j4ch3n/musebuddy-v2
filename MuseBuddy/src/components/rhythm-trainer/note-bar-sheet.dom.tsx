@@ -9,6 +9,7 @@ import { RHYTHM_SHEET_HEIGHT_PX } from './constants';
 import { RHYTHM_NOTE_KEY, type NoteBarVexflowEvent } from './note-bar-vexflow';
 
 type NoteBarSheetProps = {
+  clef: 'bass' | 'treble';
   currentStepIndex: number | null;
   events: readonly NoteBarVexflowEvent[];
   dom?: import('expo/dom').DOMProps;
@@ -17,7 +18,7 @@ type NoteBarSheetProps = {
 const STAVE_WIDTH = 328;
 const SINGLE_LINE_NOTE_POSITION = 5;
 
-export default function NoteBarSheet({ currentStepIndex, events }: NoteBarSheetProps) {
+export default function NoteBarSheet({ clef, currentStepIndex, events }: NoteBarSheetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const elementId = useId().replaceAll(':', '-');
 
@@ -60,13 +61,13 @@ export default function NoteBarSheet({ currentStepIndex, events }: NoteBarSheetP
     const timeSignature = new TimeSignature('4/4', 10);
     timeSignature.topLine = -1;
     timeSignature.bottomLine = 1;
-    stave.addModifier(timeSignature);
+    stave.addClef(clef).addModifier(timeSignature);
     stave.setContext(context).draw();
 
     const notes = events.map((event) => {
       const duration = `${event.duration}${event.kind === 'rest' ? 'r' : ''}`;
       const staveNote = new StaveNote({
-        clef: 'treble',
+        clef,
         duration,
         keys: [event.kind === 'note' ? (event.noteKey ?? RHYTHM_NOTE_KEY) : RHYTHM_NOTE_KEY],
       });
@@ -131,7 +132,7 @@ export default function NoteBarSheet({ currentStepIndex, events }: NoteBarSheetP
     if (svg) {
       svg.style.backgroundColor = museBuddyColors.mist;
     }
-  }, [currentStepIndex, elementId, events]);
+  }, [clef, currentStepIndex, elementId, events]);
 
   return (
     <div

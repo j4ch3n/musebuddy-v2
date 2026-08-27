@@ -19,7 +19,6 @@ import {
 import {
   createGuidanceState,
   getPlaybackClockState,
-  getSoundFontDemoDurationMs,
   getSoundFontPartCount,
   getSoundFontStepCount,
   guidanceReducer,
@@ -41,10 +40,7 @@ type PerformanceGuidancePlayback =
       kind: 'silent';
     };
 
-export type PerformanceGuidanceListeningMode =
-  | { kind: 'none' }
-  | { kind: 'basic-pitch' }
-  | { kind: 'rhythm-tap' };
+export type PerformanceGuidanceListeningMode = { kind: 'none' } | { kind: 'basic-pitch' };
 
 export type PerformanceGuidanceContextValue = GuidanceState & {
   completeListening: (outcome?: 'pass' | 'retry') => Promise<void>;
@@ -256,17 +252,6 @@ export function PerformanceGuidanceProvider({
         }
         playbackIdRef.current = result.playbackId;
         recognitionIdRef.current = null;
-        if (mode.kind === 'rhythm-tap') {
-          const beatDurationMs = 60_000 / currentConfiguration.bpm;
-          const demoStartedAtMs = result.startedAtMs + (leadIn ? 4 * beatDurationMs : 0);
-          const listeningStartedAtMs =
-            demoStartedAtMs + getSoundFontDemoDurationMs(currentConfiguration);
-          dispatch({
-            type: 'schedule-listening',
-            demoStartedAtMs,
-            startedAtMs: listeningStartedAtMs,
-          });
-        }
         startClock({ generation, leadIn, repetitions, startedAtMs: result.startedAtMs });
       } catch (error) {
         if (flowGenerationRef.current !== generation) {
@@ -476,13 +461,6 @@ export function PerformanceGuidanceProvider({
           const mode = listeningModeRef.current;
           if (mode.kind === 'basic-pitch') {
             void startRecognition(generation);
-          } else if (mode.kind === 'rhythm-tap') {
-            const startedAtMs = stateRef.current.listeningStartedAtMs;
-            if (startedAtMs === null) {
-              dispatch({ type: 'pending', errorMessage: 'Listening timing was unavailable.' });
-              return;
-            }
-            dispatch({ type: 'listening', startedAtMs });
           } else {
             const hasNextSegment =
               stateRef.current.currentSegmentIndex + 1 <

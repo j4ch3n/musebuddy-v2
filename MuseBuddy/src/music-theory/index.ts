@@ -19,12 +19,12 @@ export {
 } from './chord-listen-recognition';
 export {
   prepareTrainingSessionDisplay,
+  type PreparedTrainingBar,
   type PreparedTrainingSession,
   type ScoreChordChange,
 } from './training-session-display';
 export {
-  buildChordBreakdownSoundFontPlaybackConfiguration,
-  buildChordPreviewSoundFontPlaybackConfiguration,
+  buildChordPhrasePreviewSoundFontPlaybackConfiguration,
   buildPatternSoundFontPlaybackConfiguration,
   buildRhythmSoundFontPlaybackConfiguration,
 } from './sound-font-playback';
