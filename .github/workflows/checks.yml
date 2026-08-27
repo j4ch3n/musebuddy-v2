@@ -101,7 +101,11 @@ jobs:
         uses: Homebrew/actions/setup-homebrew@master
 
       - name: Install Swift tooling
-        run: brew install swiftformat swiftlint
+        run: |
+          brew install mint swiftlint
+          mint install nicklockwood/SwiftFormat@0.61.1
+          echo "$HOME/.mint/bin" >> "$GITHUB_PATH"
+          swiftformat --version
 
       - name: Check Swift formatting
         run: pnpm format:swift:check
