@@ -10,13 +10,19 @@ type RhythmBarViewerProps = {
   currentStepIndex: number | null;
   muted?: boolean;
   steps: readonly RhythmStep[];
+  width?: number;
 };
 
-export function RhythmBarViewer({ currentStepIndex, steps, muted = false }: RhythmBarViewerProps) {
+export function RhythmBarViewer({
+  currentStepIndex,
+  steps,
+  muted = false,
+  width,
+}: RhythmBarViewerProps) {
   return (
     <View
       accessibilityLabel="Rhythm bar with thirty-two thirty-second-note steps"
-      style={styles.container}
+      style={[styles.container, width === undefined ? null : { width }]}
     >
       <View style={styles.lane}>
         <View
@@ -87,7 +93,7 @@ const styles = StyleSheet.create({
   beatBand: { backgroundColor: museBuddyColors.mist, flex: 1 },
   beatBandAlternate: { backgroundColor: museBuddyColors.skyWash },
   beatBands: { bottom: 0, flexDirection: 'row', left: 0, position: 'absolute', right: 0, top: 0 },
-  container: { minHeight: 62, paddingVertical: 2 },
+  container: { minHeight: 34, paddingVertical: 2 },
   currentPointer: {
     borderLeftColor: 'transparent',
     borderLeftWidth: 5,
@@ -114,21 +120,23 @@ const styles = StyleSheet.create({
     width: 2,
     zIndex: 2,
   },
-  holdStepBar: { backgroundColor: museBuddyColors.rhythmHold, height: 12, width: '90%' },
+  holdStepBar: { backgroundColor: museBuddyColors.rhythmHold },
   lane: {
     borderCurve: 'continuous',
     borderRadius: museBuddyRadii.medium,
-    height: 58,
+    height: 30,
     overflow: 'hidden',
     position: 'relative',
   },
   mutedStepBar: { backgroundColor: museBuddyColors.notationGray },
-  restStepBar: { backgroundColor: museBuddyColors.rhythmRest, height: 6, width: '55%' },
+  restStepBar: { backgroundColor: museBuddyColors.rhythmRest },
   stepBar: {
     borderColor: museBuddyColors.frame,
     borderCurve: 'continuous',
     borderRadius: 3,
     borderWidth: 2,
+    height: 12,
+    width: '90%',
     zIndex: 1,
   },
   stepGrid: { alignItems: 'flex-end', flexDirection: 'row', height: '100%' },
@@ -141,6 +149,6 @@ const styles = StyleSheet.create({
     paddingBottom: 5,
     position: 'relative',
   },
-  strongStepBar: { backgroundColor: museBuddyColors.rhythmStrong, height: 44, width: '80%' },
-  weakStepBar: { backgroundColor: museBuddyColors.rhythmWeak, height: 30, width: '66%' },
+  strongStepBar: { backgroundColor: museBuddyColors.rhythmStrong },
+  weakStepBar: { backgroundColor: museBuddyColors.rhythmWeak },
 });

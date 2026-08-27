@@ -7,3 +7,13 @@ export function getActiveRhythmBarIndex(currentStepIndex: number | null, barCoun
 
   return Math.min(Math.floor(currentStepIndex / STEPS_PER_BAR), barCount - 1);
 }
+
+export function getCurrentStepInRhythmBar(currentStepIndex: number | null, barIndex: number) {
+  const barStart = barIndex * STEPS_PER_BAR;
+
+  return currentStepIndex !== null &&
+    currentStepIndex >= barStart &&
+    currentStepIndex < barStart + STEPS_PER_BAR
+    ? currentStepIndex - barStart
+    : null;
+}

@@ -1,10 +1,12 @@
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { NoteBarViewer } from './note-bar-viewer';
 import { convertRhythmPatternToVexflowBars } from './note-bar-vexflow';
+import { getCurrentStepInRhythmBar } from './rhythm-bar-selection';
 import { normalizeRhythmPattern, splitRhythmPatternBars } from './rhythm-pattern';
 import { RhythmBarViewer } from './rhythm-bar-viewer';
 import { RhythmLegend } from './rhythm-legend';
+import { RHYTHM_MEASURE_WIDTH_PX } from './constants';
 import type { RhythmPattern } from './types';
 
 type RhythmViewerProps = {
@@ -29,31 +31,40 @@ export function RhythmViewer({
   return (
     <View style={styles.container}>
       {showLegend ? <RhythmLegend /> : null}
-      <View style={styles.currentBars}>
-        {bars.map((steps, barIndex) => {
-          const barStartIndex = barIndex * steps.length;
-          const currentStepInBar =
-            currentStepIndex !== null &&
-            currentStepIndex >= barStartIndex &&
-            currentStepIndex < barStartIndex + steps.length
-              ? currentStepIndex - barStartIndex
-              : null;
-
-          return (
-            <View key={barIndex} style={styles.barGroup}>
-              {showNotation ? (
+      <ScrollView
+        accessibilityLabel={`${clef === 'treble' ? 'Treble' : 'Bass'} rhythm timeline`}
+        horizontal
+        showsHorizontalScrollIndicator
+        style={styles.scroll}
+      >
+        <View style={styles.timeline}>
+          {showNotation ? (
+            <View style={styles.notationRow}>
+              {bars.map((steps, barIndex) => (
                 <NoteBarViewer
                   clef={clef}
-                  currentStepIndex={currentStepInBar}
+                  currentStepIndex={getCurrentStepInRhythmBar(currentStepIndex, barIndex)}
                   events={notationBars[barIndex]}
+                  key={barIndex}
+                  showClefAndTimeSignature={barIndex === 0}
                   steps={steps}
+                  width={RHYTHM_MEASURE_WIDTH_PX}
                 />
-              ) : null}
-              <RhythmBarViewer currentStepIndex={currentStepInBar} steps={steps} />
+              ))}
             </View>
-          );
-        })}
-      </View>
+          ) : null}
+          <View style={styles.gridRow}>
+            {bars.map((steps, barIndex) => (
+              <RhythmBarViewer
+                currentStepIndex={getCurrentStepInRhythmBar(currentStepIndex, barIndex)}
+                key={barIndex}
+                steps={steps}
+                width={RHYTHM_MEASURE_WIDTH_PX}
+              />
+            ))}
+          </View>
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -61,11 +72,10 @@ export function RhythmViewer({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    gap: 10,
-    paddingTop: 4,
+    justifyContent: 'center',
   },
-  currentBars: {
-    gap: 10,
-  },
-  barGroup: { gap: 8 },
+  gridRow: { flexDirection: 'row' },
+  notationRow: { flexDirection: 'row' },
+  scroll: { flex: 1 },
+  timeline: { gap: 6 },
 });

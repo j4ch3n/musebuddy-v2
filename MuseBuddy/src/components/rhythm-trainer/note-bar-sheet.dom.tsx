@@ -5,17 +5,18 @@ import { Dot, Factory, StaveNote, TimeSignature } from 'vexflow';
 
 import { museBuddyColors } from '@/constants/design-tokens';
 
-import { RHYTHM_SHEET_HEIGHT_PX } from './constants';
+import { RHYTHM_MEASURE_WIDTH_PX, RHYTHM_SHEET_HEIGHT_PX } from './constants';
 import { RHYTHM_NOTE_KEY_BY_CLEF, type NoteBarVexflowEvent } from './note-bar-vexflow';
 
 type NoteBarSheetProps = {
   clef: 'bass' | 'treble';
   currentStepIndex: number | null;
   events: readonly NoteBarVexflowEvent[];
+  showClefAndTimeSignature: boolean;
+  width: number;
   dom?: import('expo/dom').DOMProps;
 };
 
-const STAVE_WIDTH = 328;
 const MIDDLE_STAFF_LINE = 2;
 const SINGLE_LINE_STAFF_CONFIG = [
   { visible: false },
@@ -25,7 +26,13 @@ const SINGLE_LINE_STAFF_CONFIG = [
   { visible: false },
 ];
 
-export default function NoteBarSheet({ clef, currentStepIndex, events }: NoteBarSheetProps) {
+export default function NoteBarSheet({
+  clef,
+  currentStepIndex,
+  events,
+  showClefAndTimeSignature,
+  width = RHYTHM_MEASURE_WIDTH_PX,
+}: NoteBarSheetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const elementId = useId().replaceAll(':', '-');
 
@@ -48,7 +55,7 @@ export default function NoteBarSheet({ clef, currentStepIndex, events }: NoteBar
     const factory = new Factory({
       renderer: {
         elementId,
-        width: STAVE_WIDTH,
+        width,
         height: RHYTHM_SHEET_HEIGHT_PX,
       },
     });
@@ -64,19 +71,21 @@ export default function NoteBarSheet({ clef, currentStepIndex, events }: NoteBar
         spaceAboveStaffLn: 4,
         spaceBelowStaffLn: 4,
       },
-      width: STAVE_WIDTH - 16,
+      width: width - 16,
       x: 8,
-      y: 10,
+      y: 6,
     });
     // Stave construction resets line config, so apply the one-line visibility
     // after creating it rather than passing it through the constructor.
     stave.setConfigForLines(SINGLE_LINE_STAFF_CONFIG);
-    const timeSignature = new TimeSignature('4/4', 10);
-    // Keep the numerator and denominator equally spaced above and below the
-    // one visible middle line, so the complete 4/4 glyph is centered on it.
-    timeSignature.topLine = MIDDLE_STAFF_LINE - 1;
-    timeSignature.bottomLine = MIDDLE_STAFF_LINE + 1;
-    stave.addClef(clef).addModifier(timeSignature);
+    if (showClefAndTimeSignature) {
+      const timeSignature = new TimeSignature('4/4', 10);
+      // Keep the numerator and denominator equally spaced above and below the
+      // one visible middle line, so the complete 4/4 glyph is centered on it.
+      timeSignature.topLine = MIDDLE_STAFF_LINE - 1;
+      timeSignature.bottomLine = MIDDLE_STAFF_LINE + 1;
+      stave.addClef(clef).addModifier(timeSignature);
+    }
     stave.setContext(context).draw();
 
     const notes = events.map((event) => {
@@ -119,7 +128,7 @@ export default function NoteBarSheet({ clef, currentStepIndex, events }: NoteBar
     factory
       .Formatter()
       .joinVoices([voice])
-      .format([voice], STAVE_WIDTH - 76);
+      .format([voice], width - (showClefAndTimeSignature ? 76 : 24));
     voice.draw(context, stave);
 
     events.forEach((event, eventIndex) => {
@@ -151,7 +160,7 @@ export default function NoteBarSheet({ clef, currentStepIndex, events }: NoteBar
     if (svg) {
       svg.style.backgroundColor = museBuddyColors.mist;
     }
-  }, [clef, currentStepIndex, elementId, events]);
+  }, [clef, currentStepIndex, elementId, events, showClefAndTimeSignature, width]);
 
   return (
     <div

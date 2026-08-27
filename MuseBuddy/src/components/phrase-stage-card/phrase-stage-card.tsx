@@ -230,7 +230,7 @@ function RhythmRows({
   }, [guidance, isPlaying, playRequest]);
 
   return (
-    <>
+    <View style={styles.rhythmRows}>
       {(['treble', 'bass'] as const).map((staff) => (
         <RhythmRow
           active={activeStaff === staff && isPlaying}
@@ -246,7 +246,7 @@ function RhythmRows({
         />
       ))}
       <PreviewError message={guidance.errorMessage} />
-    </>
+    </View>
   );
 }
 
@@ -475,17 +475,19 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
   },
-  rhythmContent: { flex: 1, gap: 8, paddingTop: 10 },
+  rhythmContent: { flex: 1, minHeight: 0, paddingTop: 10 },
   rhythmRow: {
     alignItems: 'center',
     borderCurve: 'continuous',
     borderRadius: museBuddyRadii.medium,
     flexDirection: 'row',
     gap: 6,
-    minHeight: 154,
+    flex: 1,
+    minHeight: 0,
     padding: 6,
   },
-  rhythmViewer: { flex: 1, minWidth: 0 },
+  rhythmRows: { flex: 1, gap: 8, minHeight: 0 },
+  rhythmViewer: { alignSelf: 'stretch', flex: 1, minWidth: 0 },
   selectedTabLabel: { fontWeight: '900' },
   soundButton: {
     alignItems: 'center',
