@@ -26,7 +26,6 @@ const WEAK_RHYTHM_NOTE: SoundFontPlaybackCell = {
 };
 const CHORD_NOTE_VELOCITY = 96;
 const CHORD_NOTE_STRONG_VELOCITY = 96;
-const CHORD_NOTE_WEAK_VELOCITY = 65;
 const HOLD_CELL: SoundFontPlaybackCell = {
   midi: HOLD_MIDI,
   velocity: null,
@@ -86,16 +85,31 @@ export function buildChordPhrasePreviewSoundFontPlaybackConfiguration(
   return {
     bpm,
     tracks: {
-      treble: [
-        [
-          ...buildChordPart(display, [
-            { durationSteps: 16, startStep: 0, velocity: CHORD_NOTE_STRONG_VELOCITY },
-          ]).slice(0, 16),
-          ...buildChordBreakdownSteps(notes),
-        ],
-      ],
+      treble: splitIntoPlaybackParts([
+        ...buildChordPart(display, [
+          { durationSteps: 16, startStep: 0, velocity: CHORD_NOTE_STRONG_VELOCITY },
+        ]).slice(0, 16),
+        ...buildChordBreakdownSteps(notes),
+      ]),
     },
   };
+}
+
+const PLAYBACK_PART_STEP_COUNT = 32;
+
+function splitIntoPlaybackParts(
+  steps: readonly SoundFontPlaybackStep[],
+): SoundFontPlaybackStep[][] {
+  return Array.from(
+    { length: Math.ceil(steps.length / PLAYBACK_PART_STEP_COUNT) },
+    (_, partIndex) => {
+      const partStart = partIndex * PLAYBACK_PART_STEP_COUNT;
+      return Array.from(
+        { length: PLAYBACK_PART_STEP_COUNT },
+        (_, stepIndex) => steps[partStart + stepIndex] ?? [REST_CELL],
+      );
+    },
+  );
 }
 
 function buildChordBreakdownSteps(notes: readonly ChordDisplay['notes'][number][]) {

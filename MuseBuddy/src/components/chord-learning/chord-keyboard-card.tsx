@@ -6,16 +6,12 @@ import { PianoKeyboard, type PianoKeyboardLiveKeyState, type PianoKeyboardMarker
 import type { PianoPitchClass } from '@schema/music-theory-schema';
 
 import ChordSheet from './chord-sheet.dom';
-import {
-  chordToneRoleByImportance,
-  chordToneMarkerAppearances,
-  type ChordToneColorRole,
-} from './chord-color-role';
+import { chordToneRoleByImportance, chordToneMarkerAppearances } from './chord-color-role';
 import { ChordToneLegend } from './chord-role-legend';
 
 type ChordKeyboardCardProps = {
   display: ChordDisplay;
-  displayMode?: 'full' | 'notation';
+  displayMode?: 'full' | 'keyboard' | 'notation';
   errorMessage?: string;
   liveKeys?: Partial<Record<PianoPitchClass, PianoKeyboardLiveKeyState>>;
   showKeyHighlightDots?: boolean;
@@ -48,10 +44,6 @@ export function ChordKeyboardCard({
     tones[note.pitchClass] = note.isRoot ? 'root' : chordToneRoleByImportance[note.importance];
     return tones;
   }, {});
-  const toneRoles = display.notes.map<ChordToneColorRole>((note) =>
-    note.isRoot ? 'root' : chordToneRoleByImportance[note.importance],
-  );
-
   if (displayMode === 'notation') {
     return (
       <View
@@ -59,8 +51,26 @@ export function ChordKeyboardCard({
         style={styles.compactSheetFrame}
       >
         <ChordSheet
-          dom={{ scrollEnabled: false, style: styles.compactSheet }}
+          dom={{ scrollEnabled: false, style: styles.notationSheet }}
+          height={160}
           notes={display.notes}
+        />
+      </View>
+    );
+  }
+
+  if (displayMode === 'keyboard') {
+    return (
+      <View style={styles.previewKeyboardFrame}>
+        <PianoKeyboard
+          accessibilityLabel={`Piano keyboard highlighting ${noteNames}`}
+          keys={selectedKeys}
+          markerAppearances={chordToneMarkerAppearances}
+          markerLabels={markerLabels}
+          markerTones={markerTones}
+          liveKeys={liveKeys}
+          root={rootNote.pitchClass}
+          showMarkers={showKeyHighlightDots}
         />
       </View>
     );
@@ -105,7 +115,7 @@ export function ChordKeyboardCard({
           />
         ) : null}
       </View>
-      <ChordToneLegend roles={toneRoles} />
+      <ChordToneLegend />
     </View>
   );
 }
@@ -126,13 +136,23 @@ const styles = StyleSheet.create({
     transform: [{ translateX: 8 }],
     width: '100%',
   },
+  previewKeyboardFrame: {
+    alignSelf: 'center',
+    maxWidth: 268,
+    width: '84%',
+  },
   sheet: {
     backgroundColor: museBuddyColors.mist,
     height: 120,
     width: '100%',
   },
-  compactSheet: { backgroundColor: museBuddyColors.mist, height: 92, width: '100%' },
-  compactSheetFrame: { height: 92, overflow: 'hidden' },
+  compactSheetFrame: {
+    backgroundColor: museBuddyColors.paper,
+    height: 160,
+    overflow: 'hidden',
+    width: '100%',
+  },
+  notationSheet: { backgroundColor: museBuddyColors.paper, height: 160, width: '100%' },
   sheetFrame: {
     backgroundColor: museBuddyColors.mist,
     height: 120,

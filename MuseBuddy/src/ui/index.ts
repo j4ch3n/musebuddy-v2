@@ -9,6 +9,7 @@ export {
 } from './carousel-utils';
 export { TrainingStageIcon, type TrainingStageIconId } from './training-stage-icon';
 export { FlashCard } from './flash-card';
+export { MusicViewFlip } from './music-view-flip';
 export {
   getPianoKeyboardMarkers,
   PianoKeyboard,

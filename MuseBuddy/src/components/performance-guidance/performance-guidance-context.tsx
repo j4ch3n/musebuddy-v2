@@ -61,6 +61,7 @@ type PerformanceGuidanceProviderProps = {
   cycleCount?: number;
   finishDurationMs?: number;
   finishText: string;
+  leadIn?: boolean;
   listeningMode: PerformanceGuidanceListeningMode;
   onFinish: () => void;
   onSkip: () => void;
@@ -91,6 +92,7 @@ export function PerformanceGuidanceProvider({
   cycleCount = 3,
   finishDurationMs = DEFAULT_FINISH_DURATION_MS,
   finishText,
+  leadIn = true,
   listeningMode,
   onFinish,
   onSkip,
@@ -320,7 +322,7 @@ export function PerformanceGuidanceProvider({
       .release(ownerIdRef.current)
       .then(() => {
         if (flowGenerationRef.current === generation) {
-          void startDemo(generation, true);
+          void startDemo(generation, leadIn);
         }
       })
       .catch((error) => {
@@ -331,7 +333,7 @@ export function PerformanceGuidanceProvider({
           });
         }
       });
-  }, [clearFinishTimer, dispatch, startDemo]);
+  }, [clearFinishTimer, dispatch, leadIn, startDemo]);
 
   const completeListening = useCallback(
     async (outcome: 'pass' | 'retry' = 'pass') => {
@@ -519,7 +521,7 @@ export function PerformanceGuidanceProvider({
       .release(ownerIdRef.current)
       .then(() => {
         if (flowGenerationRef.current === generation) {
-          void startDemo(generation, true);
+          void startDemo(generation, leadIn);
         }
       })
       .catch((error) => {
@@ -527,7 +529,7 @@ export function PerformanceGuidanceProvider({
           dispatch({ type: 'pending', errorMessage: messageFor(error, 'Audio restart failed.') });
         }
       });
-  }, [clearClock, clearFinishTimer, configuration, dispatch, startDemo]);
+  }, [clearClock, clearFinishTimer, configuration, dispatch, leadIn, startDemo]);
 
   useEffect(() => {
     if (startPhase === 'prepare' && !didAutoStartRef.current) {

@@ -61,6 +61,7 @@ export class SoundFontPlayerError extends Error {
 }
 
 let nativeModule: NativeSoundFontPlayerModule | null = null;
+const PLAYBACK_PART_STEP_COUNT = 32;
 
 function getNativeModule(): NativeSoundFontPlayerModule {
   if (Platform.OS !== 'ios') {
@@ -108,10 +109,29 @@ function normalizeOptions(options: SoundFontPlaybackOptions): Required<SoundFont
   };
 }
 
+function reportInvalidPartLengths(configuration: SoundFontPlaybackConfiguration): void {
+  const tracks = [
+    ['treble', configuration.tracks.treble],
+    ['bass', configuration.tracks.bass],
+  ] as const;
+
+  tracks.forEach(([trackName, parts]) => {
+    parts?.forEach((part, partIndex) => {
+      if (part.length !== PLAYBACK_PART_STEP_COUNT) {
+        console.error(
+          `[SoundFontPlayer] ${trackName} part ${partIndex} has ${part.length} steps; ` +
+            `each playback part must have ${PLAYBACK_PART_STEP_COUNT} steps.`,
+        );
+      }
+    });
+  });
+}
+
 export function playPiano(
   configuration: SoundFontPlaybackConfiguration,
   options: SoundFontPlaybackOptions = {},
 ): Promise<SoundFontPlaybackStartResult> {
+  reportInvalidPartLengths(configuration);
   return callNative(() => getNativeModule().playPiano(configuration, normalizeOptions(options)));
 }
 
@@ -119,6 +139,7 @@ export function playGroove(
   configuration: SoundFontPlaybackConfiguration,
   options: SoundFontPlaybackOptions = {},
 ): Promise<SoundFontPlaybackStartResult> {
+  reportInvalidPartLengths(configuration);
   return callNative(() => getNativeModule().playGroove(configuration, normalizeOptions(options)));
 }
 

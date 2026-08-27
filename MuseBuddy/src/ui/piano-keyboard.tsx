@@ -18,9 +18,10 @@ export type PianoKeyboardMarkerAppearance = {
 };
 
 export type PianoKeyboardLiveKeyState = {
+  expiresAtMs: number | null;
   isUnexpectedActive: boolean;
   isSuccess: boolean;
-  labels: readonly string[];
+  label: string | null;
   rippleId: number;
 };
 
@@ -120,6 +121,8 @@ export function PianoKeyboard({
 }: PianoKeyboardProps) {
   const markers = getPianoKeyboardMarkers(root, keys);
   const isLiveKeyboard = liveKeys !== undefined;
+  const visibleLiveKeys = useVisibleLiveKeys(liveKeys);
+  const liveKeyStates = visibleLiveKeys ?? {};
   const markerLabel = markers
     .map(
       ({ isRoot, pitchClass }) =>
@@ -151,7 +154,7 @@ export function PianoKeyboard({
               appearance={getKeyAppearance(pitchClass, markerAppearances, markerTones)}
               isBlack={false}
               key={`white-shadow-${pitchClass}`}
-              liveState={liveKeys?.[pitchClass]}
+              liveState={liveKeyStates[pitchClass]}
               pitchClass={pitchClass}
             />
           ))}
@@ -199,7 +202,7 @@ export function PianoKeyboard({
               appearance={getKeyAppearance(pitchClass, markerAppearances, markerTones)}
               isBlack
               key={pitchClass}
-              liveState={liveKeys?.[pitchClass]}
+              liveState={liveKeyStates[pitchClass]}
               pitchClass={pitchClass}
             />
           ))}
@@ -225,7 +228,7 @@ export function PianoKeyboard({
         {isLiveKeyboard ? (
           <G>
             {pianoPitchClasses.map((pitchClass) => {
-              const liveState = liveKeys[pitchClass];
+              const liveState = liveKeyStates[pitchClass];
               if (!liveState || liveState.isUnexpectedActive || liveState.rippleId === 0) {
                 return null;
               }
@@ -323,6 +326,43 @@ function KeyboardClipPaths() {
   );
 }
 
+function useVisibleLiveKeys(liveKeys: PianoKeyboardProps['liveKeys']) {
+  const [nowMs, setNowMs] = useState(() => Date.now());
+
+  useEffect(() => {
+    const nextExpiryMs = Object.values(liveKeys ?? {}).reduce<number | null>((earliest, state) => {
+      if (state?.expiresAtMs === null || state?.expiresAtMs === undefined) {
+        return earliest;
+      }
+      return earliest === null ? state.expiresAtMs : Math.min(earliest, state.expiresAtMs);
+    }, null);
+    if (nextExpiryMs === null) {
+      return;
+    }
+    const delayMs = Math.max(0, nextExpiryMs - Date.now());
+    const timer = setTimeout(() => setNowMs(Date.now()), delayMs);
+    return () => clearTimeout(timer);
+  }, [liveKeys, nowMs]);
+
+  if (!liveKeys) {
+    return undefined;
+  }
+
+  return Object.fromEntries(
+    Object.entries(liveKeys).map(([pitchClass, state]) => [
+      pitchClass,
+      state && state.expiresAtMs !== null && state.expiresAtMs <= nowMs
+        ? {
+            ...state,
+            isSuccess: false,
+            isUnexpectedActive: false,
+            label: null,
+          }
+        : state,
+    ]),
+  ) as PianoKeyboardProps['liveKeys'];
+}
+
 function getKeyAppearance(
   pitchClass: PianoPitchClass,
   markerAppearances: PianoKeyboardProps['markerAppearances'],
@@ -350,8 +390,8 @@ function KeyboardKeyShadow({
       KEY_SHADOW_OFFSET_X -
       KEY_SHADOW_HORIZONTAL_INSET;
   const baseWidth = isBlack ? 24 : 40 + KEY_SHADOW_WIDTH_EXPANSION;
-  const labels = liveState?.labels ?? [];
-  const hasExpectedHit = labels.length > 0;
+  const label = liveState?.label;
+  const hasExpectedHit = Boolean(label);
   const isExtended = hasExpectedHit || liveState?.isUnexpectedActive === true;
   const [extension] = useState(
     () => new Animated.Value(isExtended ? LIVE_KEY_SHADOW_EXTENSION : 0),
@@ -397,21 +437,18 @@ function KeyboardKeyShadow({
           y={dropdownY}
         />
         <Rect fill={fill} height={KEY_SHADOW_RADIUS} width={baseWidth} x={baseX} y={dropdownY} />
-        {hasExpectedHit
-          ? labels.map((label, index) => (
-              <SvgText
-                fill={museBuddyColors.mist}
-                fontSize={10}
-                fontWeight="900"
-                key={`${pitchClass}-${label}-${index}`}
-                textAnchor="middle"
-                x={baseX + baseWidth / 2}
-                y={labelY + index * 14}
-              >
-                {label}
-              </SvgText>
-            ))
-          : null}
+        {label ? (
+          <SvgText
+            fill={museBuddyColors.mist}
+            fontSize={10}
+            fontWeight="900"
+            textAnchor="middle"
+            x={baseX + baseWidth / 2}
+            y={labelY}
+          >
+            {label}
+          </SvgText>
+        ) : null}
       </G>
     );
   }
@@ -426,21 +463,18 @@ function KeyboardKeyShadow({
         x={baseX}
         y={KEY_SHADOW_Y}
       />
-      {hasExpectedHit
-        ? labels.map((label, index) => (
-            <SvgText
-              fill={museBuddyColors.mist}
-              fontSize={10}
-              fontWeight="900"
-              key={`${pitchClass}-${label}-${index}`}
-              textAnchor="middle"
-              x={baseX + baseWidth / 2}
-              y={labelY + index * 14}
-            >
-              {label}
-            </SvgText>
-          ))
-        : null}
+      {label ? (
+        <SvgText
+          fill={museBuddyColors.mist}
+          fontSize={10}
+          fontWeight="900"
+          textAnchor="middle"
+          x={baseX + baseWidth / 2}
+          y={labelY}
+        >
+          {label}
+        </SvgText>
+      ) : null}
     </G>
   );
 }

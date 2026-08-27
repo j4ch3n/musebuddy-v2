@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  CHORD_SUCCESS_SHADOW_DURATION_MS,
+  CHORD_WRONG_SHADOW_DURATION_MS,
+  clearExpiredChordListenLiveKeyStates,
   markChordListenLiveKeyStatesSuccess,
   updateChordListenLiveKeyStates,
 } from './chord-listen-live-state';
 
 describe('updateChordListenLiveKeyStates', () => {
-  it('keeps the three most recent expected octave labels for each normalized key', () => {
+  it('keeps only the most recent expected octave label for each normalized key', () => {
     const state = updateChordListenLiveKeyStates({
       attacks: [
         { midiPitch: 36, startTimeMs: 1 },
@@ -20,7 +23,8 @@ describe('updateChordListenLiveKeyStates', () => {
     });
 
     expect(state[0]).toMatchObject({
-      labels: ['C3', 'C2', 'C4'],
+      expiresAtMs: 2_004,
+      label: 'C4',
       rippleId: 4,
     });
   });
@@ -36,7 +40,7 @@ describe('updateChordListenLiveKeyStates', () => {
       unexpectedMidiPitches: [],
     });
 
-    expect(state[0]).toMatchObject({ labels: ['C4'], rippleId: 2 });
+    expect(state[0]).toMatchObject({ expiresAtMs: 2_002, label: 'C4', rippleId: 2 });
   });
 
   it('shows unexpected notes as temporary red-shadow state without labels or ripples', () => {
@@ -50,25 +54,31 @@ describe('updateChordListenLiveKeyStates', () => {
     expect(state[1]).toEqual({
       isSuccess: false,
       isUnexpectedActive: true,
-      labels: [],
+      expiresAtMs: 501,
       rippleId: 0,
+      label: null,
     });
   });
 
-  it('resets an unexpected shadow when its note is no longer active', () => {
-    const state = updateChordListenLiveKeyStates({
-      attacks: [],
-      expectedPitchClasses: new Set([0]),
-      previous: {
-        1: { isSuccess: false, isUnexpectedActive: true, labels: [], rippleId: 0 },
+  it('clears an unexpected shadow after half a second', () => {
+    const state = clearExpiredChordListenLiveKeyStates(
+      {
+        1: {
+          expiresAtMs: 500,
+          isSuccess: false,
+          isUnexpectedActive: true,
+          label: null,
+          rippleId: 0,
+        },
       },
-      unexpectedMidiPitches: [],
-    });
+      CHORD_WRONG_SHADOW_DURATION_MS,
+    );
 
     expect(state[1]).toEqual({
+      expiresAtMs: null,
       isSuccess: false,
       isUnexpectedActive: false,
-      labels: [],
+      label: null,
       rippleId: 0,
     });
   });
@@ -76,15 +86,35 @@ describe('updateChordListenLiveKeyStates', () => {
   it('changes every expected key shadow to the completion state', () => {
     const state = markChordListenLiveKeyStatesSuccess(
       {
-        0: { isSuccess: false, isUnexpectedActive: false, labels: ['C4'], rippleId: 1 },
-        4: { isSuccess: false, isUnexpectedActive: false, labels: ['E4'], rippleId: 1 },
-        7: { isSuccess: false, isUnexpectedActive: true, labels: [], rippleId: 0 },
+        0: {
+          expiresAtMs: null,
+          isSuccess: false,
+          isUnexpectedActive: false,
+          label: 'C4',
+          rippleId: 1,
+        },
+        4: {
+          expiresAtMs: null,
+          isSuccess: false,
+          isUnexpectedActive: false,
+          label: 'E4',
+          rippleId: 1,
+        },
+        7: {
+          expiresAtMs: 100,
+          isSuccess: false,
+          isUnexpectedActive: true,
+          label: null,
+          rippleId: 0,
+        },
       },
       new Set([0, 4]),
+      10,
     );
 
     expect(state[0]?.isSuccess).toBe(true);
     expect(state[4]?.isSuccess).toBe(true);
     expect(state[7]?.isSuccess).toBe(false);
+    expect(state[0]?.expiresAtMs).toBe(10 + CHORD_SUCCESS_SHADOW_DURATION_MS);
   });
 });

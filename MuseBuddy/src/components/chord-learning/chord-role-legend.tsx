@@ -39,21 +39,24 @@ export function ChordSyntaxLegend({ tokens }: ChordSyntaxLegendProps) {
   );
 }
 
-type ChordToneLegendProps = {
-  roles: readonly ChordToneColorRole[];
-};
+const chordToneLegendRows = [
+  ['root', 'essential', 'supporting'],
+  ['color', 'optional'],
+] as const satisfies readonly (readonly ChordToneColorRole[])[];
 
-export function ChordToneLegend({ roles }: ChordToneLegendProps) {
-  const uniqueRoles = [...new Set(roles)];
-
+export function ChordToneLegend() {
   return (
     <View accessibilityLabel="Chord tone color key" style={styles.legend}>
-      {uniqueRoles.map((role) => (
-        <LegendItem
-          color={chordToneRoleColors[role].color}
-          key={role}
-          label={chordToneRoleLabels[role]}
-        />
+      {chordToneLegendRows.map((roles, rowIndex) => (
+        <View key={rowIndex} style={styles.legendRow}>
+          {roles.map((role) => (
+            <LegendItem
+              color={chordToneRoleColors[role].color}
+              key={role}
+              label={chordToneRoleLabels[role]}
+            />
+          ))}
+        </View>
       ))}
     </View>
   );
@@ -82,28 +85,31 @@ function LegendItem({
 
 const styles = StyleSheet.create({
   legend: {
+    alignItems: 'center',
+    gap: 2,
+  },
+  legendRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 8,
     justifyContent: 'center',
   },
   legendItem: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 4,
+    gap: 3,
   },
   legendLabel: {
     color: museBuddyColors.pine,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
   },
   swatch: {
-    borderRadius: museBuddyRadii.small,
-    height: 10,
-    width: 18,
+    borderRadius: museBuddyRadii.round,
+    height: 7,
+    width: 7,
   },
   swatchOutlined: {
     borderColor: museBuddyColors.frame,
-    borderWidth: 2,
+    borderWidth: 1,
   },
 });

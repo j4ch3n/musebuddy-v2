@@ -12,7 +12,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { ChordKeyboardCard, ChordName } from '@/components/chord-learning';
+import { ChordKeyboardCard, ChordName, ChordToneLegend } from '@/components/chord-learning';
 import {
   PerformanceGuidanceProvider,
   usePerformanceGuidance,
@@ -26,7 +26,7 @@ import {
   buildPatternSoundFontPlaybackConfiguration,
   buildRhythmSoundFontPlaybackConfiguration,
 } from '@/music-theory';
-import { Button, FlashCard } from '@/ui';
+import { Button, FlashCard, MusicViewFlip } from '@/ui';
 
 const STAGES: readonly PhraseStage[] = ['ideas', 'chords', 'rhythms'];
 
@@ -138,7 +138,7 @@ function ChordStagePreview({
     [bpm, chord],
   );
   return (
-    <PreviewProvider configuration={configuration}>
+    <PreviewProvider configuration={configuration} leadIn={false}>
       <ChordPreview chord={chord} />
     </PreviewProvider>
   );
@@ -154,17 +154,28 @@ function ChordPreview({
   return (
     <View style={styles.chordContent}>
       <View style={styles.chordHeading}>
-        <SoundPreviewButton
-          disabled={isDisabled}
-          isPlaying={isPlaying}
-          onPress={isPlaying ? reset : start}
-        />
+        <View style={styles.chordSoundControl}>
+          <SoundPreviewButton
+            disabled={isDisabled}
+            isPlaying={isPlaying}
+            onPress={isPlaying ? reset : start}
+          />
+        </View>
         <View style={styles.chordLabels}>
+          <ChordName display={chord} />
           <Text style={styles.friendlyName}>{chord.friendlyName}</Text>
-          <ChordName display={chord} size="compact" />
         </View>
       </View>
-      <ChordKeyboardCard display={chord} />
+      <View style={styles.chordStudyArea}>
+        <MusicViewFlip
+          keyboard={<ChordKeyboardCard display={chord} displayMode="keyboard" />}
+          notation={<ChordKeyboardCard display={chord} displayMode="notation" />}
+          style={styles.chordStudy}
+        />
+      </View>
+      <View style={styles.chordLegendDock}>
+        <ChordToneLegend />
+      </View>
       <PreviewError message={errorMessage} />
     </View>
   );
@@ -274,17 +285,20 @@ function PreviewProvider({
   configuration,
   cycleCount = 1,
   kind = 'piano',
+  leadIn = true,
 }: {
   children: ReactNode;
   configuration: ReturnType<typeof buildPatternSoundFontPlaybackConfiguration>;
   cycleCount?: number;
   kind?: 'groove' | 'piano';
+  leadIn?: boolean;
 }) {
   return (
     <PerformanceGuidanceProvider
       cycleCount={cycleCount}
       finishDurationMs={0}
       finishText=""
+      leadIn={leadIn}
       listeningMode={{ kind: 'none' }}
       onFinish={noop}
       onSkip={noop}
@@ -431,12 +445,27 @@ function StageTab({
 const styles = StyleSheet.create({
   activeRhythmRow: { backgroundColor: museBuddyColors.skyWash },
   card: { flex: 1, minHeight: 0 },
-  chordContent: { flex: 1, gap: 10, paddingTop: 14 },
-  chordHeading: { alignItems: 'center', flexDirection: 'row', gap: 8 },
-  chordLabels: { flex: 1, gap: 2 },
+  chordContent: { flex: 1, gap: 8, minHeight: 0, paddingBottom: 4, paddingTop: 8 },
+  chordHeading: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 72,
+    paddingHorizontal: 52,
+    position: 'relative',
+  },
+  chordLabels: { alignItems: 'center', gap: 0 },
+  chordLegendDock: { bottom: 2, left: 0, minHeight: 18, position: 'absolute', right: 0 },
+  chordSoundControl: { left: 0, position: 'absolute' },
+  chordStudy: { flex: 0, height: 220, minHeight: 208 },
+  chordStudyArea: { flex: 1, justifyContent: 'center', marginBottom: 22, minHeight: 0 },
   content: { flex: 1, minHeight: 0 },
   empty: { alignItems: 'center', flex: 1, justifyContent: 'center' },
-  friendlyName: { color: museBuddyColors.pine, fontSize: 18, fontWeight: '900' },
+  friendlyName: {
+    color: museBuddyColors.pine,
+    fontSize: 14,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
   ideasContent: { alignItems: 'center', flex: 1, justifyContent: 'center' },
   inlinePreview: { alignItems: 'center', flexDirection: 'row', gap: 12, width: '100%' },
   mainContent: { flex: 1, minHeight: 0 },
