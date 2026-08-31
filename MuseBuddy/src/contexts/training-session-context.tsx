@@ -26,6 +26,7 @@ type TrainingSessionContextValue = {
   session: PreparedTrainingSession | null;
   setBpm: (bpm: number) => void;
   openBarDetails: (barIndex: number, tab: TrainingDetailTab) => void;
+  resetTrainingSession: () => void;
   setSelectedPhraseIndex: (phraseIndex: number) => void;
   showSheet: () => void;
   view: TrainingSessionView;
@@ -89,6 +90,16 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
 
   const showSheet = useCallback(() => setView('sheet'), []);
 
+  const resetTrainingSession = useCallback(() => {
+    setErrorMessage('');
+    setLearningConfig(DEFAULT_LEARNING_CONFIG);
+    setPhase('idle');
+    setSelectedPhraseIndex(0);
+    setSelectedDetailTab(null);
+    setSession(null);
+    setView('sheet');
+  }, []);
+
   const prepareTrainingSession = useCallback(async () => {
     setErrorMessage('');
     setPhase('loading');
@@ -119,6 +130,7 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
       phase,
       prepareTrainingSession,
       openBarDetails,
+      resetTrainingSession,
       selectedDetailTab,
       selectedPhraseIndex,
       session,
@@ -133,6 +145,7 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
       phase,
       prepareTrainingSession,
       openBarDetails,
+      resetTrainingSession,
       selectedDetailTab,
       selectPhrase,
       selectedPhraseIndex,

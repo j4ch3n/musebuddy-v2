@@ -71,6 +71,7 @@ export function ChordKeyboardCard({
           markerAppearances={chordToneMarkerAppearances}
           markerLabels={markerLabels}
           markerTones={markerTones}
+          liveKeys={liveKeys}
           root={rootNote.pitchClass}
           showMarkers={showKeyHighlightDots}
         />

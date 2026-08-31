@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  CHORD_SUCCESS_SHADOW_DURATION_MS,
   CHORD_WRONG_SHADOW_DURATION_MS,
   clearExpiredChordListenLiveKeyStates,
-  markChordListenLiveKeyStatesSuccess,
   updateChordListenLiveKeyStates,
 } from './chord-listen-live-state';
 
@@ -24,6 +22,7 @@ describe('updateChordListenLiveKeyStates', () => {
 
     expect(state[0]).toMatchObject({
       expiresAtMs: 2_004,
+      isSuccess: true,
       label: 'C4',
       rippleId: 4,
     });
@@ -40,7 +39,12 @@ describe('updateChordListenLiveKeyStates', () => {
       unexpectedMidiPitches: [],
     });
 
-    expect(state[0]).toMatchObject({ expiresAtMs: 2_002, label: 'C4', rippleId: 2 });
+    expect(state[0]).toMatchObject({
+      expiresAtMs: 2_002,
+      isSuccess: true,
+      label: 'C4',
+      rippleId: 2,
+    });
   });
 
   it('shows unexpected notes as a temporary red shadow with the detected key name', () => {
@@ -54,17 +58,17 @@ describe('updateChordListenLiveKeyStates', () => {
     expect(state[1]).toEqual({
       isSuccess: false,
       isUnexpectedActive: true,
-      expiresAtMs: 501,
+      expiresAtMs: 2_001,
       rippleId: 0,
       label: 'C#4',
     });
   });
 
-  it('clears an unexpected shadow after half a second', () => {
+  it('clears an unexpected shadow after two seconds', () => {
     const state = clearExpiredChordListenLiveKeyStates(
       {
         1: {
-          expiresAtMs: 500,
+          expiresAtMs: 2_000,
           isSuccess: false,
           isUnexpectedActive: true,
           label: null,
@@ -81,40 +85,5 @@ describe('updateChordListenLiveKeyStates', () => {
       label: null,
       rippleId: 0,
     });
-  });
-
-  it('changes every expected key shadow to the completion state', () => {
-    const state = markChordListenLiveKeyStatesSuccess(
-      {
-        0: {
-          expiresAtMs: null,
-          isSuccess: false,
-          isUnexpectedActive: false,
-          label: 'C4',
-          rippleId: 1,
-        },
-        4: {
-          expiresAtMs: null,
-          isSuccess: false,
-          isUnexpectedActive: false,
-          label: 'E4',
-          rippleId: 1,
-        },
-        7: {
-          expiresAtMs: 100,
-          isSuccess: false,
-          isUnexpectedActive: true,
-          label: null,
-          rippleId: 0,
-        },
-      },
-      new Set([0, 4]),
-      10,
-    );
-
-    expect(state[0]?.isSuccess).toBe(true);
-    expect(state[4]?.isSuccess).toBe(true);
-    expect(state[7]?.isSuccess).toBe(false);
-    expect(state[0]?.expiresAtMs).toBe(10 + CHORD_SUCCESS_SHADOW_DURATION_MS);
   });
 });

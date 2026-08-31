@@ -14,6 +14,7 @@ type NavigatorProps = {
   isPlaying: boolean;
   isPreparing: boolean;
   onBpmChange: (bpm: number) => void;
+  onExitConfirmed: () => void;
   onMoveBack: () => void;
   onMoveForward: () => void;
   onPlayPress: () => void;
@@ -29,6 +30,7 @@ export function Navigator({
   isPlaying,
   isPreparing,
   onBpmChange,
+  onExitConfirmed,
   onMoveBack,
   onMoveForward,
   onPlayPress,
@@ -58,7 +60,14 @@ export function Navigator({
         onPress={() =>
           Alert.alert('Quit training?', 'Your current practice will end.', [
             { text: 'Keep practicing', style: 'cancel' },
-            { text: 'Quit', style: 'destructive', onPress: () => router.dismissTo('/') },
+            {
+              text: 'Quit',
+              style: 'destructive',
+              onPress: () => {
+                onExitConfirmed();
+                router.dismissTo('/');
+              },
+            },
           ])
         }
         pressedStyle={styles.exitPressed}

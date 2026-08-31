@@ -1,5 +1,5 @@
-import { useEffect, useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { AppState, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeOut, SlideInLeft, SlideInRight } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -9,6 +9,7 @@ import {
   BarSoundPreviewButton,
   Navigator,
 } from '@/components/training-session';
+import { useChordListenRecognition } from '@/components/chord-learning';
 import { PianoPatternScore, type ScoreTarget } from '@/components/piano-pattern-score';
 import {
   PerformanceGuidanceProvider,
@@ -34,6 +35,8 @@ export function TrainingSessionPage() {
     showSheet,
     view,
   } = useTrainingSession();
+  const [appState, setAppState] = useState(AppState.currentState);
+  const [isBarPreviewPlaying, setIsBarPreviewPlaying] = useState(false);
   const bar = session?.bars[selectedPhraseIndex];
   const tab = useMemo<TrainingDetailTab>(
     () => selectedDetailTab ?? { chordIndex: 0, kind: 'chord' },
@@ -54,6 +57,13 @@ export function TrainingSessionPage() {
       ? buildChordPhrasePreviewSoundFontPlaybackConfiguration(chord, learningConfig.bpm)
       : null;
   }, [bar, learningConfig.bpm, session, tab, view]);
+  const isChordView = view === 'bar-details' && tab.kind === 'chord';
+  const isAppActive = appState === 'active';
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', setAppState);
+    return () => subscription.remove();
+  }, []);
 
   if (!session || !configuration) return <SessionUnavailable />;
   return (
@@ -63,6 +73,10 @@ export function TrainingSessionPage() {
       listeningMode={{ kind: 'none' }}
       onFinish={noop}
       onSkip={noop}
+      passiveRecognitionEnabled={isChordView && isAppActive && !isBarPreviewPlaying}
+      passiveRecognitionKey={
+        isChordView ? `${selectedPhraseIndex}:${tab.chordIndex}:${isAppActive}` : undefined
+      }
       playback={{
         configuration,
         kind: tab.kind === 'rhythm' && view === 'bar-details' ? 'groove' : 'piano',
@@ -70,6 +84,8 @@ export function TrainingSessionPage() {
     >
       <TrainingSessionContent
         bar={bar}
+        isAppActive={isAppActive}
+        onBarPreviewPlayingChange={setIsBarPreviewPlaying}
         onOpenTarget={(target) => openBarDetails(target.measureIndex, targetToTab(target))}
         showSheet={showSheet}
         tab={tab}
@@ -80,27 +96,50 @@ export function TrainingSessionPage() {
 
 function TrainingSessionContent({
   bar,
+  isAppActive,
+  onBarPreviewPlayingChange,
   onOpenTarget,
   showSheet,
   tab,
 }: {
   bar: PreparedTrainingBar | undefined;
+  isAppActive: boolean;
+  onBarPreviewPlayingChange: (isPlaying: boolean) => void;
   onOpenTarget: (target: ScoreTarget) => void;
   showSheet: () => void;
   tab: TrainingDetailTab;
 }) {
-  const { learningConfig, openBarDetails, selectedPhraseIndex, session, setBpm, view } =
-    useTrainingSession();
+  const {
+    learningConfig,
+    openBarDetails,
+    resetTrainingSession,
+    selectedPhraseIndex,
+    session,
+    setBpm,
+    view,
+  } = useTrainingSession();
   const { countdownValue, currentStepIndex, errorMessage, isDisabled, phase, reset, start } =
     usePerformanceGuidance();
-  const isPlaying = phase === 'demo' || phase === 'prepare';
   const bars = session?.bars ?? [];
+  const selectedChord =
+    tab.kind === 'chord' ? bars[selectedPhraseIndex]?.chordDisplays[tab.chordIndex] : undefined;
+  const { liveKeys } = useChordListenRecognition({
+    display: selectedChord,
+    enabled: view === 'bar-details' && tab.kind === 'chord' && isAppActive,
+  });
+  const isPlaying = phase === 'demo' || phase === 'prepare';
+  const isPassiveChordListening = view === 'bar-details' && tab.kind === 'chord' && isAppActive;
   const move = (offset: number) => {
     const next = selectedPhraseIndex + offset;
     if (next < 0 || next >= bars.length) return;
     openBarDetails(next, { chordIndex: 0, kind: 'chord' });
   };
   useEffect(() => () => reset(), [reset, view, selectedPhraseIndex, tab]);
+  useEffect(() => {
+    if (isPassiveChordListening && phase === 'finish') {
+      reset();
+    }
+  }, [isPassiveChordListening, phase, reset]);
   return (
     <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
       <View style={styles.content}>
@@ -129,7 +168,11 @@ function TrainingSessionContent({
           <Animated.View entering={SlideInRight} exiting={SlideInLeft} style={styles.barContent}>
             <View style={styles.barPreview}>
               <View style={styles.barControls}>
-                <BarSoundPreviewButton bar={bar} bpm={learningConfig.bpm} />
+                <BarSoundPreviewButton
+                  bar={bar}
+                  bpm={learningConfig.bpm}
+                  onPlayingChange={onBarPreviewPlayingChange}
+                />
                 <BarDetailsExit onPress={showSheet} />
               </View>
               <View style={styles.barScore}>
@@ -145,6 +188,7 @@ function TrainingSessionContent({
             <BarDetails
               bar={bar}
               currentStepIndex={currentStepIndex}
+              liveKeys={liveKeys}
               onTabChange={(nextTab) => openBarDetails(selectedPhraseIndex, nextTab)}
               selectedTab={tab}
             />
@@ -164,6 +208,7 @@ function TrainingSessionContent({
         isPlaying={isPlaying}
         isPreparing={phase === 'prepare'}
         onBpmChange={setBpm}
+        onExitConfirmed={resetTrainingSession}
         onMoveBack={() => move(-1)}
         onMoveForward={() => move(1)}
         onPlayPress={isPlaying ? reset : start}

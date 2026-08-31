@@ -7,6 +7,8 @@ import { museBuddyColors } from '@/constants/design-tokens';
 import type { TrainingDetailTab } from '@/contexts/training-session-context';
 import type { PreparedTrainingBar } from '@/music-theory';
 import { FlashCard, MusicViewFlip } from '@/ui';
+import type { PianoKeyboardLiveKeyState } from '@/ui';
+import type { PianoPitchClass } from '@schema/music-theory-schema';
 
 import { BarDetailsTabGroup } from './bar-details-tab-group';
 
@@ -20,11 +22,18 @@ const CHORD_STUDY_BOTTOM_LEDGE = 10;
 type BarDetailsProps = {
   bar: PreparedTrainingBar;
   currentStepIndex: number | null;
+  liveKeys?: Partial<Record<PianoPitchClass, PianoKeyboardLiveKeyState>>;
   onTabChange: (tab: TrainingDetailTab) => void;
   selectedTab: TrainingDetailTab;
 };
 
-export function BarDetails({ bar, currentStepIndex, onTabChange, selectedTab }: BarDetailsProps) {
+export function BarDetails({
+  bar,
+  currentStepIndex,
+  liveKeys,
+  onTabChange,
+  selectedTab,
+}: BarDetailsProps) {
   const selectedTabId =
     selectedTab.kind === 'chord'
       ? `chord-${selectedTab.chordIndex}`
@@ -75,6 +84,7 @@ export function BarDetails({ bar, currentStepIndex, onTabChange, selectedTab }: 
           {selectedTab.kind === 'chord' ? (
             <ChordDetail
               chord={bar.chordDisplays[selectedTab.chordIndex] ?? bar.chordDisplays[0]}
+              liveKeys={liveKeys}
             />
           ) : (
             <RhythmDetail bar={bar} currentStepIndex={currentStepIndex} staff={selectedTab.staff} />
@@ -88,8 +98,10 @@ export function BarDetails({ bar, currentStepIndex, onTabChange, selectedTab }: 
 
 function ChordDetail({
   chord,
+  liveKeys,
 }: {
   chord: PreparedTrainingBar['chordDisplays'][number] | undefined;
+  liveKeys?: Partial<Record<PianoPitchClass, PianoKeyboardLiveKeyState>>;
 }) {
   if (!chord) return null;
   return (
@@ -99,7 +111,7 @@ function ChordDetail({
         <Text style={styles.friendlyName}>{chord.friendlyName}</Text>
       </View>
       <MusicViewFlip
-        keyboard={<ChordKeyboardCard display={chord} displayMode="keyboard" />}
+        keyboard={<ChordKeyboardCard display={chord} displayMode="keyboard" liveKeys={liveKeys} />}
         notation={<ChordKeyboardCard display={chord} displayMode="notation" />}
         style={styles.chordStudy}
       />

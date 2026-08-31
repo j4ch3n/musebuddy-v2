@@ -19,7 +19,7 @@ export type ChordListenAttack = {
 };
 
 export const CHORD_SUCCESS_SHADOW_DURATION_MS = 2_000;
-export const CHORD_WRONG_SHADOW_DURATION_MS = 500;
+export const CHORD_WRONG_SHADOW_DURATION_MS = 2_000;
 
 export function getChordListenAttackId({ midiPitch, startTimeMs }: ChordListenAttack): string {
   return `${midiPitch}:${startTimeMs}`;
@@ -63,7 +63,7 @@ export function updateChordListenLiveKeyStates({
 
     next[pitchClass] = {
       expiresAtMs: attack.startTimeMs + CHORD_SUCCESS_SHADOW_DURATION_MS,
-      isSuccess: false,
+      isSuccess: true,
       isUnexpectedActive: false,
       label,
       rippleId: key.rippleId + 1,
@@ -90,26 +90,6 @@ export function updateChordListenLiveKeyStates({
   }
 
   return next;
-}
-
-export function markChordListenLiveKeyStatesSuccess(
-  previous: ChordListenLiveKeyStates,
-  expectedPitchClasses: ReadonlySet<PianoPitchClass>,
-  nowMs: number = Date.now(),
-): ChordListenLiveKeyStates {
-  return Object.fromEntries(
-    Object.entries(previous).map(([pitchClass, state]) => [
-      pitchClass,
-      expectedPitchClasses.has(Number(pitchClass) as PianoPitchClass)
-        ? {
-            ...state,
-            expiresAtMs: nowMs + CHORD_SUCCESS_SHADOW_DURATION_MS,
-            isSuccess: true,
-            isUnexpectedActive: false,
-          }
-        : state,
-    ]),
-  ) as ChordListenLiveKeyStates;
 }
 
 export function clearExpiredChordListenLiveKeyStates(

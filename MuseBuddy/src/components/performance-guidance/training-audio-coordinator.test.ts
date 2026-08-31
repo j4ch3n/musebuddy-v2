@@ -108,6 +108,22 @@ describe('TrainingAudioCoordinator', () => {
     });
   });
 
+  it('lets an existing playback owner reclaim audio after passive recognition stops', async () => {
+    const api = createApi();
+    const coordinator = new TrainingAudioCoordinator(api);
+
+    await coordinator.startRecognition(2, {});
+    await coordinator.play(1, 'piano', configuration, {});
+
+    expect(api.cancelRecognition).toHaveBeenCalledWith(3);
+    expect(api.playPiano).toHaveBeenCalledWith(configuration, {});
+    expect(coordinator.getActiveAudio()).toEqual({
+      kind: 'playback',
+      ownerId: 1,
+      playbackId: 1,
+    });
+  });
+
   it('only releases the exact recognition id', async () => {
     const api = createApi();
     const coordinator = new TrainingAudioCoordinator(api);

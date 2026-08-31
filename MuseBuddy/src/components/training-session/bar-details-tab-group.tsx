@@ -77,6 +77,12 @@ export function BarDetailsTabGroup({ onSelect, selectedId, tabs }: BarDetailsTab
     if (id === selectedId) moveStroke(layout);
   }
 
+  function handleTabPress(id: string) {
+    const layout = tabLayouts.current.get(id);
+    if (layout) moveStroke(layout);
+    onSelect(id);
+  }
+
   return (
     <View accessibilityRole="tablist" style={styles.tabs}>
       <Animated.View pointerEvents="none" style={[styles.activeStroke, strokeStyle]}>
@@ -91,7 +97,7 @@ export function BarDetailsTabGroup({ onSelect, selectedId, tabs }: BarDetailsTab
             accessibilityState={{ selected: isSelected }}
             key={tab.id}
             onLayout={(event) => handleTabLayout(tab.id, event)}
-            onPress={() => onSelect(tab.id)}
+            onPress={() => handleTabPress(tab.id)}
             style={({ pressed }) => [styles.tab, pressed ? styles.tabPressed : null]}
           >
             <View style={styles.tabContent}>

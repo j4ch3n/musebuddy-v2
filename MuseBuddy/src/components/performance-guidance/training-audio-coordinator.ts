@@ -34,7 +34,6 @@ type TrainingAudioApi = {
 
 export class TrainingAudioCoordinator {
   private active: ActiveAudio = { kind: 'idle' };
-  private latestOwnerId = 0;
   private queue: Promise<void> = Promise.resolve();
 
   constructor(private readonly api: TrainingAudioApi) {}
@@ -46,7 +45,6 @@ export class TrainingAudioCoordinator {
     options: SoundFontPlaybackOptions,
   ): Promise<SoundFontPlaybackStartResult> {
     return this.enqueue(async () => {
-      this.assertCurrentOwner(ownerId);
       await this.releaseActive();
       const result =
         kind === 'piano'
@@ -59,7 +57,6 @@ export class TrainingAudioCoordinator {
 
   startRecognition(ownerId: number, options: RecognitionOptions): Promise<RecognitionStartResult> {
     return this.enqueue(async () => {
-      this.assertCurrentOwner(ownerId);
       await this.releaseActive();
       const result = await this.api.startRecognition(options);
       this.active = { kind: 'recognition', ownerId, recognitionId: result.recognitionId };
@@ -118,13 +115,6 @@ export class TrainingAudioCoordinator {
 
   getActiveAudio(): ActiveAudio {
     return this.active;
-  }
-
-  private assertCurrentOwner(ownerId: number) {
-    if (ownerId < this.latestOwnerId) {
-      throw new Error('This training audio owner has been superseded.');
-    }
-    this.latestOwnerId = ownerId;
   }
 
   private async releaseActive() {

@@ -8,6 +8,7 @@ import { Carousel } from '@/ui';
 
 import {
   getActiveScoreMeasureIndex,
+  getScorePageHeight,
   getScorePageIndexForMeasure,
   paginateScore,
 } from './piano-pattern-score-layout';
@@ -99,6 +100,8 @@ function PianoPatternScorePage({
   score: TrainingSessionScore;
   surfaceColor: string;
 }) {
+  const sheetHeight = getScorePageHeight(score, renderHeight);
+
   return (
     <View
       accessibilityLabel={`Piano score with ${score.measures.length} measures`}
@@ -107,14 +110,13 @@ function PianoPatternScorePage({
       <PianoPatternScoreSheet
         chordChanges={chordChanges}
         dom={{
-          matchContents: true,
           scrollEnabled: false,
-          style: [styles.sheet, { backgroundColor: surfaceColor }],
+          style: [styles.sheet, { backgroundColor: surfaceColor, height: sheetHeight }],
         }}
         currentStepIndex={currentStepIndex}
         notationColor={notationColor}
         onTargetPress={onTargetPress}
-        renderHeight={renderHeight}
+        renderHeight={sheetHeight}
         score={score}
         surfaceColor={surfaceColor}
       />

@@ -15,11 +15,12 @@ import {
 type BarSoundPreviewButtonProps = {
   bar: PreparedTrainingBar;
   bpm: number;
+  onPlayingChange: (isPlaying: boolean) => void;
 };
 
 const soundIconNames = ['volume-off', 'volume-low', 'volume-medium', 'volume-high'] as const;
 
-export function BarSoundPreviewButton({ bar, bpm }: BarSoundPreviewButtonProps) {
+export function BarSoundPreviewButton({ bar, bpm, onPlayingChange }: BarSoundPreviewButtonProps) {
   const configuration = useMemo(
     () => buildPatternSoundFontPlaybackConfiguration(bar.beats, bpm),
     [bar.beats, bpm],
@@ -35,15 +36,22 @@ export function BarSoundPreviewButton({ bar, bpm }: BarSoundPreviewButtonProps) 
       onSkip={noop}
       playback={{ configuration, kind: 'piano' }}
     >
-      <BarSoundPreviewControl />
+      <BarSoundPreviewControl onPlayingChange={onPlayingChange} />
     </PerformanceGuidanceProvider>
   );
 }
 
-function BarSoundPreviewControl() {
+function BarSoundPreviewControl({
+  onPlayingChange,
+}: Pick<BarSoundPreviewButtonProps, 'onPlayingChange'>) {
   const { isDisabled, phase, reset, start } = usePerformanceGuidance();
   const [frame, setFrame] = useState(0);
   const isPlaying = phase === 'demo' || phase === 'prepare';
+
+  useEffect(() => {
+    onPlayingChange(isPlaying);
+    return () => onPlayingChange(false);
+  }, [isPlaying, onPlayingChange]);
 
   useEffect(() => {
     if (!isPlaying) return;

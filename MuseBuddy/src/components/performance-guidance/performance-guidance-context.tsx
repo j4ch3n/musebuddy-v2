@@ -65,6 +65,8 @@ type PerformanceGuidanceProviderProps = {
   listeningMode: PerformanceGuidanceListeningMode;
   onFinish: () => void;
   onSkip: () => void;
+  passiveRecognitionEnabled?: boolean;
+  passiveRecognitionKey?: string;
   getPrimaryButtonLabel?: (
     state: Pick<
       GuidanceState,
@@ -96,6 +98,8 @@ export function PerformanceGuidanceProvider({
   listeningMode,
   onFinish,
   onSkip,
+  passiveRecognitionEnabled = false,
+  passiveRecognitionKey,
   getPrimaryButtonLabel,
   playback,
   segmentConfigurations,
@@ -112,6 +116,7 @@ export function PerformanceGuidanceProvider({
   const flowGenerationRef = useRef(0);
   const playbackIdRef = useRef<number | null>(null);
   const recognitionIdRef = useRef<number | null>(null);
+  const passiveRecognitionAttemptKeyRef = useRef<string | null>(null);
   const completionInProgressRef = useRef(false);
   const internalSegmentTransitionRef = useRef(false);
   const clockTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -447,6 +452,43 @@ export function PerformanceGuidanceProvider({
   }, [listeningMode]);
 
   useEffect(() => {
+    const recognitionId = recognitionIdRef.current;
+    const isPlaybackActive = state.phase === 'prepare' || state.phase === 'demo';
+    if (!passiveRecognitionEnabled || isPlaybackActive || state.phase === 'finish') {
+      if (!passiveRecognitionEnabled || state.phase === 'finish') {
+        passiveRecognitionAttemptKeyRef.current = null;
+      }
+      if (recognitionId !== null) {
+        recognitionIdRef.current = null;
+        void trainingAudioCoordinator.releaseRecognition(ownerIdRef.current, recognitionId);
+      }
+      return;
+    }
+    if (recognitionId !== null) {
+      return;
+    }
+    const recognitionKey = passiveRecognitionKey ?? 'default';
+    if (passiveRecognitionAttemptKeyRef.current === recognitionKey) {
+      return;
+    }
+
+    passiveRecognitionAttemptKeyRef.current = recognitionKey;
+    flowGenerationRef.current += 1;
+    const generation = flowGenerationRef.current;
+    void trainingAudioCoordinator
+      .release(ownerIdRef.current)
+      .then(() => startRecognition(generation))
+      .catch((error) => {
+        if (flowGenerationRef.current === generation) {
+          dispatch({
+            type: 'pending',
+            errorMessage: messageFor(error, 'Recognition could not start.'),
+          });
+        }
+      });
+  }, [dispatch, passiveRecognitionEnabled, passiveRecognitionKey, startRecognition, state.phase]);
+
+  useEffect(() => {
     const playbackSubscription = addPlaybackFinishListener((event) => {
       if (!shouldHandlePlaybackEvent(playbackIdRef.current, event.playbackId)) {
         return;
@@ -502,13 +544,12 @@ export function PerformanceGuidanceProvider({
       internalSegmentTransitionRef.current = false;
       return;
     }
-    if (previousConfiguration === configuration || stateRef.current.phase === 'pending') {
+    if (
+      previousConfiguration === configuration ||
+      (stateRef.current.phase !== 'prepare' && stateRef.current.phase !== 'demo')
+    ) {
       return;
     }
-    if (stateRef.current.phase === 'finish') {
-      return;
-    }
-
     flowGenerationRef.current += 1;
     const generation = flowGenerationRef.current;
     clearClock();

@@ -3,6 +3,7 @@ import type { TrainingSessionScore } from '@/contexts/training-session-schema';
 export const SCORE_MEASURES_PER_ROW = 1;
 export const SCORE_MEASURES_PER_PAGE = 3;
 export const SCORE_PLAYBACK_STEPS_PER_MEASURE = 64;
+export const SCORE_PAGE_SYSTEM_HEIGHT = 170;
 
 export function getActiveScoreMeasureIndex(currentStepIndex: number | null): number | null {
   return currentStepIndex === null
@@ -99,6 +100,10 @@ export function groupScoreMeasures(
     (_, rowIndex) =>
       measures.slice(rowIndex * SCORE_MEASURES_PER_ROW, (rowIndex + 1) * SCORE_MEASURES_PER_ROW),
   );
+}
+
+export function getScorePageHeight(score: TrainingSessionScore, renderHeight: number | undefined) {
+  return renderHeight ?? groupScoreMeasures(score.measures).length * SCORE_PAGE_SYSTEM_HEIGHT;
 }
 
 export function paginateScore(

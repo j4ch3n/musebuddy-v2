@@ -6,6 +6,7 @@ import { createTrainingSession } from '@/contexts/training-session-test-fixture'
 import {
   getActiveScoreEventIds,
   getActiveScoreMeasureIndex,
+  getScorePageHeight,
   getScorePageIndexForMeasure,
   groupScoreMeasures,
   paginateScore,
@@ -79,6 +80,16 @@ describe('paginateScore', () => {
       ],
       [],
     ]);
+  });
+});
+
+describe('getScorePageHeight', () => {
+  it('uses a fixed height for each score system when the caller does not provide one', () => {
+    expect(getScorePageHeight(createTrainingSession(4).score, undefined)).toBe(680);
+  });
+
+  it('preserves an explicit render height', () => {
+    expect(getScorePageHeight(createTrainingSession(4).score, 190)).toBe(190);
   });
 });
 
