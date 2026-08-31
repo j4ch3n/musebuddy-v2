@@ -25,10 +25,14 @@ type ScoreEvent =
   TrainingSessionScore['measures'][number]['staves']['treble']['voices'][number]['events'][number];
 
 const MIN_SCORE_WIDTH = 300;
-const HORIZONTAL_PADDING = 4;
+// A brace is rendered to the left of VexFlow's stave origin. Reserve its full
+// footprint inside the SVG so the score containers can continue clipping their
+// own bounds without cutting off the grand-staff connector.
+const SYSTEM_LEFT_GUTTER = 22;
+const SYSTEM_RIGHT_PADDING = 4;
 const STAFF_HEIGHT = 95;
 const CLEF_BASS_GAP_SIZE = 10;
-const SCORE_SCALE = 0.8;
+const SCORE_SCALE = 0.85;
 const SCORE_HEIGHT = STAFF_HEIGHT * 2 + CLEF_BASS_GAP_SIZE;
 const TARGET_PADDING = 6;
 const MIN_TARGET_SIZE = 30;
@@ -183,10 +187,10 @@ function renderScore(
   const activeEventIds = getActiveScoreEventIds(score, currentStepIndex);
 
   rows.forEach((rowMeasures, rowIndex) => {
-    const measureWidth = (width - HORIZONTAL_PADDING * 2) / rowMeasures.length;
+    const measureWidth = (width - SYSTEM_LEFT_GUTTER - SYSTEM_RIGHT_PADDING) / rowMeasures.length;
 
     rowMeasures.forEach((measure, columnIndex) => {
-      const x = HORIZONTAL_PADDING + columnIndex * measureWidth;
+      const x = SYSTEM_LEFT_GUTTER + columnIndex * measureWidth;
       const system = factory.System({
         formatOptions: { alignRests: true },
         spaceBetweenStaves: CLEF_BASS_GAP_SIZE,
