@@ -12,11 +12,17 @@ import { TabGroup } from './tab-group';
 
 type PhraseStageCardProps = {
   bar: PreparedTrainingBar;
+  currentStepIndex: number | null;
   onTabChange: (tab: TrainingDetailTab) => void;
   selectedTab: TrainingDetailTab;
 };
 
-export function PhraseStageCard({ bar, onTabChange, selectedTab }: PhraseStageCardProps) {
+export function PhraseStageCard({
+  bar,
+  currentStepIndex,
+  onTabChange,
+  selectedTab,
+}: PhraseStageCardProps) {
   const selectedTabId =
     selectedTab.kind === 'chord'
       ? `chord-${selectedTab.chordIndex}`
@@ -69,7 +75,7 @@ export function PhraseStageCard({ bar, onTabChange, selectedTab }: PhraseStageCa
               chord={bar.chordDisplays[selectedTab.chordIndex] ?? bar.chordDisplays[0]}
             />
           ) : (
-            <RhythmDetail bar={bar} staff={selectedTab.staff} />
+            <RhythmDetail bar={bar} currentStepIndex={currentStepIndex} staff={selectedTab.staff} />
           )}
         </View>
       }
@@ -100,12 +106,20 @@ function ChordDetail({
   );
 }
 
-function RhythmDetail({ bar, staff }: { bar: PreparedTrainingBar; staff: 'bass' | 'treble' }) {
+function RhythmDetail({
+  bar,
+  currentStepIndex,
+  staff,
+}: {
+  bar: PreparedTrainingBar;
+  currentStepIndex: number | null;
+  staff: 'bass' | 'treble';
+}) {
   return (
     <View style={styles.rhythmContent}>
       <RhythmViewer
         clef={staff}
-        currentStepIndex={null}
+        currentStepIndex={currentStepIndex}
         pattern={bar.rhythms[staff].pattern}
         showLegend={false}
       />

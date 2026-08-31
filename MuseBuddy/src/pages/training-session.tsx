@@ -140,6 +140,7 @@ function TrainingSessionContent({
             </View>
             <PhraseStageCard
               bar={bar}
+              currentStepIndex={currentStepIndex}
               onTabChange={(nextTab) => openBarDetails(selectedPhraseIndex, nextTab)}
               selectedTab={tab}
             />
