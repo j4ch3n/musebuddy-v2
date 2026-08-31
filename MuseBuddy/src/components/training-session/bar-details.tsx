@@ -10,6 +10,13 @@ import { FlashCard, MusicViewFlip } from '@/ui';
 
 import { BarDetailsTabGroup } from './bar-details-tab-group';
 
+const CARD_CONTENT_HORIZONTAL_INSET = 18;
+const CARD_CONTENT_TOP_INSET = 8;
+const CARD_CONTENT_BOTTOM_INSET = 18;
+const CHORD_CONTENT_TOP_INSET = 12;
+const CHORD_GROUP_GAP = 4;
+const CHORD_STUDY_BOTTOM_LEDGE = 10;
+
 type BarDetailsProps = {
   bar: PreparedTrainingBar;
   currentStepIndex: number | null;
@@ -124,10 +131,23 @@ function RhythmDetail({
 
 const styles = StyleSheet.create({
   card: { flex: 1, minHeight: 0 },
-  chordContent: { flex: 1, gap: 8, minHeight: 0, paddingTop: 4 },
+  // The 4 pt gap plus the flip face's 8 pt inset gives the friendly name 12 pt of keyboard space.
+  chordContent: {
+    flex: 1,
+    gap: CHORD_GROUP_GAP,
+    minHeight: 0,
+    paddingTop: CHORD_CONTENT_TOP_INSET,
+  },
   chordHeading: { alignItems: 'center' },
-  chordStudy: { flex: 1, minHeight: 200 },
-  content: { flex: 1, minHeight: 0, paddingBottom: 18, paddingHorizontal: 18, paddingTop: 8 },
+  // Preserve the 10 pt bottom ledge; the stack gap makes its visible separation 14 pt.
+  chordStudy: { flex: 1, marginBottom: CHORD_STUDY_BOTTOM_LEDGE, minHeight: 200 },
+  content: {
+    flex: 1,
+    minHeight: 0,
+    paddingBottom: CARD_CONTENT_BOTTOM_INSET,
+    paddingHorizontal: CARD_CONTENT_HORIZONTAL_INSET,
+    paddingTop: CARD_CONTENT_TOP_INSET,
+  },
   friendlyName: { color: museBuddyColors.pine, fontSize: 14, fontWeight: '800' },
   rhythmContent: { flex: 1, minHeight: 0, paddingTop: 8 },
 });

@@ -45,11 +45,14 @@ const KEY_SHADOW_Y = KEY_FACE_Y + KEY_SHADOW_OFFSET_Y;
 const KEY_SHADOW_WIDTH_EXPANSION = 6;
 const KEY_SHADOW_HORIZONTAL_INSET = KEY_SHADOW_WIDTH_EXPANSION / 2;
 const KEY_SHADOW_RADIUS = museBuddyRadii.medium;
-const LIVE_KEYBOARD_HEIGHT = 230;
-const LIVE_KEY_SHADOW_EXTENSION = 54;
-const LIVE_RIPPLE_DURATION_MS = 180;
 const WHITE_KEY_HEIGHT = 132;
 const BLACK_KEY_HEIGHT = 86;
+const LIVE_KEY_SHADOW_EXTENSION = 54;
+const LIVE_KEYBOARD_BOTTOM_BUFFER = 24;
+// Reserve room below the longest white-key detection shadow before the flip control.
+const LIVE_KEYBOARD_HEIGHT =
+  KEY_SHADOW_Y + WHITE_KEY_HEIGHT + LIVE_KEY_SHADOW_EXTENSION + LIVE_KEYBOARD_BOTTOM_BUFFER;
+const LIVE_RIPPLE_DURATION_MS = 180;
 const WHITE_MARKER_Y = 127;
 const BLACK_MARKER_Y = 85;
 const MARKER_CORE_RADIUS_OFFSET = 4;
@@ -119,9 +122,10 @@ export function PianoKeyboard({
   showMarkers = true,
   width,
 }: PianoKeyboardProps) {
-  const markers = getPianoKeyboardMarkers(root, keys);
   const isLiveKeyboard = liveKeys !== undefined;
   const visibleLiveKeys = useVisibleLiveKeys(liveKeys);
+
+  const markers = getPianoKeyboardMarkers(root, keys);
   const liveKeyStates = visibleLiveKeys ?? {};
   const markerLabel = markers
     .map(
@@ -391,8 +395,8 @@ function KeyboardKeyShadow({
       KEY_SHADOW_HORIZONTAL_INSET;
   const baseWidth = isBlack ? 24 : 40 + KEY_SHADOW_WIDTH_EXPANSION;
   const label = liveState?.label;
-  const hasExpectedHit = Boolean(label);
-  const isExtended = hasExpectedHit || liveState?.isUnexpectedActive === true;
+  const hasDetectedKey = label !== null && label !== undefined;
+  const isExtended = hasDetectedKey || liveState?.isUnexpectedActive === true;
   const [extension] = useState(
     () => new Animated.Value(isExtended ? LIVE_KEY_SHADOW_EXTENSION : 0),
   );
@@ -410,12 +414,12 @@ function KeyboardKeyShadow({
     }).start();
   }, [extension, isExtended]);
 
-  const fill = liveState?.isSuccess
-    ? museBuddyColors.success
-    : hasExpectedHit
-      ? appearance.fill
-      : liveState?.isUnexpectedActive
-        ? museBuddyColors.error
+  const fill = liveState?.isUnexpectedActive
+    ? museBuddyColors.error
+    : liveState?.isSuccess
+      ? museBuddyColors.success
+      : hasDetectedKey
+        ? appearance.fill
         : museBuddyColors.notation;
   const labelY = (isBlack ? KEY_FACE_Y + BLACK_KEY_HEIGHT - 2 : KEY_SHADOW_Y + baseHeight) + 15;
 

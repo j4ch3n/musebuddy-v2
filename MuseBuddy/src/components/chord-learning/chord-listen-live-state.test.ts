@@ -43,7 +43,7 @@ describe('updateChordListenLiveKeyStates', () => {
     expect(state[0]).toMatchObject({ expiresAtMs: 2_002, label: 'C4', rippleId: 2 });
   });
 
-  it('shows unexpected notes as temporary red-shadow state without labels or ripples', () => {
+  it('shows unexpected notes as a temporary red shadow with the detected key name', () => {
     const state = updateChordListenLiveKeyStates({
       attacks: [{ midiPitch: 61, startTimeMs: 1 }],
       expectedPitchClasses: new Set([0]),
@@ -56,7 +56,7 @@ describe('updateChordListenLiveKeyStates', () => {
       isUnexpectedActive: true,
       expiresAtMs: 501,
       rippleId: 0,
-      label: null,
+      label: 'C#4',
     });
   });
 

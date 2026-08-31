@@ -9,6 +9,9 @@ import ChordSheet from './chord-sheet.dom';
 import { chordToneRoleByImportance, chordToneMarkerAppearances } from './chord-color-role';
 import { ChordToneLegend } from './chord-role-legend';
 
+const PREVIEW_KEYBOARD_SIDE_BLEED = -13;
+const PREVIEW_KEYBOARD_RIGHT_SHIFT = 10;
+
 type ChordKeyboardCardProps = {
   display: ChordDisplay;
   displayMode?: 'full' | 'keyboard' | 'notation';
@@ -68,7 +71,6 @@ export function ChordKeyboardCard({
           markerAppearances={chordToneMarkerAppearances}
           markerLabels={markerLabels}
           markerTones={markerTones}
-          liveKeys={liveKeys}
           root={rootNote.pitchClass}
           showMarkers={showKeyHighlightDots}
         />
@@ -138,8 +140,9 @@ const styles = StyleSheet.create({
   },
   previewKeyboardFrame: {
     alignSelf: 'center',
-    maxWidth: 268,
-    width: '84%',
+    // With the card's 18 pt inset and the SVG's internal key bounds, this balances visible sides.
+    marginHorizontal: PREVIEW_KEYBOARD_SIDE_BLEED,
+    transform: [{ translateX: PREVIEW_KEYBOARD_RIGHT_SHIFT }],
   },
   sheet: {
     backgroundColor: museBuddyColors.mist,

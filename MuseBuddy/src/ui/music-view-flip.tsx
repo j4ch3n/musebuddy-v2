@@ -10,6 +10,9 @@ import Animated, {
 
 import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 
+const FACE_TOP_INSET = 8;
+const TOGGLE_MINIMUM_GAP = 4;
+
 type MusicViewFlipProps = {
   keyboard: ReactNode;
   notation: ReactNode;
@@ -72,13 +75,15 @@ export function MusicViewFlip({ keyboard, notation, style }: MusicViewFlipProps)
 }
 
 const styles = StyleSheet.create({
-  container: { alignItems: 'center', flex: 1, gap: 8, minHeight: 0 },
+  // The flexible surface keeps the toggle bottom-pinned while this is its minimum clearance.
+  container: { alignItems: 'center', flex: 1, gap: TOGGLE_MINIMUM_GAP, minHeight: 0 },
   face: {
     alignItems: 'stretch',
     backfaceVisibility: 'hidden',
     bottom: 0,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     left: 0,
+    paddingTop: FACE_TOP_INSET,
     position: 'absolute',
     right: 0,
     top: 0,

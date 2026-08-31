@@ -42,6 +42,7 @@ export function updateChordListenLiveKeyStates({
 
   for (const attack of attacks) {
     const pitchClass = midiToPitchClass(attack.midiPitch);
+    const label = Note.fromMidiSharps(attack.midiPitch);
     const key = next[pitchClass] ?? {
       isSuccess: false,
       isUnexpectedActive: false,
@@ -55,12 +56,11 @@ export function updateChordListenLiveKeyStates({
         ...key,
         expiresAtMs: attack.startTimeMs + CHORD_WRONG_SHADOW_DURATION_MS,
         isUnexpectedActive: true,
-        label: null,
+        label,
       };
       continue;
     }
 
-    const label = Note.fromMidiSharps(attack.midiPitch);
     next[pitchClass] = {
       expiresAtMs: attack.startTimeMs + CHORD_SUCCESS_SHADOW_DURATION_MS,
       isSuccess: false,
@@ -84,7 +84,7 @@ export function updateChordListenLiveKeyStates({
         ...key,
         expiresAtMs: nowMs + CHORD_WRONG_SHADOW_DURATION_MS,
         isUnexpectedActive: true,
-        label: null,
+        label: Note.fromMidiSharps(midiPitch),
       };
     }
   }
