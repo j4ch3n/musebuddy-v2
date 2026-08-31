@@ -13,6 +13,7 @@ type NoteBarSheetProps = {
   currentStepIndex: number | null;
   events: readonly NoteBarVexflowEvent[];
   showClefAndTimeSignature: boolean;
+  surfaceColor: string;
   width: number;
   dom?: import('expo/dom').DOMProps;
 };
@@ -31,15 +32,16 @@ export default function NoteBarSheet({
   currentStepIndex,
   events,
   showClefAndTimeSignature,
+  surfaceColor,
   width = RHYTHM_MEASURE_WIDTH_PX,
 }: NoteBarSheetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const elementId = useId().replaceAll(':', '-');
 
   useEffect(() => {
-    document.documentElement.style.backgroundColor = museBuddyColors.mist;
+    document.documentElement.style.backgroundColor = surfaceColor;
     document.documentElement.style.height = '100%';
-    document.body.style.backgroundColor = museBuddyColors.mist;
+    document.body.style.backgroundColor = surfaceColor;
     document.body.style.height = '100%';
     document.body.style.margin = '0';
     document.body.style.padding = '0';
@@ -158,9 +160,9 @@ export default function NoteBarSheet({
 
     const svg = container.querySelector('svg');
     if (svg) {
-      svg.style.backgroundColor = museBuddyColors.mist;
+      svg.style.backgroundColor = surfaceColor;
     }
-  }, [clef, currentStepIndex, elementId, events, showClefAndTimeSignature, width]);
+  }, [clef, currentStepIndex, elementId, events, showClefAndTimeSignature, surfaceColor, width]);
 
   return (
     <div
@@ -169,7 +171,7 @@ export default function NoteBarSheet({
       ref={containerRef}
       style={{
         alignItems: 'center',
-        background: museBuddyColors.mist,
+        background: surfaceColor,
         display: 'flex',
         height: RHYTHM_SHEET_HEIGHT_PX,
         justifyContent: 'center',

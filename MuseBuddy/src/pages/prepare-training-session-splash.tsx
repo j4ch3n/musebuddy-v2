@@ -10,7 +10,7 @@ import { Button, FlashCard } from '@/ui';
 
 import { TrainingScreenShell } from './training-screen-shell';
 
-const previewHref = '/preview' as Href;
+const trainingSessionHref = '/training-session' as Href;
 
 export function PrepareTrainingSessionSplashPage() {
   const router = useRouter();
@@ -24,7 +24,7 @@ export function PrepareTrainingSessionSplashPage() {
 
   useEffect(() => {
     if (phase === 'ready' && session) {
-      router.replace(previewHref);
+      router.replace(trainingSessionHref);
     }
   }, [phase, router, session]);
 

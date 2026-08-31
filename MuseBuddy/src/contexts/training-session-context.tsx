@@ -7,7 +7,10 @@ import { fetchDailyTrainingSession } from './training-session-api';
 
 type TrainingSessionPhase = 'idle' | 'loading' | 'ready' | 'error';
 
-export type PhraseStage = 'ideas' | 'chords' | 'rhythms';
+export type TrainingDetailTab =
+  | { chordIndex: number; kind: 'chord' }
+  | { kind: 'rhythm'; staff: 'bass' | 'treble' };
+export type TrainingSessionView = 'bar-details' | 'sheet';
 
 export type TrainingLearningConfig = {
   bpm: number;
@@ -18,12 +21,14 @@ type TrainingSessionContextValue = {
   learningConfig: TrainingLearningConfig;
   phase: TrainingSessionPhase;
   prepareTrainingSession: () => Promise<void>;
-  selectedPhraseStage: PhraseStage;
+  selectedDetailTab: TrainingDetailTab | null;
   selectedPhraseIndex: number;
   session: PreparedTrainingSession | null;
   setBpm: (bpm: number) => void;
-  setSelectedPhraseStage: (stage: PhraseStage) => void;
+  openBarDetails: (barIndex: number, tab: TrainingDetailTab) => void;
   setSelectedPhraseIndex: (phraseIndex: number) => void;
+  showSheet: () => void;
+  view: TrainingSessionView;
 };
 
 const TrainingSessionContext = createContext<TrainingSessionContextValue | null>(null);
@@ -54,8 +59,9 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
     useState<TrainingLearningConfig>(DEFAULT_LEARNING_CONFIG);
   const [phase, setPhase] = useState<TrainingSessionPhase>('idle');
   const [selectedPhraseIndex, setSelectedPhraseIndex] = useState(0);
-  const [selectedPhraseStage, setSelectedPhraseStage] = useState<PhraseStage>('ideas');
+  const [selectedDetailTab, setSelectedDetailTab] = useState<TrainingDetailTab | null>(null);
   const [session, setSession] = useState<PreparedTrainingSession | null>(null);
+  const [view, setView] = useState<TrainingSessionView>('sheet');
 
   const setBpm = useCallback((bpm: number) => {
     setLearningConfig((currentConfig) => ({
@@ -72,6 +78,17 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
     [session],
   );
 
+  const openBarDetails = useCallback(
+    (barIndex: number, tab: TrainingDetailTab) => {
+      selectPhrase(barIndex);
+      setSelectedDetailTab(tab);
+      setView('bar-details');
+    },
+    [selectPhrase],
+  );
+
+  const showSheet = useCallback(() => setView('sheet'), []);
+
   const prepareTrainingSession = useCallback(async () => {
     setErrorMessage('');
     setPhase('loading');
@@ -83,7 +100,8 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
       const preparedSession = prepareTrainingSessionDisplay(loadedSession);
       setSession(preparedSession);
       setSelectedPhraseIndex(0);
-      setSelectedPhraseStage('ideas');
+      setSelectedDetailTab(null);
+      setView('sheet');
       setPhase('ready');
     } catch (error) {
       logger.error('Daily training preparation failed.', {
@@ -100,23 +118,28 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
       learningConfig,
       phase,
       prepareTrainingSession,
-      selectedPhraseStage,
+      openBarDetails,
+      selectedDetailTab,
       selectedPhraseIndex,
       session,
       setBpm,
-      setSelectedPhraseStage,
       setSelectedPhraseIndex: selectPhrase,
+      showSheet,
+      view,
     }),
     [
       errorMessage,
       learningConfig,
       phase,
       prepareTrainingSession,
-      selectedPhraseStage,
+      openBarDetails,
+      selectedDetailTab,
       selectPhrase,
       selectedPhraseIndex,
       session,
       setBpm,
+      showSheet,
+      view,
     ],
   );
 

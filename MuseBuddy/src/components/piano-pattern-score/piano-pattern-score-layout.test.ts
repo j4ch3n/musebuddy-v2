@@ -49,6 +49,14 @@ describe('paginateScore', () => {
     ).toEqual([[0, 1, 2], [3]]);
   });
 
+  it('supports four grand-staff systems per page for the full sheet preview', () => {
+    const score = createTrainingSession(5).score;
+
+    expect(
+      paginateScore(score, 4).map((page) => page.measures.map((measure) => measure.index)),
+    ).toEqual([[0, 1, 2, 3], [4]]);
+  });
+
   it('keeps ties only when both endpoints are visible on the same page', () => {
     const score = createTrainingSession(4).score;
     score.ties.push(

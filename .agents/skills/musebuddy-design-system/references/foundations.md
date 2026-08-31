@@ -30,10 +30,10 @@ group identifies where a color belongs, rather than creating a new naming conven
 | UX framework | `sky` | `#65C1D5` |
 | UX framework | `leaf` | `#C8DB9E` |
 | UX framework | `sun` | `#F8F19E` |
-| UX framework | `petal` | `#F8D9E9` |
-| UX framework | `skyWash` | `#DDF3F7` |
-| UX framework | `leafWash` | `#E8F1D5` |
-| UX framework | `sunWash` | `#FFFBD1` |
+| UX framework | `petal` | `#F2B6D2` |
+| UX framework | `skyWash` | `#B7E3ED` |
+| UX framework | `leafWash` | `#DCE9B9` |
+| UX framework | `sunWash` | `#FCF6BB` |
 | UX framework | `cobalt` | `#4F6DF5` |
 | UX framework | `cobaltWash` | `#E5E9FF` |
 | UX framework | `error` | `#C1121F` |

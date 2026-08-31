@@ -14,7 +14,7 @@ export type FlashCardPage = {
   label: string;
 };
 
-type FlashCardProps = {
+type FlashCardBaseProps = {
   accessibilityLabel?: string;
   footer?: ReactNode;
   isFlipped?: boolean;
@@ -25,14 +25,30 @@ type FlashCardProps = {
   selectedPageIndex?: number;
   sideA: ReactNode;
   sideB?: ReactNode;
-  shadowColor: string;
   style?: StyleProp<ViewStyle>;
   surface?: FlashCardSurface;
 };
 
+type FramedFlashCardProps = {
+  borderColor?: string;
+  frameless?: false;
+  shadowColor: string;
+  surfaceColor?: string;
+};
+
+type FramelessFlashCardProps = {
+  borderColor?: never;
+  frameless: true;
+  shadowColor?: never;
+  surfaceColor?: never;
+};
+
+type FlashCardProps = FlashCardBaseProps & (FramedFlashCardProps | FramelessFlashCardProps);
+
 export function FlashCard({
   accessibilityLabel,
   footer,
+  frameless = false,
   isFlipped: controlledIsFlipped,
   onFlipChange,
   onPageChange,
@@ -42,12 +58,20 @@ export function FlashCard({
   sideA,
   sideB,
   shadowColor,
+  borderColor = museBuddyColors.frame,
+  surfaceColor,
   style,
   surface = 'hero',
 }: FlashCardProps) {
   const [uncontrolledIsFlipped, setUncontrolledIsFlipped] = useState(false);
   const isFlipped = controlledIsFlipped ?? uncontrolledIsFlipped;
-  const backgroundStyle = surface === 'supporting' ? styles.supportingSurface : styles.heroSurface;
+  const backgroundStyle = frameless
+    ? styles.framelessSurface
+    : surfaceColor
+      ? { backgroundColor: surfaceColor }
+      : surface === 'supporting'
+        ? styles.supportingSurface
+        : styles.heroSurface;
   const activeSide = isFlipped && sideB ? sideB : sideA;
   const content = pages ? (
     <Carousel
@@ -66,7 +90,12 @@ export function FlashCard({
   return (
     <YStack
       accessibilityLabel={accessibilityLabel}
-      style={[styles.card, backgroundStyle, { boxShadow: `6px 6px 0 ${shadowColor}` }, style]}
+      style={[
+        frameless ? styles.frameless : styles.card,
+        backgroundStyle,
+        frameless ? null : { borderColor, boxShadow: `6px 6px 0 ${shadowColor}` },
+        style,
+      ]}
     >
       <YStack style={[styles.inner, backgroundStyle, padded ? styles.padded : null]}>
         {content}
@@ -105,6 +134,8 @@ const styles = StyleSheet.create({
     borderWidth: museBuddyBorders.bold,
     overflow: 'hidden',
   },
+  frameless: { flex: 1, margin: 0, overflow: 'hidden', padding: 0 },
+  framelessSurface: { backgroundColor: 'transparent' },
   supportingSurface: {
     backgroundColor: museBuddyColors.mist,
   },

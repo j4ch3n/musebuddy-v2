@@ -1,11 +1,12 @@
 'use dom';
 
-import { useEffect, useId, useRef } from 'react';
-import { Accidental, Dot, Factory, Stem, type StaveNote } from 'vexflow';
+import { useEffect, useId, useRef, useState } from 'react';
+import { Accidental, Clef, Dot, Factory, Stem, type StaveNote } from 'vexflow';
 
 import { museBuddyColors } from '@/constants/design-tokens';
 import type { TrainingSessionScore } from '@/contexts/training-session-schema';
 import type { ScoreChordChange } from '@/music-theory';
+import type { ScoreTarget } from './piano-pattern-score';
 
 import { getActiveScoreEventIds, groupScoreMeasures } from './piano-pattern-score-layout';
 
@@ -14,6 +15,7 @@ type PianoPatternScoreSheetProps = {
   currentStepIndex: number | null;
   dom?: import('expo/dom').DOMProps;
   notationColor: string;
+  onTargetPress?: (target: ScoreTarget) => Promise<void>;
   renderHeight?: number;
   score: TrainingSessionScore;
   surfaceColor: string;
@@ -26,19 +28,44 @@ const MIN_SCORE_WIDTH = 300;
 const HORIZONTAL_PADDING = 4;
 const STAFF_HEIGHT = 95;
 const CLEF_BASS_GAP_SIZE = 10;
-const SCORE_SCALE = 0.9;
+const SCORE_SCALE = 0.8;
 const SCORE_HEIGHT = STAFF_HEIGHT * 2 + CLEF_BASS_GAP_SIZE;
+const TARGET_PADDING = 6;
+const MIN_TARGET_SIZE = 30;
+
+type BoundingBox = {
+  getH: () => number;
+  getW: () => number;
+  getX: () => number;
+  getY: () => number;
+};
+
+type ScoreTargetRegion = {
+  height: number;
+  target: ScoreTarget;
+  width: number;
+  x: number;
+  y: number;
+};
+
+type VexScoreTarget = {
+  element: { getBoundingBox: () => BoundingBox };
+  target: ScoreTarget;
+};
 
 export default function PianoPatternScoreSheet({
   chordChanges,
   currentStepIndex,
   notationColor,
+  onTargetPress,
   renderHeight,
   score,
   surfaceColor,
 }: PianoPatternScoreSheetProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
   const elementId = useId().replaceAll(':', '-');
+  const canvasId = `${elementId}-canvas`;
+  const [targetRegions, setTargetRegions] = useState<readonly ScoreTargetRegion[]>([]);
 
   useEffect(() => {
     document.documentElement.style.backgroundColor = surfaceColor;
@@ -48,21 +75,23 @@ export default function PianoPatternScoreSheet({
     document.body.style.margin = '0';
     document.body.style.padding = '0';
 
-    const container = containerRef.current;
+    const container = canvasRef.current;
     if (!container) {
       return;
     }
 
     const render = () => {
-      renderScore(
-        container,
-        elementId,
-        score,
-        chordChanges,
-        currentStepIndex,
-        notationColor,
-        renderHeight,
-        surfaceColor,
+      setTargetRegions(
+        renderScore(
+          container,
+          canvasId,
+          score,
+          chordChanges,
+          currentStepIndex,
+          notationColor,
+          renderHeight,
+          surfaceColor,
+        ),
       );
     };
     const observer = new ResizeObserver(render);
@@ -72,14 +101,14 @@ export default function PianoPatternScoreSheet({
     return () => {
       observer.disconnect();
       container.replaceChildren();
+      setTargetRegions([]);
     };
-  }, [chordChanges, currentStepIndex, elementId, notationColor, renderHeight, score, surfaceColor]);
+  }, [canvasId, chordChanges, currentStepIndex, notationColor, renderHeight, score, surfaceColor]);
 
   return (
     <div
       aria-label={`Piano score with ${score.measures.length} measures`}
       id={elementId}
-      ref={containerRef}
       style={{
         background: surfaceColor,
         height:
@@ -88,7 +117,39 @@ export default function PianoPatternScoreSheet({
         position: 'relative',
         width: '100%',
       }}
-    />
+    >
+      <div
+        id={canvasId}
+        ref={canvasRef}
+        style={{ height: '100%', inset: 0, position: 'absolute', width: '100%' }}
+      />
+      {onTargetPress
+        ? targetRegions.map(({ height, target, width, x, y }) => (
+            <button
+              aria-label={
+                target.kind === 'chord'
+                  ? `Open chord ${target.chordIndex + 1}`
+                  : `Open ${target.staff} rhythm`
+              }
+              key={`${target.kind}-${target.measureIndex}-${target.kind === 'chord' ? target.chordIndex : target.staff}`}
+              onClick={() => void onTargetPress(target)}
+              style={{
+                background: 'transparent',
+                border: `2px solid ${target.kind === 'chord' ? museBuddyColors.sky : museBuddyColors.leaf}`,
+                borderRadius: 4,
+                cursor: 'pointer',
+                height,
+                left: x,
+                padding: 0,
+                position: 'absolute',
+                top: y,
+                width,
+                zIndex: 2,
+              }}
+            />
+          ))
+        : null}
+    </div>
   );
 }
 
@@ -101,7 +162,7 @@ function renderScore(
   notationColor: string,
   renderHeight: number | undefined,
   surfaceColor: string,
-) {
+): ScoreTargetRegion[] {
   container.replaceChildren();
 
   const width = Math.max(MIN_SCORE_WIDTH, Math.floor(container.clientWidth / SCORE_SCALE));
@@ -118,6 +179,7 @@ function renderScore(
   factory.getContext().setStrokeStyle(notationColor);
   const notesById = new Map<string, StaveNote>();
   const rowByEventId = new Map<string, number>();
+  const targetElements: VexScoreTarget[] = [];
   const activeEventIds = getActiveScoreEventIds(score, currentStepIndex);
 
   rows.forEach((rowMeasures, rowIndex) => {
@@ -150,11 +212,14 @@ function renderScore(
           });
 
           if (staffName === 'treble' && voiceIndex === 0) {
-            addChordSymbols(
-              factory,
-              notes,
-              voiceData.events,
-              chordChanges.filter((chordChange) => chordChange.measureIndex === measure.index),
+            targetElements.push(
+              ...addChordSymbols(
+                factory,
+                notes,
+                voiceData.events,
+                chordChanges.filter((chordChange) => chordChange.measureIndex === measure.index),
+                measure.index,
+              ),
             );
           }
 
@@ -166,6 +231,13 @@ function renderScore(
           stave.addClef(staffData.clef).addKeySignature(score.key_signature);
           if (rowIndex === 0) {
             stave.addTimeSignature(score.time_signature);
+          }
+          const clef = stave.getModifiers(undefined, Clef.CATEGORY)[0];
+          if (clef) {
+            targetElements.push({
+              element: clef,
+              target: { kind: 'rhythm', measureIndex: measure.index, staff: staffName },
+            });
           }
         }
       }
@@ -206,6 +278,10 @@ function renderScore(
     svg.style.transform = `scale(${SCORE_SCALE})`;
     svg.style.transformOrigin = 'top left';
   }
+
+  return targetElements.map(({ element, target }) =>
+    getTargetRegion(element.getBoundingBox(), target, container),
+  );
 }
 
 function addChordSymbols(
@@ -213,14 +289,51 @@ function addChordSymbols(
   notes: readonly StaveNote[],
   events: readonly ScoreEvent[],
   chordChanges: readonly ScoreChordChange[],
-) {
-  chordChanges.forEach((chordChange) => {
+  measureIndex: number,
+): VexScoreTarget[] {
+  return chordChanges.flatMap((chordChange, chordIndex) => {
     const note = notes[getEventIndexForChordChange(events, chordChange.beatIndex)];
-    note?.addModifier(
-      factory.ChordSymbol({ hJustify: 'left', vJustify: 'top' }).addGlyphOrText(chordChange.symbol),
-      0,
-    );
+    if (!note) return [];
+    const chordSymbol = factory
+      .ChordSymbol({ hJustify: 'left', vJustify: 'top' })
+      .addGlyphOrText(chordChange.symbol);
+    note.addModifier(chordSymbol, 0);
+    return [{ element: chordSymbol, target: { chordIndex, kind: 'chord', measureIndex } }];
   });
+}
+
+function getTargetRegion(
+  boundingBox: BoundingBox,
+  target: ScoreTarget,
+  container: HTMLDivElement,
+): ScoreTargetRegion {
+  const width = Math.min(
+    Math.max(MIN_TARGET_SIZE, boundingBox.getW() * SCORE_SCALE + TARGET_PADDING * 2),
+    container.clientWidth,
+  );
+  const height = Math.min(
+    Math.max(MIN_TARGET_SIZE, boundingBox.getH() * SCORE_SCALE + TARGET_PADDING * 2),
+    container.clientHeight,
+  );
+  return {
+    height,
+    target,
+    width,
+    x: clamp(
+      boundingBox.getX() * SCORE_SCALE - TARGET_PADDING,
+      0,
+      Math.max(container.clientWidth - width, 0),
+    ),
+    y: clamp(
+      boundingBox.getY() * SCORE_SCALE - TARGET_PADDING,
+      0,
+      Math.max(container.clientHeight - height, 0),
+    ),
+  };
+}
+
+function clamp(value: number, minimum: number, maximum: number) {
+  return Math.min(Math.max(value, minimum), maximum);
 }
 
 function getEventIndexForChordChange(events: readonly ScoreEvent[], beatIndex: 0 | 1) {

@@ -101,13 +101,16 @@ export function groupScoreMeasures(
   );
 }
 
-export function paginateScore(score: TrainingSessionScore): TrainingSessionScore[] {
+export function paginateScore(
+  score: TrainingSessionScore,
+  measuresPerPage = SCORE_MEASURES_PER_PAGE,
+): TrainingSessionScore[] {
   return Array.from(
-    { length: Math.ceil(score.measures.length / SCORE_MEASURES_PER_PAGE) },
+    { length: Math.ceil(score.measures.length / measuresPerPage) },
     (_, pageIndex) => {
       const measures = score.measures.slice(
-        pageIndex * SCORE_MEASURES_PER_PAGE,
-        (pageIndex + 1) * SCORE_MEASURES_PER_PAGE,
+        pageIndex * measuresPerPage,
+        (pageIndex + 1) * measuresPerPage,
       );
       const eventIds = new Set(
         measures.flatMap((measure) =>

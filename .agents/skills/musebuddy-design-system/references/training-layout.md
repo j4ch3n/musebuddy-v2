@@ -59,8 +59,10 @@ large FlashCard may use a stronger offset. The shadow should compress and the el
 toward it when pressed, then return on release.
 
 When changing a component’s surface or state, customize its shadow through the component’s
-existing `shadowColor` or style contract. Do not add multiple shadows, detach the shadow direction
-from the pressed translation, or use shadows as decorative background effects.
+existing `shadowColor` or style contract. Choose the shadow color to support that component’s
+semantic role or state; it does not need to match the pine frame or use a single global shadow
+color. Do not add multiple shadows, detach the shadow direction from the pressed translation, or
+use shadows as decorative background effects.
 
 ## Content grouping
 

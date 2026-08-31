@@ -18,6 +18,7 @@ type NoteBarViewerProps = {
   events?: readonly NoteBarVexflowEvent[];
   showClefAndTimeSignature?: boolean;
   steps: readonly RhythmStep[];
+  surfaceColor?: string;
   width?: number;
 };
 
@@ -27,6 +28,7 @@ export function NoteBarViewer({
   events: suppliedEvents,
   showClefAndTimeSignature = true,
   steps,
+  surfaceColor = museBuddyColors.mist,
   width = RHYTHM_MEASURE_WIDTH_PX,
 }: NoteBarViewerProps) {
   const derivedEvents = useMemo(
@@ -36,7 +38,10 @@ export function NoteBarViewer({
   const events = suppliedEvents ?? derivedEvents;
 
   return (
-    <View accessibilityLabel="Note preview for rhythm bar" style={[styles.container, { width }]}>
+    <View
+      accessibilityLabel="Note preview for rhythm bar"
+      style={[styles.container, { backgroundColor: surfaceColor, width }]}
+    >
       <NoteBarSheet
         clef={clef}
         currentStepIndex={currentStepIndex}
@@ -46,6 +51,7 @@ export function NoteBarViewer({
         }}
         events={events}
         showClefAndTimeSignature={showClefAndTimeSignature}
+        surfaceColor={surfaceColor}
         width={width}
       />
     </View>
@@ -54,14 +60,12 @@ export function NoteBarViewer({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: museBuddyColors.mist,
     borderRadius: museBuddyRadii.medium,
     height: RHYTHM_SHEET_WRAPPER_HEIGHT_PX,
     justifyContent: 'center',
     overflow: 'hidden',
   },
   sheet: {
-    backgroundColor: museBuddyColors.mist,
     height: RHYTHM_SHEET_HEIGHT_PX,
     width: RHYTHM_MEASURE_WIDTH_PX,
   },

@@ -1,8 +1,9 @@
 import Lucide from '@react-native-vector-icons/lucide';
 import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import Animated, {
+  FadeInUp,
   ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
@@ -12,6 +13,8 @@ import { Text, XStack, YStack } from 'tamagui';
 
 import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 import { BPM_OPTIONS } from '@/music-theory';
+
+import { TactileControlAction } from './tactile-control';
 
 type BpmControlProps = {
   direction?: 'down' | 'up';
@@ -24,6 +27,7 @@ const DRAWER_ANIMATION_MS = 180;
 export function BpmControl({ direction = 'down', onChange, value }: BpmControlProps) {
   const [isOpen, setIsOpen] = useState(false);
   const drawerProgress = useSharedValue(0);
+  const drawerEnterOffset = direction === 'up' ? 8 : -8;
 
   useEffect(() => {
     drawerProgress.value = withTiming(isOpen ? 1 : 0, {
@@ -36,7 +40,7 @@ export function BpmControl({ direction = 'down', onChange, value }: BpmControlPr
     opacity: drawerProgress.value,
     transform: [
       {
-        translateY: (1 - drawerProgress.value) * -8,
+        translateY: (1 - drawerProgress.value) * drawerEnterOffset,
       },
       {
         scale: 0.96 + drawerProgress.value * 0.04,
@@ -44,108 +48,107 @@ export function BpmControl({ direction = 'down', onChange, value }: BpmControlPr
     ],
   }));
 
-  return (
-    <YStack style={styles.container}>
-      <Pressable
-        accessibilityLabel={`${value} BPM`}
-        accessibilityRole="button"
-        accessibilityState={{ expanded: isOpen }}
-        onPress={() => {
-          setIsOpen((current) => !current);
-        }}
-        style={({ pressed }) => [styles.trigger, pressed && styles.triggerPressed]}
-      >
-        <XStack style={styles.triggerContent}>
-          <MaterialDesignIcons color={museBuddyColors.mist} name="metronome" size={16} />
-          <XStack style={styles.bpmLabel}>
-            <Text
-              color={museBuddyColors.mist}
-              fontSize={14}
-              fontWeight="600"
-              style={styles.bpmText}
+  const menu = isOpen ? (
+    <Animated.View
+      style={[styles.drawer, direction === 'up' ? styles.drawerUp : null, drawerStyle]}
+    >
+      <YStack accessibilityLabel="BPM options" accessibilityRole="tablist" gap="$2">
+        {BPM_OPTIONS.map((option, optionIndex) => {
+          const isSelected = option.bpm === value;
+          const bottomUpDelay = (BPM_OPTIONS.length - optionIndex - 1) * 45;
+
+          return (
+            <Animated.View
+              entering={FadeInUp.delay(bottomUpDelay)
+                .duration(180)
+                .reduceMotion(ReduceMotion.System)}
+              key={option.id}
             >
-              {value}
-            </Text>
-            <Text color={museBuddyColors.mist} fontSize={10} fontWeight="400">
-              BPM
-            </Text>
-          </XStack>
-        </XStack>
-      </Pressable>
-
-      {isOpen ? (
-        <Animated.View
-          style={[styles.drawer, direction === 'up' ? styles.drawerUp : null, drawerStyle]}
-        >
-          <YStack accessibilityLabel="BPM options" accessibilityRole="tablist" gap="$2">
-            {BPM_OPTIONS.map((option) => {
-              const isSelected = option.bpm === value;
-
-              return (
-                <XStack
-                  accessibilityLabel={`${option.label}, ${option.bpm} BPM`}
-                  accessibilityRole="tab"
-                  accessibilityState={{ selected: isSelected }}
-                  key={option.id}
-                  onPress={() => {
-                    onChange(option.bpm);
-                    setIsOpen(false);
-                  }}
-                  pressStyle={styles.optionPressed}
-                  style={[styles.option, isSelected && styles.optionSelected]}
+              <XStack
+                accessibilityLabel={`${option.label}, ${option.bpm} BPM`}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: isSelected }}
+                onPress={() => {
+                  onChange(option.bpm);
+                  setIsOpen(false);
+                }}
+                pressStyle={styles.optionPressed}
+                style={[styles.option, isSelected && styles.optionSelected]}
+              >
+                {isSelected ? <Lucide color={museBuddyColors.mist} name="check" size={16} /> : null}
+                <Text
+                  color={museBuddyColors.pine}
+                  fontSize={14}
+                  fontWeight="900"
+                  numberOfLines={1}
+                  style={[styles.optionLabel, isSelected && styles.optionTextSelected]}
                 >
-                  {isSelected ? (
-                    <Lucide color={museBuddyColors.mist} name="check" size={16} />
-                  ) : null}
-                  <Text
-                    color={museBuddyColors.pine}
-                    fontSize={14}
-                    fontWeight="900"
-                    numberOfLines={1}
-                    style={[styles.optionLabel, isSelected && styles.optionTextSelected]}
-                  >
-                    {option.label}
-                  </Text>
-                  <Text
-                    color={museBuddyColors.pine}
-                    fontSize={13}
-                    fontWeight="900"
-                    numberOfLines={1}
-                    style={[styles.bpmValue, isSelected && styles.optionTextSelected]}
-                  >
-                    {option.bpm}
-                  </Text>
-                </XStack>
-              );
-            })}
-          </YStack>
-        </Animated.View>
-      ) : null}
-    </YStack>
+                  {option.label}
+                </Text>
+                <Text
+                  color={museBuddyColors.pine}
+                  fontSize={13}
+                  fontWeight="900"
+                  numberOfLines={1}
+                  style={[styles.bpmValue, isSelected && styles.optionTextSelected]}
+                >
+                  {option.bpm}
+                </Text>
+              </XStack>
+            </Animated.View>
+          );
+        })}
+      </YStack>
+    </Animated.View>
+  ) : null;
+
+  return (
+    <TactileControlAction
+      accessibilityLabel={`${value} BPM`}
+      accessibilityState={{ expanded: isOpen }}
+      containerStyle={styles.container}
+      menu={menu}
+      onPress={() => setIsOpen((current) => !current)}
+      pressedStyle={styles.triggerPressed}
+      style={styles.trigger}
+    >
+      <XStack style={styles.triggerContent}>
+        <MaterialDesignIcons color={museBuddyColors.pine} name="metronome" size={18} />
+        <XStack style={styles.bpmLabel}>
+          <Text color={museBuddyColors.pine} fontSize={16} fontWeight="800" style={styles.bpmText}>
+            {value}
+          </Text>
+          <Text color={museBuddyColors.pine} fontSize={12} fontWeight="700">
+            BPM
+          </Text>
+        </XStack>
+      </XStack>
+    </TactileControlAction>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     alignItems: 'flex-end',
-    height: 42,
+    height: 44,
+    marginHorizontal: 4,
     minWidth: 84,
     zIndex: 20,
   },
   trigger: {
     alignItems: 'center',
-    backgroundColor: museBuddyColors.wildflower,
-    borderColor: museBuddyColors.frame,
+    backgroundColor: museBuddyColors.paper,
+    borderColor: museBuddyColors.pine,
     borderRadius: museBuddyRadii.round,
     borderWidth: museBuddyBorders.standard,
-    boxShadow: `4px 4px 0 ${museBuddyColors.petal}`,
+    boxShadow: `4px 4px 0 ${museBuddyColors.leafWash}`,
     justifyContent: 'center',
-    height: 40,
+    height: 44,
     minWidth: 84,
     paddingHorizontal: 8,
   },
   triggerPressed: {
-    boxShadow: `1px 1px 0 ${museBuddyColors.petal}`,
+    boxShadow: `1px 1px 0 ${museBuddyColors.leafWash}`,
     transform: [{ translateX: 3 }, { translateY: 3 }],
   },
   triggerContent: {
@@ -157,15 +160,14 @@ const styles = StyleSheet.create({
     backgroundColor: museBuddyColors.mist,
     borderColor: museBuddyColors.frame,
     borderRadius: museBuddyRadii.medium,
-    borderWidth: 1,
-    boxShadow: `4px 4px 0 ${museBuddyColors.petal}`,
+    borderWidth: museBuddyBorders.standard,
     minWidth: 210,
     padding: 10,
     position: 'absolute',
     right: 0,
-    top: 40,
+    top: 44,
   },
-  drawerUp: { bottom: 40, top: undefined },
+  drawerUp: { bottom: 52, right: -10, top: undefined },
   option: {
     alignItems: 'center',
     backgroundColor: museBuddyColors.mist,

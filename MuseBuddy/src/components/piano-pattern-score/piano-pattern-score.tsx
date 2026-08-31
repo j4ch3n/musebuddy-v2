@@ -13,11 +13,17 @@ import {
 } from './piano-pattern-score-layout';
 import PianoPatternScoreSheet from './piano-pattern-score-sheet.dom';
 
+export type ScoreTarget =
+  | { chordIndex: number; kind: 'chord'; measureIndex: number }
+  | { kind: 'rhythm'; measureIndex: number; staff: 'bass' | 'treble' };
+
 type PianoPatternScoreProps = {
   chordChanges: readonly ScoreChordChange[];
   currentStepIndex?: number | null;
+  measuresPerPage?: number;
   notationColor?: string;
   renderHeight?: number;
+  onTargetPress?: (target: ScoreTarget) => Promise<void>;
   score: TrainingSessionScore;
   style?: StyleProp<ViewStyle>;
   surfaceColor?: string;
@@ -27,14 +33,16 @@ type PianoPatternScoreProps = {
 export function PianoPatternScore({
   chordChanges,
   currentStepIndex = null,
+  measuresPerPage,
   notationColor = museBuddyColors.notation,
   renderHeight,
+  onTargetPress,
   score,
   style,
   surfaceColor = museBuddyColors.mist,
   swipeEnabled = true,
 }: PianoPatternScoreProps) {
-  const pages = useMemo(() => paginateScore(score), [score]);
+  const pages = useMemo(() => paginateScore(score, measuresPerPage), [measuresPerPage, score]);
   const [manualPageIndex, setManualPageIndex] = useState(0);
   const playbackPageIndex = getScorePageIndexForMeasure(
     pages,
@@ -61,6 +69,7 @@ export function PianoPatternScore({
               currentStepIndex={currentStepIndex}
               notationColor={notationColor}
               renderHeight={renderHeight}
+              onTargetPress={onTargetPress}
               score={page}
               surfaceColor={surfaceColor}
             />
@@ -77,6 +86,7 @@ function PianoPatternScorePage({
   chordChanges,
   currentStepIndex,
   notationColor,
+  onTargetPress,
   renderHeight,
   score,
   surfaceColor,
@@ -84,6 +94,7 @@ function PianoPatternScorePage({
   chordChanges: readonly ScoreChordChange[];
   currentStepIndex: number | null;
   notationColor: string;
+  onTargetPress: ((target: ScoreTarget) => Promise<void>) | undefined;
   renderHeight: number | undefined;
   score: TrainingSessionScore;
   surfaceColor: string;
@@ -102,6 +113,7 @@ function PianoPatternScorePage({
         }}
         currentStepIndex={currentStepIndex}
         notationColor={notationColor}
+        onTargetPress={onTargetPress}
         renderHeight={renderHeight}
         score={score}
         surfaceColor={surfaceColor}

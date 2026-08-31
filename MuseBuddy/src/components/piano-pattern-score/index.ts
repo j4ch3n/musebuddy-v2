@@ -1,1 +1,1 @@
-export { PianoPatternScore } from './piano-pattern-score';
+export { PianoPatternScore, type ScoreTarget } from './piano-pattern-score';
