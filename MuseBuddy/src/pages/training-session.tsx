@@ -131,6 +131,7 @@ function TrainingSessionContent({
               <View style={styles.barScore}>
                 <PianoPatternScore
                   chordChanges={bar.chordChanges}
+                  onTargetPress={async (target) => onOpenTarget(target)}
                   score={bar.score}
                   surfaceColor={museBuddyColors.mist}
                   swipeEnabled={false}
