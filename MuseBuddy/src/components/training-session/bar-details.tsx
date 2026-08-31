@@ -8,21 +8,16 @@ import type { TrainingDetailTab } from '@/contexts/training-session-context';
 import type { PreparedTrainingBar } from '@/music-theory';
 import { FlashCard, MusicViewFlip } from '@/ui';
 
-import { TabGroup } from './tab-group';
+import { BarDetailsTabGroup } from './bar-details-tab-group';
 
-type PhraseStageCardProps = {
+type BarDetailsProps = {
   bar: PreparedTrainingBar;
   currentStepIndex: number | null;
   onTabChange: (tab: TrainingDetailTab) => void;
   selectedTab: TrainingDetailTab;
 };
 
-export function PhraseStageCard({
-  bar,
-  currentStepIndex,
-  onTabChange,
-  selectedTab,
-}: PhraseStageCardProps) {
+export function BarDetails({ bar, currentStepIndex, onTabChange, selectedTab }: BarDetailsProps) {
   const selectedTabId =
     selectedTab.kind === 'chord'
       ? `chord-${selectedTab.chordIndex}`
@@ -69,7 +64,7 @@ export function PhraseStageCard({
       shadowColor={selectedTab.kind === 'chord' ? museBuddyColors.sky : museBuddyColors.leaf}
       sideA={
         <View style={styles.content}>
-          <TabGroup onSelect={handleTabSelect} selectedId={selectedTabId} tabs={tabs} />
+          <BarDetailsTabGroup onSelect={handleTabSelect} selectedId={selectedTabId} tabs={tabs} />
           {selectedTab.kind === 'chord' ? (
             <ChordDetail
               chord={bar.chordDisplays[selectedTab.chordIndex] ?? bar.chordDisplays[0]}

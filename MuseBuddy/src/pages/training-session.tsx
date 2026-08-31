@@ -3,8 +3,12 @@ import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeOut, SlideInLeft, SlideInRight } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BarDetailsExit, BarSoundPreviewButton, Navigator } from '@/components/training-session';
-import { PhraseStageCard } from '@/components/phrase-stage-card';
+import {
+  BarDetails,
+  BarDetailsExit,
+  BarSoundPreviewButton,
+  Navigator,
+} from '@/components/training-session';
 import { PianoPatternScore, type ScoreTarget } from '@/components/piano-pattern-score';
 import {
   PerformanceGuidanceProvider,
@@ -138,7 +142,7 @@ function TrainingSessionContent({
                 />
               </View>
             </View>
-            <PhraseStageCard
+            <BarDetails
               bar={bar}
               currentStepIndex={currentStepIndex}
               onTabChange={(nextTab) => openBarDetails(selectedPhraseIndex, nextTab)}

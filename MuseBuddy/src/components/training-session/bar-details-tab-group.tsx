@@ -12,23 +12,23 @@ import Animated, {
 
 import { museBuddyColors } from '@/constants/design-tokens';
 
-type TabGroupItem = {
+type BarDetailsTab = {
   accessibilityLabel?: string;
   id: string;
   label: ReactNode;
 };
 
-type TabGroupProps = {
+type BarDetailsTabGroupProps = {
   onSelect: (id: string) => void;
   selectedId: string;
-  tabs: TabGroupItem[];
+  tabs: BarDetailsTab[];
 };
 
 type TabLayout = { width: number; x: number };
 
 const activeTabStrokeSource = require('@assets/images/stroke.png');
 
-export function TabGroup({ onSelect, selectedId, tabs }: TabGroupProps) {
+export function BarDetailsTabGroup({ onSelect, selectedId, tabs }: BarDetailsTabGroupProps) {
   const tabLayouts = useRef(new Map<string, TabLayout>());
   const hasPositionedStroke = useRef(false);
   const strokeWidth = useSharedValue(0);
