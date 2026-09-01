@@ -6,6 +6,7 @@ export const museBuddyPalette = {
   pine: '#286467',
   wildflower: '#DA438C',
   sky: '#65C1D5',
+  buddy: '#338789',
   leaf: '#C8DB9E',
   sun: '#F8F19E',
   petal: '#F2B6D2',

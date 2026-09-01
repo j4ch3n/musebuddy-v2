@@ -9,7 +9,9 @@
     "paths": {
       "@/*": ["./src/*"],
       "@assets/*": ["./assets/*"],
+      "@contexts/*": ["./src/contexts/*"],
       "@modules/*": ["./modules/*"],
+      "@pages/*": ["./src/pages/*"],
       "@schema/*": ["./src/schema/*"]
     }
   },

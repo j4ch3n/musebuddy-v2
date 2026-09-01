@@ -28,6 +28,7 @@ group identifies where a color belongs, rather than creating a new naming conven
 | UX framework | `pine` | `#286467` | Primary interface ink, structural frame, outline, divider, and solid offset-shadow color. |
 | UX framework | `wildflower` | `#DA438C` | Primary action and current focal-state color. |
 | UX framework | `sky` | `#65C1D5` | Active, in-progress, and secondary accent color. |
+| UX framework | `buddy` | `#338789` | Dedicated MuseBuddy companion illustration color. |
 | UX framework | `leaf` | `#C8DB9E` | Selected, supportive, and completion-adjacent surface color. |
 | UX framework | `sun` | `#F8F19E` | Warm brand-atmosphere and low-emphasis background color. |
 | UX framework | `petal` | `#F2B6D2` | Soft decorative or low-emphasis highlight color. |
@@ -55,7 +56,8 @@ specific component. Do not rename tokens or add prefixes or suffixes to express 
 
 `wildflower` may be the primary action or current app-level focal state, but it is not the chord
 root color; `pink` is. `sky` may indicate active UI progress, but it is not a held note or
-essential chord tone; `cyan` is. `leaf` can support a selected or completion-adjacent UI state,
+essential chord tone; `cyan` is. `buddy` is reserved for the MuseBuddy companion and its
+illustration details. `leaf` can support a selected or completion-adjacent UI state,
 while `success` is the explicit success feedback token. These distinctions preserve the boundary
 between interface state and teaching-material meaning.
 
