@@ -145,12 +145,11 @@ Deno.serve(async (request) => {
         beats: notes.map(toBeat),
         pattern: {
           id: pattern.id,
-          key_signature: {
-            fifths: pattern.key_signature_fifths,
-            major_scale: pattern.key_signature_major_scale,
-            relative_minor_scale: pattern.key_signature_relative_minor_scale,
-          },
+          key_signature_display: pattern.key_signature_display,
+          progression_in_major_scale: pattern.progression_in_major_scale,
+          progression_in_minor_scale: pattern.progression_in_minor_scale,
           time_signature: pattern.time_signature,
+          title: pattern.name,
         },
       },
       score: {

@@ -109,9 +109,21 @@ class PianoPatternUploadTests(unittest.TestCase):
                 {
                     "id": "piano-pattern/test",
                     "time_signature": "4/4",
-                    "key_signature_fifths": 0,
-                    "key_signature_major_scale": "C major",
-                    "key_signature_relative_minor_scale": "A minor",
+                    "key_signature_display": "C major / A minor",
+                    "progression_in_major_scale": {
+                        "mode": "major",
+                        "tonic": "C",
+                        "tonic_circle_of_fifths_index": 0,
+                        "display": ["I"],
+                        "active_circle_of_fifths_indices": [0],
+                    },
+                    "progression_in_minor_scale": {
+                        "mode": "minor",
+                        "tonic": "A",
+                        "tonic_circle_of_fifths_index": 3,
+                        "display": ["III"],
+                        "active_circle_of_fifths_indices": [0],
+                    },
                 }
             ],
             notes=[

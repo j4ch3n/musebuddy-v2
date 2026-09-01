@@ -181,16 +181,25 @@ export const trainingSessionChordSchema = z.object({
   tones: z.array(chordToneSchema).min(1),
 });
 
+function progressionSchema(mode: 'major' | 'minor') {
+  return z.object({
+    active_circle_of_fifths_indices: z.array(z.number().int().min(0).max(11)),
+    display: z.array(z.string().min(1)).min(1),
+    mode: z.literal(mode),
+    tonic: chordPitchSchema,
+    tonic_circle_of_fifths_index: z.number().int().min(0).max(11),
+  });
+}
+
 const notesDocumentSchema = z.object({
   beats: z.array(patternBeatSchema).min(2).max(8),
   pattern: z.object({
     id: z.string().min(1),
-    key_signature: z.object({
-      fifths: z.number().int().min(-7).max(7),
-      major_scale: z.string().min(1),
-      relative_minor_scale: z.string().min(1),
-    }),
+    key_signature_display: z.string().min(1),
+    progression_in_major_scale: progressionSchema('major'),
+    progression_in_minor_scale: progressionSchema('minor'),
     time_signature: z.literal('4/4'),
+    title: z.string().min(1).nullable(),
   }),
 });
 

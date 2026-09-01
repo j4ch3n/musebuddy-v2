@@ -55,12 +55,23 @@ export function createTrainingSession(measureCount = 1): TrainingSession {
       })),
       pattern: {
         id: patternId,
-        key_signature: {
-          fifths: 0,
-          major_scale: 'C major',
-          relative_minor_scale: 'A minor',
+        key_signature_display: 'C major / A minor',
+        progression_in_major_scale: {
+          active_circle_of_fifths_indices: [0],
+          display: ['I'],
+          mode: 'major',
+          tonic: 'C',
+          tonic_circle_of_fifths_index: 0,
+        },
+        progression_in_minor_scale: {
+          active_circle_of_fifths_indices: [0],
+          display: ['III'],
+          mode: 'minor',
+          tonic: 'A',
+          tonic_circle_of_fifths_index: 3,
         },
         time_signature: '4/4',
+        title: null,
       },
     },
     score: {

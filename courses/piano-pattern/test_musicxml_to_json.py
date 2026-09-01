@@ -29,10 +29,20 @@ class MusicXmlToJsonTests(unittest.TestCase):
             {
                 "id": "piano-pattern/no4",
                 "time_signature": "4/4",
-                "key_signature": {
-                    "fifths": 1,
-                    "major_scale": "G major",
-                    "relative_minor_scale": "E minor",
+                "key_signature_display": "G major / E minor",
+                "progression_in_major_scale": {
+                    "mode": "major",
+                    "tonic": "G",
+                    "tonic_circle_of_fifths_index": 1,
+                    "display": ["I", "vi", "IV", "V"],
+                    "active_circle_of_fifths_indices": [1, 4, 0, 2],
+                },
+                "progression_in_minor_scale": {
+                    "mode": "minor",
+                    "tonic": "E",
+                    "tonic_circle_of_fifths_index": 4,
+                    "display": ["III", "i", "VI", "VII"],
+                    "active_circle_of_fifths_indices": [1, 4, 0, 2],
                 },
             },
         )
@@ -52,11 +62,27 @@ class MusicXmlToJsonTests(unittest.TestCase):
 
     def test_no15_metadata_and_chords(self) -> None:
         self.assertEqual(
-            self.no15["pattern"]["key_signature"],
+            self.no15["pattern"]["key_signature_display"],
+            "F major / D minor",
+        )
+        self.assertEqual(
+            self.no15["pattern"]["progression_in_major_scale"],
             {
-                "fifths": -1,
-                "major_scale": "F major",
-                "relative_minor_scale": "D minor",
+                "mode": "major",
+                "tonic": "F",
+                "tonic_circle_of_fifths_index": 11,
+                "display": ["vi", "IV", "I", "V"],
+                "active_circle_of_fifths_indices": [2, 10, 11, 0],
+            },
+        )
+        self.assertEqual(
+            self.no15["pattern"]["progression_in_minor_scale"],
+            {
+                "mode": "minor",
+                "tonic": "D",
+                "tonic_circle_of_fifths_index": 2,
+                "display": ["i", "VI", "III", "VII"],
+                "active_circle_of_fifths_indices": [2, 10, 11, 0],
             },
         )
         self.assertEqual(

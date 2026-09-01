@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, TypeAlias
 
 import click
-from sqlalchemy import Column, ForeignKey, Integer, SmallInteger, Text, create_engine
+from sqlalchemy import Column, ForeignKey, Integer, Text, create_engine
 from sqlalchemy.dialects.postgresql import JSONB, insert
 from sqlalchemy.orm import DeclarativeBase
 
@@ -34,10 +34,11 @@ class PianoPattern(Base):
     __table_args__ = {"schema": "public"}
 
     id = Column(Text, primary_key=True)
+    name = Column(Text, nullable=True, default=None)
     time_signature = Column(Text, nullable=False)
-    key_signature_fifths = Column(SmallInteger, nullable=False)
-    key_signature_major_scale = Column(Text, nullable=False)
-    key_signature_relative_minor_scale = Column(Text, nullable=False)
+    key_signature_display = Column(Text, nullable=False)
+    progression_in_major_scale = Column(JSONB, nullable=False)
+    progression_in_minor_scale = Column(JSONB, nullable=False)
 
 
 class PianoPatternNote(Base):
@@ -176,28 +177,24 @@ def note_rows(
     )
     if time_signature != "4/4":
         raise ValueError(f"{path}.pattern.time_signature must be '4/4'")
-    key_signature = expect_object(
-        pattern.get("key_signature"),
-        f"{path}.pattern.key_signature",
+    key_signature_display = expect_str(
+        pattern.get("key_signature_display"),
+        f"{path}.pattern.key_signature_display",
     )
-    fifths = expect_int(
-        key_signature.get("fifths"),
-        f"{path}.pattern.key_signature.fifths",
-    )
-    if not -7 <= fifths <= 7:
-        raise ValueError(f"{path}.pattern.key_signature.fifths must be -7 to 7")
 
     pattern_row = {
         "id": pattern_id,
         "time_signature": time_signature,
-        "key_signature_fifths": fifths,
-        "key_signature_major_scale": expect_str(
-            key_signature.get("major_scale"),
-            f"{path}.pattern.key_signature.major_scale",
+        "key_signature_display": key_signature_display,
+        "progression_in_major_scale": progression_value(
+            pattern.get("progression_in_major_scale"),
+            "major",
+            f"{path}.pattern.progression_in_major_scale",
         ),
-        "key_signature_relative_minor_scale": expect_str(
-            key_signature.get("relative_minor_scale"),
-            f"{path}.pattern.key_signature.relative_minor_scale",
+        "progression_in_minor_scale": progression_value(
+            pattern.get("progression_in_minor_scale"),
+            "minor",
+            f"{path}.pattern.progression_in_minor_scale",
         ),
     }
 
@@ -280,6 +277,36 @@ def note_rows(
     return pattern_row, rows
 
 
+def progression_value(value: Any, mode: str, context: str) -> JsonObject:
+    progression = expect_object(value, context)
+    if progression.get("mode") != mode:
+        raise ValueError(f"{context}.mode must be {mode!r}")
+    expect_str(progression.get("tonic"), f"{context}.tonic")
+    index = expect_int(
+        progression.get("tonic_circle_of_fifths_index"),
+        f"{context}.tonic_circle_of_fifths_index",
+    )
+    if not 0 <= index <= 11:
+        raise ValueError(f"{context}.tonic_circle_of_fifths_index must be 0 to 11")
+    display = expect_list(progression.get("display"), f"{context}.display")
+    if not display or any(not isinstance(item, str) or not item for item in display):
+        raise ValueError(f"{context}.display must contain non-empty strings")
+    active_indexes = expect_list(
+        progression.get("active_circle_of_fifths_indices"),
+        f"{context}.active_circle_of_fifths_indices",
+    )
+    if any(
+        not isinstance(index, int) or isinstance(index, bool) or not 0 <= index <= 11
+        for index in active_indexes
+    ):
+        raise ValueError(
+            f"{context}.active_circle_of_fifths_indices must contain integers from 0 to 11"
+        )
+    if len(active_indexes) != len(set(active_indexes)):
+        raise ValueError(f"{context}.active_circle_of_fifths_indices must be unique")
+    return progression
+
+
 def score_row(
     document: JsonObject,
     pattern: JsonObject,
@@ -305,7 +332,14 @@ def score_row(
         document.get("key_signature"),
         f"{path}.key_signature",
     )
-    expected_key = str(pattern["key_signature_major_scale"]).removesuffix(" major")
+    major_progression = expect_object(
+        pattern["progression_in_major_scale"],
+        f"{path}.pattern.progression_in_major_scale",
+    )
+    expected_key = expect_str(
+        major_progression.get("tonic"),
+        f"{path}.pattern.progression_in_major_scale.tonic",
+    )
     if key_signature != expected_key:
         raise ValueError(f"{path}.key_signature does not match its notes file")
     measures = expect_list(document.get("measures"), f"{path}.measures")
@@ -352,12 +386,18 @@ def load_upload_rows(output_dir: Path) -> UploadRows:
     return UploadRows(patterns=patterns, notes=notes, scores=scores)
 
 
-def upsert_statement(table: Any, rows: list[JsonObject], key: str) -> Any:
+def upsert_statement(
+    table: Any,
+    rows: list[JsonObject],
+    key: str,
+    *,
+    preserve_columns: frozenset[str] = frozenset(),
+) -> Any:
     statement = insert(table).values(rows)
     update_values = {
         column.name: statement.excluded[column.name]
         for column in table.columns
-        if column.name != key
+        if column.name != key and column.name not in preserve_columns
     }
     return statement.on_conflict_do_update(
         index_elements=[table.c[key]],
@@ -370,7 +410,12 @@ def upload_rows(database_url: str, rows: UploadRows) -> None:
     pattern_ids = [row["id"] for row in rows.patterns]
     with engine.begin() as connection:
         connection.execute(
-            upsert_statement(PianoPattern.__table__, rows.patterns, "id")
+            upsert_statement(
+                PianoPattern.__table__,
+                rows.patterns,
+                "id",
+                preserve_columns=frozenset({"name"}),
+            )
         )
         connection.execute(
             PianoPatternNote.__table__.delete().where(

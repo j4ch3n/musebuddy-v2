@@ -8,7 +8,7 @@ from fractions import Fraction
 from pathlib import Path
 from typing import Any, Literal, TypeAlias
 
-from music21 import chord, clef, converter, key, meter, note, stream
+from music21 import chord, clef, converter, key, meter, note, pitch, stream
 
 COURSES_DIR = Path(__file__).resolve().parents[1]
 if str(COURSES_DIR) not in sys.path:
@@ -55,6 +55,7 @@ class ChordCandidate:
     pitch_classes: frozenset[int]
     essential_pitch_classes: frozenset[int]
     tone_names: dict[int, frozenset[str]]
+    quality_name: str
     omission_count: int
     alteration_count: int
 
@@ -166,16 +167,28 @@ def build_pattern_document(input_path: Path) -> JsonObject:
             )
 
     major_scale = key.KeySignature(fifths).asKey("major")
-    relative_minor = major_scale.relative
+    relative_minor = key.KeySignature(fifths).asKey("minor")
+    candidates_by_id = {candidate.profile_id: candidate for candidate in candidates}
+    chord_sequence = [
+        candidates_by_id[chord_id]
+        for chords_for_measure in beat_chords
+        for chord_id in chords_for_measure
+    ]
     return {
         "pattern": {
             "id": pattern_id,
             "time_signature": TIME_SIGNATURE,
-            "key_signature": {
-                "fifths": fifths,
-                "major_scale": key_name(major_scale),
-                "relative_minor_scale": key_name(relative_minor),
-            },
+            "key_signature_display": (
+                f"{key_name(major_scale)} / {key_name(relative_minor)}"
+            ),
+            "progression_in_major_scale": progression_document(
+                major_scale,
+                chord_sequence,
+            ),
+            "progression_in_minor_scale": progression_document(
+                relative_minor,
+                chord_sequence,
+            ),
         },
         "beats": beats,
     }
@@ -418,6 +431,9 @@ def chord_candidates() -> list[ChordCandidate]:
                         pitch_class: frozenset(names)
                         for pitch_class, names in tone_names.items()
                     },
+                    quality_name=require_string(
+                        require_dict(profile, "quality"), "name"
+                    ),
                     omission_count=len(omissions),
                     alteration_count=len(alterations),
                 )
@@ -456,6 +472,82 @@ def chord_ids_for_measure(
         f"bar {measure.bar_index} beat 1",
     )
     return first.profile_id, second.profile_id
+
+
+def progression_document(
+    scale: key.Key,
+    chords: list[ChordCandidate],
+) -> JsonObject:
+    display: list[str] = []
+    active_indexes: list[int] = []
+    for candidate in chords:
+        numeral = roman_numeral_for_chord(candidate, scale)
+        if not display or display[-1] != numeral:
+            display.append(numeral)
+
+        circle_index = circle_of_fifths_index(candidate.root_name)
+        if circle_index not in active_indexes:
+            active_indexes.append(circle_index)
+
+    tonic = normalize_pitch_name(scale.tonic.name)
+    return {
+        "mode": scale.mode,
+        "tonic": tonic,
+        "tonic_circle_of_fifths_index": circle_of_fifths_index(tonic),
+        "display": display,
+        "active_circle_of_fifths_indices": active_indexes,
+    }
+
+
+def roman_numeral_for_chord(candidate: ChordCandidate, scale: key.Key) -> str:
+    root = pitch.Pitch(candidate.root_name)
+    degree = scale.getScaleDegreeFromPitch(root)
+    if degree is None:
+        raise ConversionError(
+            f"Chord {candidate.symbol} has a root outside {key_name(scale)}"
+        )
+
+    base = roman_degree(degree)
+    if candidate.quality_name in ("major", "dominant"):
+        return base
+    if candidate.quality_name == "minor":
+        return base.lower()
+    if candidate.quality_name == "diminished":
+        return f"{base.lower()}°"
+    if candidate.quality_name == "half-diminished":
+        return f"{base.lower()}ø"
+    if candidate.quality_name == "augmented":
+        return f"{base}+"
+    if candidate.quality_name == "suspended":
+        return diatonic_roman_degree(degree, scale)
+    raise ConversionError(
+        f"Chord {candidate.symbol} has unsupported quality {candidate.quality_name!r}"
+    )
+
+
+def roman_degree(degree: int) -> str:
+    numerals = ("I", "II", "III", "IV", "V", "VI", "VII")
+    return numerals[degree - 1]
+
+
+def diatonic_roman_degree(degree: int, scale: key.Key) -> str:
+    if scale.mode == "major":
+        qualities = ("major", "minor", "minor", "major", "major", "minor", "diminished")
+    elif scale.mode == "minor":
+        qualities = ("minor", "diminished", "major", "minor", "minor", "major", "major")
+    else:
+        raise ConversionError(f"Unsupported scale mode {scale.mode!r}")
+    quality = qualities[degree - 1]
+    base = roman_degree(degree)
+    if quality == "minor":
+        return base.lower()
+    if quality == "diminished":
+        return f"{base.lower()}°"
+    return base
+
+
+def circle_of_fifths_index(pitch_name: str) -> int:
+    return (pitch.Pitch(pitch_name).pitchClass * 7) % 12
 
 
 def infer_chord(

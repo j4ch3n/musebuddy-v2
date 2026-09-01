@@ -93,19 +93,29 @@ potentially incorrect label.
 
 ## JSON Shape
 
-The top-level pattern metadata records the notated key signature without
-asserting whether the music is in its major or relative-minor mode:
+The top-level pattern metadata records the major and relative-minor readings
+of the notated key signature. It does not assert a single tonal centre:
 
 ```json
 {
   "pattern": {
     "id": "piano-pattern/no4",
     "time_signature": "4/4",
-    "key_signature": {
-      "fifths": 1,
-      "major_scale": "G major",
-      "relative_minor_scale": "E minor"
-    }
+  "key_signature_display": "G major / E minor",
+  "progression_in_major_scale": {
+    "mode": "major",
+    "tonic": "G",
+    "tonic_circle_of_fifths_index": 1,
+    "display": ["I", "vi", "IV", "V"],
+    "active_circle_of_fifths_indices": [1, 4, 0, 2]
+  },
+  "progression_in_minor_scale": {
+    "mode": "minor",
+    "tonic": "E",
+    "tonic_circle_of_fifths_index": 4,
+    "display": ["III", "i", "VI", "VII"],
+    "active_circle_of_fifths_indices": [1, 4, 0, 2]
+  }
   },
   "beats": [
     {
