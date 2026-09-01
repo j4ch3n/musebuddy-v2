@@ -21,74 +21,55 @@ Core principles:
 The CSS palette is intentionally organized into two groups. Keep the existing token names; the
 group identifies where a color belongs, rather than creating a new naming convention.
 
-| Group | Token name | Value |
-| --- | --- | --- |
-| UX framework | `mist` | `#F2FAFC` |
-| UX framework | `paper` | `#FFFFFF` |
-| UX framework | `pine` | `#286467` |
-| UX framework | `wildflower` | `#DA438C` |
-| UX framework | `sky` | `#65C1D5` |
-| UX framework | `leaf` | `#C8DB9E` |
-| UX framework | `sun` | `#F8F19E` |
-| UX framework | `petal` | `#F2B6D2` |
-| UX framework | `skyWash` | `#B7E3ED` |
-| UX framework | `leafWash` | `#DCE9B9` |
-| UX framework | `sunWash` | `#FCF6BB` |
-| UX framework | `cobalt` | `#4F6DF5` |
-| UX framework | `cobaltWash` | `#E5E9FF` |
-| UX framework | `error` | `#C1121F` |
-| UX framework | `success` | `#A7C957` |
-| Teaching materials | `notation` | `#0D1321` |
-| Teaching materials | `notationGray` | `#415A77` |
-| Teaching materials | `blue` | `#0F8B8D` |
-| Teaching materials | `pink` | `#F038FF` |
-| Teaching materials | `yellow` | `#FFBD00` |
-| Teaching materials | `cyan` | `#5FA8D3` |
-| Teaching materials | `coral` | `#E56B6F` |
-| Teaching materials | `cobaltInk` | `#293C9A` |
+| Group | Token name | Value | Functional role |
+| --- | --- | --- | --- |
+| UX framework | `mist` | `#F2FAFC` | Default application canvas and quiet neutral surface. |
+| UX framework | `paper` | `#FFFFFF` | Plain, neutral content surface; use where content needs maximum visual neutrality. |
+| UX framework | `pine` | `#286467` | Primary interface ink, structural frame, outline, divider, and solid offset-shadow color. |
+| UX framework | `wildflower` | `#DA438C` | Primary action and current focal-state color. |
+| UX framework | `sky` | `#65C1D5` | Active, in-progress, and secondary accent color. |
+| UX framework | `leaf` | `#C8DB9E` | Selected, supportive, and completion-adjacent surface color. |
+| UX framework | `sun` | `#F8F19E` | Warm brand-atmosphere and low-emphasis background color. |
+| UX framework | `petal` | `#F2B6D2` | Soft decorative or low-emphasis highlight color. |
+| UX framework | `skyWash` | `#B7E3ED` | Subtle cool-tinted surface for secondary content or controls. |
+| UX framework | `leafWash` | `#DCE9B9` | Subtle positive-state surface. |
+| UX framework | `sunWash` | `#FCF6BB` | Subtle warm-tinted surface. |
+| UX framework | `cobalt` | `#4F6DF5` | Reserved high-emphasis cool accent. |
+| UX framework | `cobaltWash` | `#E5E9FF` | Subtle surface paired with the cobalt accent. |
+| UX framework | `error` | `#C1121F` | Error and destructive-state signal. |
+| UX framework | `success` | `#A7C957` | Explicit success-state signal. |
+| Teaching materials | `notation` | `#0D1321` | Primary notation ink and high-precision musical mark color. |
+| Teaching materials | `notationGray` | `#415A77` | Secondary or muted notation ink. |
+| Teaching materials | `blue` | `#0F8B8D` | Teaching-material category: rhythm rest; supporting chord tone. |
+| Teaching materials | `pink` | `#F038FF` | Teaching-material category: strong rhythm beat; chord root. |
+| Teaching materials | `yellow` | `#FFBD00` | Teaching-material category: weak rhythm beat, correct rhythm response, or chord color tone. |
+| Teaching materials | `cyan` | `#5FA8D3` | Teaching-material category: held rhythm note; essential chord tone. |
+| Teaching materials | `coral` | `#E56B6F` | Teaching-material category: optional chord tone. |
+| Teaching materials | `cobaltInk` | `#293C9A` | Reserved dark-blue teaching-material ink or category color. |
 
-Use UX-framework colors for buttons, cards, surfaces, shadows, navigation, and feedback. Reserve
-teaching-material colors for visualizing musical content: notation, chord names and roles,
-keyboard highlights, and rhythm-trainer states. Do not rename tokens or add prefixes or suffixes
-to express these groups.
+Use UX-framework colors for shared interface chrome: surfaces, controls, frames, navigation,
+shadows, and feedback. Reserve teaching-material colors for musical information. In particular,
+do not use teaching-material category colors as general UI accents, status colors, or decorative
+chrome. The role column defines each token's intended semantic function; it does not prescribe a
+specific component. Do not rename tokens or add prefixes or suffixes to express these groups.
 
-### Cyan — `#65C1D5`
-
-Cyan represents active playback, movement, timing, and musical energy. Use it for active playheads and beat markers, playback and Pause controls, strong beats, safe-note highlighting, animated progress accents, secondary solid shadows, and positive in-progress feedback. Do not use it as a general page background. Restrict deep-teal text on cyan to large, bold labels.
-
-### Magenta — `#DA438C`
-
-Magenta represents the current objective, primary action, root note, and strongest point of attention. Use it for the current training stage, Start and Continue actions, current chord/root notes, active checkpoints, current bars, small rewards, and destructive hold progress. Use it selectively: normally one dominant magenta region per screen. Use ice-white text on magenta only for large, bold labels or headings.
-
-### Lemon — `#F8F19E`
-
-Lemon is the brand atmosphere and primary environmental background. Use it for home-screen backgrounds, soft training framing, warm highlights, and low-priority game elements. Main content surfaces should normally remain ice white. Use deep teal for text.
-
-### Pistachio — `#C8DB9E`
-
-Pistachio represents completion, safety, support, and learned material. Use it for completed training stages, check states, learned chords, supporting chord tones, held notes, selected secondary controls, and safe choices. Use deep teal text. Do not let it compete with magenta.
-
-### Deep teal — `#286467`
-
-Deep teal is the structural color. Use it for primary text, icons, thin outlines, notation, solid offset shadows, keyboard structure, dividers, connecting paths, and secondary labels. It replaces black throughout most of the interface. Use ice-white text on deep teal surfaces.
-
-### Ice white — `#F2FAFC`
-
-Ice white is the principal content surface. Use it for notation, training arenas, cards, piano keys, secondary buttons, upcoming states, and modals. Deep teal is the default text and icon color.
-
-### Paper — `#FFFFFF`
-
-Paper is the neutral session and notation background. Use it for the plain training-session canvas and VexFlow score surfaces when the score must read as unframed material rather than a card. Deep teal is the default text and icon color.
+`wildflower` may be the primary action or current app-level focal state, but it is not the chord
+root color; `pink` is. `sky` may indicate active UI progress, but it is not a held note or
+essential chord tone; `cyan` is. `leaf` can support a selected or completion-adjacent UI state,
+while `success` is the explicit success feedback token. These distinctions preserve the boundary
+between interface state and teaching-material meaning.
 
 ## Contrast rules
 
 | Background | Preferred text | Usage |
 | --- | --- | --- |
-| Ice white | Deep teal | All text sizes |
-| Lemon | Deep teal | All text sizes |
-| Pistachio | Deep teal | All text sizes |
-| Deep teal | Ice white | All text sizes |
-| Magenta | Ice white | Large, bold text only |
-| Cyan | Deep teal | Large, bold text only |
+| `mist` | `pine` | All text sizes |
+| `paper` | `pine` | All text sizes |
+| `sun` | `pine` | All text sizes |
+| `leaf` | `pine` | All text sizes |
+| `pine` | `mist` | All text sizes |
+| `wildflower` | `mist` | Large, bold text only |
+| `sky` | `pine` | Large, bold text only |
 
-Do not place small labels or body text directly on magenta or cyan. Music notation may use deep teal or near-black when additional precision is needed.
+Do not place small labels or body text directly on `wildflower` or `sky`. Music notation uses
+`notation`; use `notationGray` only for secondary or muted notation.
