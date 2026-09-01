@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 
 import { museBuddyColors } from '@/constants/design-tokens';
 
-const wordmarkSource = require('@assets/images/brand/musebuddy-wordmark.png');
+const splashSource = require('@assets/images/musebuddy-splash.png');
 
 type LaunchScreenProps = {
   isRetryPending: boolean;
@@ -15,9 +15,9 @@ export function LaunchScreen({ isRetryPending, onLayout }: LaunchScreenProps) {
     <View onLayout={onLayout} style={styles.screen}>
       <Image
         accessibilityLabel="MuseBuddy"
-        contentFit="contain"
-        source={wordmarkSource}
-        style={styles.wordmark}
+        contentFit="cover"
+        source={splashSource}
+        style={styles.splash}
       />
       {isRetryPending ? (
         <View accessibilityLiveRegion="polite" style={styles.retryIndicator}>
@@ -40,10 +40,8 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   screen: {
-    alignItems: 'center',
     backgroundColor: museBuddyColors.sky,
     flex: 1,
-    justifyContent: 'center',
   },
-  wordmark: { height: 62, width: 260 },
+  splash: StyleSheet.absoluteFill,
 });

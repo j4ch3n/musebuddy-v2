@@ -44,8 +44,10 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#65C1D5",
-          "image": "./assets/images/brand/musebuddy-wordmark.png",
-          "imageWidth": 260,
+          "image": "./assets/images/musebuddy-splash.png",
+          "imageWidth": 393,
+          "enableFullScreenImage_legacy": true,
+          "resizeMode": "cover",
           "android": {
             "image": "./assets/images/splash-icon.png",
             "imageWidth": 76
