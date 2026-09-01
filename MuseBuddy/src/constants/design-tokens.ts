@@ -50,5 +50,6 @@ export const museBuddyShadows = {
 export const museBuddyTypography = {
   body: 'system-ui',
   rounded: 'ui-rounded',
+  serif: 'ui-serif',
   mono: 'ui-monospace',
 } as const;

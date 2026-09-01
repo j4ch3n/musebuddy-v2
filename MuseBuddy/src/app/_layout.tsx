@@ -1,4 +1,4 @@
-import { type ComponentType, useEffect } from 'react';
+import { type ComponentType, useCallback, useState } from 'react';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -6,7 +6,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { TamaguiProvider } from 'tamagui';
 
 import tamaguiConfig from '../../tamagui.config';
-import { TrainingSessionProvider } from '../contexts/training-session-context';
+import { TrainingSessionProvider, useTrainingSession } from '../contexts/training-session-context';
+import { LaunchScreen } from '../pages/launch-screen';
 
 type StorybookModule = {
   default: ComponentType;
@@ -19,12 +20,6 @@ if (!isStorybookEnabled) {
 }
 
 export default function RootLayout() {
-  useEffect(() => {
-    if (!isStorybookEnabled) {
-      void SplashScreen.hideAsync();
-    }
-  }, []);
-
   if (isStorybookEnabled) {
     // Keep Storybook out of the production bundle unless the Storybook flag is set.
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -37,17 +32,32 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
         <TrainingSessionProvider>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen
-              name="prepare-training-session-splash"
-              options={{ gestureEnabled: false }}
-            />
-            <Stack.Screen name="training-session" options={{ gestureEnabled: false }} />
-            <Stack.Screen name="basic-pitch-debug" />
-          </Stack>
+          <AppContent />
         </TrainingSessionProvider>
         <StatusBar style="dark" />
       </TamaguiProvider>
     </GestureHandlerRootView>
+  );
+}
+
+function AppContent() {
+  const { phase } = useTrainingSession();
+  const [hasHiddenNativeSplash, setHasHiddenNativeSplash] = useState(false);
+  const hideNativeSplash = useCallback(() => {
+    if (hasHiddenNativeSplash) return;
+
+    setHasHiddenNativeSplash(true);
+    void SplashScreen.hideAsync();
+  }, [hasHiddenNativeSplash]);
+
+  if (phase !== 'ready') {
+    return <LaunchScreen isRetryPending={phase === 'error'} onLayout={hideNativeSplash} />;
+  }
+
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="training-session" options={{ gestureEnabled: false }} />
+      <Stack.Screen name="basic-pitch-debug" />
+    </Stack>
   );
 }

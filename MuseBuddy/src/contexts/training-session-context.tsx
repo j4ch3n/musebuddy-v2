@@ -1,11 +1,19 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 
 import { initialize, BasicPitchError } from '@modules/basic-pitch';
 import { prepareTrainingSessionDisplay, type PreparedTrainingSession } from '@/music-theory';
 import { createLogger } from '@/utils/logger';
 import { fetchDailyTrainingSession } from './training-session-api';
 
-type TrainingSessionPhase = 'idle' | 'loading' | 'ready' | 'error';
+type TrainingSessionPhase = 'loading' | 'ready' | 'error';
 
 export type TrainingDetailTab =
   | { chordIndex: number; kind: 'chord' }
@@ -58,7 +66,7 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
   const [errorMessage, setErrorMessage] = useState('');
   const [learningConfig, setLearningConfig] =
     useState<TrainingLearningConfig>(DEFAULT_LEARNING_CONFIG);
-  const [phase, setPhase] = useState<TrainingSessionPhase>('idle');
+  const [phase, setPhase] = useState<TrainingSessionPhase>('loading');
   const [selectedPhraseIndex, setSelectedPhraseIndex] = useState(0);
   const [selectedDetailTab, setSelectedDetailTab] = useState<TrainingDetailTab | null>(null);
   const [session, setSession] = useState<PreparedTrainingSession | null>(null);
@@ -93,10 +101,8 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
   const resetTrainingSession = useCallback(() => {
     setErrorMessage('');
     setLearningConfig(DEFAULT_LEARNING_CONFIG);
-    setPhase('idle');
     setSelectedPhraseIndex(0);
     setSelectedDetailTab(null);
-    setSession(null);
     setView('sheet');
   }, []);
 
@@ -122,6 +128,24 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
       setPhase('error');
     }
   }, []);
+
+  useEffect(() => {
+    const initialAttempt = setTimeout(() => {
+      void prepareTrainingSession();
+    }, 0);
+
+    return () => clearTimeout(initialAttempt);
+  }, [prepareTrainingSession]);
+
+  useEffect(() => {
+    if (phase !== 'error') return;
+
+    const retryTimer = setTimeout(() => {
+      void prepareTrainingSession();
+    }, 10_000);
+
+    return () => clearTimeout(retryTimer);
+  }, [phase, prepareTrainingSession]);
 
   const value = useMemo(
     () => ({

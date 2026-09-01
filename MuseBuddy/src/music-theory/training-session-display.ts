@@ -12,6 +12,7 @@ export type PreparedTrainingSession = {
   bars: readonly PreparedTrainingBar[];
   chordDisplays: ChordDisplay[];
   notes: readonly TrainingSessionPatternBeat[];
+  pattern: TrainingSession['notes']['pattern'];
   rhythms: {
     bass: TrainingSessionRhythm;
     treble: TrainingSessionRhythm;
@@ -80,6 +81,7 @@ export function prepareTrainingSessionDisplay(session: TrainingSession): Prepare
     ),
     chordDisplays,
     notes: session.notes.beats,
+    pattern: session.notes.pattern,
     rhythms: {
       bass: deriveRhythmFromPatternBeats(session.notes.beats, 'bass'),
       treble: deriveRhythmFromPatternBeats(session.notes.beats, 'treble'),

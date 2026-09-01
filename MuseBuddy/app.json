@@ -43,9 +43,9 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#F4F1E9",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76,
+          "backgroundColor": "#65C1D5",
+          "image": "./assets/images/brand/musebuddy-wordmark.png",
+          "imageWidth": 260,
           "android": {
             "image": "./assets/images/splash-icon.png",
             "imageWidth": 76
