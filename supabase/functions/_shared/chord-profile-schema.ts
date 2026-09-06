@@ -11,6 +11,7 @@ export const chordDisplayTokenSchema = z.object({
     "bass",
     "separator",
   ]),
+  teachingRole: z.enum(["anchor", "quality", "guide", "color", "voicing"]).nullable(),
   value: z.string(),
 });
 
@@ -59,8 +60,9 @@ export const pianoPitchClassSchema = z.union([
 
 export const chordToneSchema = z.object({
   degree: chordDegreeSchema,
-  explanation: z.string().min(1),
-  importance: z.enum(["essential", "supporting", "color", "optional"]),
+  isBass: z.boolean(),
   pitch: chordPitchSchema,
   pitchClass: pianoPitchClassSchema,
+  teachingRole: z.enum(["anchor", "quality", "guide", "color", "voicing"]),
+  voicingRole: z.enum(["required", "optional", "omitted"]),
 });

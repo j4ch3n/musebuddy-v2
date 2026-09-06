@@ -247,16 +247,26 @@ def generated_chord_lookup() -> dict[tuple[int, tuple[int, ...], int], str]:
     for root in generate.ROOTS:
         for spec in generate.chord_specs():
             profile = generate.build_profile(root, spec)
-            midi = profile["midi"]
-            if not isinstance(midi, dict):
-                raise TypeError("Generated chord profile midi field must be an object")
-            root_pc = int(midi["rootPitchClass"])
-            pitch_classes = midi["pitchClasses"]
-            if not isinstance(pitch_classes, list):
-                raise TypeError("Generated chord profile pitch classes must be a list")
-            relative = tuple(sorted((int(pc) - root_pc) % 12 for pc in pitch_classes))
-            bass_pc = midi["bassPitchClass"]
-            bass_interval = 0 if bass_pc is None else (int(bass_pc) - root_pc) % 12
+            tones = profile["tones"]
+            if not isinstance(tones, list):
+                raise TypeError("Generated chord profile tones field must be a list")
+            sounding_tones = [
+                tone
+                for tone in tones
+                if isinstance(tone, dict) and tone["voicingRole"] != "omitted"
+            ]
+            root_tone = next(
+                tone for tone in sounding_tones if tone["harmonicRole"] == "root"
+            )
+            bass_tone = next(tone for tone in sounding_tones if tone["isBass"])
+            root_pc = int(root_tone["midiPitchClass"])
+            relative = tuple(
+                sorted(
+                    (int(tone["midiPitchClass"]) - root_pc) % 12
+                    for tone in sounding_tones
+                )
+            )
+            bass_interval = (int(bass_tone["midiPitchClass"]) - root_pc) % 12
             profile_id = profile["id"]
             if not isinstance(profile_id, str):
                 raise TypeError("Generated chord profile id must be a string")

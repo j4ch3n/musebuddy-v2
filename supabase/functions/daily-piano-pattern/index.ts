@@ -120,7 +120,7 @@ Deno.serve(async (request) => {
     const chordIds = uniqueChordIds(notes);
     const { data: profileData, error: profileError } = await supabase
       .from("chord_profiles")
-      .select("id,displayTokens,normalizedSymbol,root,tones")
+      .select("id,displayTokens,normalizedSymbol,root,bass,tones")
       .in("id", chordIds);
 
     if (profileError) {
@@ -270,6 +270,7 @@ function toBeat(note: PianoPatternNoteRow) {
 
 function toTrainingChord(profile: ChordProfileRow) {
   return {
+    bass: profile.bass,
     displayTokens: profile.displayTokens,
     idName: profile.id,
     normalizedSymbol: profile.normalizedSymbol,

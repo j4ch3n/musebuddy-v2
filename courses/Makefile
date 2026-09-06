@@ -1,4 +1,4 @@
-.PHONY: help chord-generate chord-upload pop909-process pop909-process-dry-run pop909-validate
+.PHONY: help chord-generate chord-upload piano-pattern-generate pop909-process pop909-process-dry-run pop909-validate
 
 UV_CACHE_DIR ?= /private/tmp/uv-cache
 PYTHON := UV_CACHE_DIR=$(UV_CACHE_DIR) uv run python
@@ -9,11 +9,13 @@ DATABASE_URL_ARG := $(if $(DATABASE_URL),--database-url "$(DATABASE_URL)")
 SONG_LIMIT_ARG := $(if $(SONG_LIMIT),--song-limit $(SONG_LIMIT))
 OUTPUT_DIR_ARG := $(if $(OUTPUT_DIR),--output-dir "$(OUTPUT_DIR)")
 DRY_RUN_ARG := $(if $(DRY_RUN),--dry-run)
+PIANO_PATTERN_INPUT := $(INPUT)
 
 help:
 	@printf '%s\n' 'Course script targets:'
 	@printf '%s\n' '  make chord-generate'
 	@printf '%s\n' '  make chord-upload DRY_RUN=1'
+	@printf '%s\n' '  make piano-pattern-generate INPUT=piano-pattern/data/example.mxl'
 	@printf '%s\n' '  make pop909-process SONG_IDS="001 047 089 399"'
 	@printf '%s\n' '  make pop909-process-dry-run SONG_IDS="001 047 089 399"'
 	@printf '%s\n' '  make pop909-validate SONG_IDS="001 047 089 399"'
@@ -25,6 +27,11 @@ chord-generate:
 
 chord-upload:
 	$(PYTHON) chord_dictionary/upload.py $(OUTPUT_DIR_ARG) $(DATABASE_URL_ARG) $(DRY_RUN_ARG) $(ARGS)
+
+piano-pattern-generate:
+	@test -n "$(PIANO_PATTERN_INPUT)" || (echo 'INPUT is required, for example INPUT=piano-pattern/data/example.mxl' >&2; exit 2)
+	$(PYTHON) piano-pattern/main.py "$(PIANO_PATTERN_INPUT)" --mode notes
+	$(PYTHON) piano-pattern/main.py "$(PIANO_PATTERN_INPUT)" --mode scores
 
 pop909-process:
 	$(PYTHON) -m companion.process_pop909 $(DATASET_ROOT_ARG) $(DATABASE_URL_ARG) $(SONG_LIMIT_ARG) $(SONG_ARGS) $(ARGS)

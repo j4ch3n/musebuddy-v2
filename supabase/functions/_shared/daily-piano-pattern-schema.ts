@@ -98,6 +98,7 @@ export const pianoPatternScoreRowSchema = z.object({
 });
 
 export const chordProfileRowSchema = z.object({
+  bass: chordPitchSchema.nullable(),
   displayTokens: z.array(chordDisplayTokenSchema).min(1),
   id: z.string().min(1),
   normalizedSymbol: z.string().min(1),

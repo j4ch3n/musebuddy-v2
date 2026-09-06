@@ -26,14 +26,12 @@ The generator writes one JSON file per chord to:
 courses/chord_dictionary/output/
 ```
 
-Each chord JSON includes:
-
-- stable `id` and `normalizedSymbol`
-- `root`, optional slash `bass`, and `family`
-- quality and symbol components
-- display tokens for rendering the chord symbol
-- sounding `tones` and explicit `omittedTones`
-- MIDI pitch-class data
-- short teaching `explanation` and enum-backed `tendency` for each tone
+Each chord JSON contains only the canonical visual data persisted in
+`chord_profiles`: stable `id`, `normalizedSymbol`, `displayTokens`,
+`root`, nullable `bass`, `structuralShapeId`, and an ordered `tones` list.
+Every tone provides its spelled `pitch`, pedagogical `degree`, `midiPitchClass`,
+`teachingRole`, `voicingRole`, and `isBass`. Teaching roles are `anchor`,
+`quality`, `guide`, `color`, and `voicing`; the app derives captions and visual
+layers from them rather than storing duplicate copy.
 
 Output should stay deterministic, camelCase, and free of extra fields.

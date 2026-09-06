@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import json
 import sys
-from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, TypeAlias, get_args
+from typing import Any, TypeAlias
 
 import click
-from sqlalchemy import Column, Integer, Text, create_engine
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB, ENUM, insert
+from sqlalchemy import Column, Text, create_engine
+from sqlalchemy.dialects.postgresql import JSONB, insert
 from sqlalchemy.orm import DeclarativeBase, Session
 
 COURSES_DIR = Path(__file__).resolve().parents[1]
@@ -16,7 +15,6 @@ if str(COURSES_DIR) not in sys.path:
     sys.path.insert(0, str(COURSES_DIR))
 
 import course_environment
-from chord_dictionary import generate
 
 
 DEFAULT_OUTPUT_DIR = Path(__file__).resolve().parent / "output"
@@ -28,79 +26,18 @@ class Base(DeclarativeBase):
     pass
 
 
-def enum_type(name: str, values: Iterable[str]) -> ENUM:
-    return ENUM(*sorted(values), name=name, schema="public", create_type=False)
-
-
-CHORD_FAMILY_VALUES = set(get_args(generate.ChordFamily))
-CHORD_DISPLAY_TOKEN_TYPE_VALUES = set(get_args(generate.ChordDisplayTokenType))
-CHORD_TONE_IMPORTANCE_VALUES = set(get_args(generate.ToneImportance))
-CHORD_TONE_TENDENCY_VALUES = set(get_args(generate.ChordToneTendency))
-CHORD_COMPONENT_KIND_VALUES = set(get_args(generate.ComponentKind))
-
-
-def generated_profiles() -> list[JsonObject]:
-    return [
-        generate.build_profile(root, spec)
-        for root in generate.ROOTS
-        for spec in generate.chord_specs()
-    ]
-
-
-def values_from_profiles(profiles: Iterable[JsonObject], *paths: str) -> set[str]:
-    values: set[str] = set()
-    for profile in profiles:
-        for path in paths:
-            value: Any = profile
-            for key in path.split("."):
-                if not isinstance(value, dict):
-                    raise TypeError(
-                        f"Expected object while reading generated value path {path}"
-                    )
-                value = value[key]
-            if value is not None:
-                if not isinstance(value, str):
-                    raise TypeError(f"Expected string at generated value path {path}")
-                values.add(value)
-    return values
-
-
-def pitch_values_from_profiles(profiles: Iterable[JsonObject]) -> set[str]:
-    values: set[str] = set()
-    for profile in profiles:
-        for key in ("root", "bass"):
-            value = profile[key]
-            if value is not None:
-                if not isinstance(value, str):
-                    raise TypeError(f"Expected string at generated value path {key}")
-                values.add(value)
-        for key in ("tones", "omittedTones"):
-            tones = profile[key]
-            if not isinstance(tones, list):
-                raise TypeError(f"Expected list at generated value path {key}")
-            for index, tone in enumerate(tones):
-                if not isinstance(tone, dict):
-                    raise TypeError(
-                        f"Expected object at generated value path {key}[{index}]"
-                    )
-                pitch = tone["pitch"]
-                if not isinstance(pitch, str):
-                    raise TypeError(
-                        f"Expected string at generated value path {key}[{index}].pitch"
-                    )
-                values.add(pitch)
-    return values
-
-
-REFERENCE_PROFILES = generated_profiles()
-CHORD_PITCH_VALUES = pitch_values_from_profiles(REFERENCE_PROFILES)
-CHORD_QUALITY_NAME_VALUES = values_from_profiles(REFERENCE_PROFILES, "quality.name")
-CHORD_QUALITY_SYMBOL_VALUES = values_from_profiles(REFERENCE_PROFILES, "quality.symbol")
-CHORD_DEGREE_VALUES = {
-    *generate.DEGREE_NAMES.keys(),
-    *(generate.semantic_degree(value) for value in generate.DEGREE_NAMES.keys()),
-    *(generate.raw_degree(value) for value in generate.DEGREE_NAMES.keys()),
+DISPLAY_TOKEN_TYPES = {
+    "root",
+    "quality",
+    "extension",
+    "alteration",
+    "addition",
+    "omission",
+    "bass",
+    "separator",
 }
+TEACHING_ROLES = {"anchor", "quality", "guide", "color", "voicing"}
+VOICING_ROLES = {"required", "optional", "omitted"}
 
 
 class ChordProfile(Base):
@@ -109,35 +46,11 @@ class ChordProfile(Base):
 
     id = Column(Text, primary_key=True)
     normalizedSymbol = Column("normalizedSymbol", Text, nullable=False)
-    root = Column(enum_type("chord_pitch", CHORD_PITCH_VALUES), nullable=False)
-    bass = Column(enum_type("chord_pitch", CHORD_PITCH_VALUES), nullable=True)
-    quality_symbol = Column(
-        enum_type("chord_quality_symbol", CHORD_QUALITY_SYMBOL_VALUES),
-        nullable=True,
-    )
-    quality_name = Column(
-        enum_type("chord_quality_name", CHORD_QUALITY_NAME_VALUES),
-        nullable=True,
-    )
-    quality_baseFormula = Column(
-        "quality_baseFormula",
-        ARRAY(enum_type("chord_degree", CHORD_DEGREE_VALUES)),
-        nullable=False,
-    )
-    family = Column(
-        ARRAY(enum_type("chord_family", CHORD_FAMILY_VALUES)),
-        nullable=False,
-    )
-    components_extensions = Column(JSONB, nullable=False)
-    components_additions = Column(JSONB, nullable=False)
-    components_alterations = Column(JSONB, nullable=False)
-    components_omissions = Column(JSONB, nullable=False)
+    root = Column(Text, nullable=False)
+    bass = Column(Text, nullable=True)
     displayTokens = Column("displayTokens", JSONB, nullable=False)
+    structuralShapeId = Column("structuralShapeId", Text, nullable=False)
     tones = Column(JSONB, nullable=False)
-    omittedTones = Column("omittedTones", JSONB, nullable=False)
-    midi_rootPitchClass = Column("midi_rootPitchClass", Integer, nullable=False)
-    midi_bassPitchClass = Column("midi_bassPitchClass", Integer, nullable=True)
-    midi_pitchClasses = Column("midi_pitchClasses", ARRAY(Integer), nullable=False)
 
 
 def expect_object(value: Any, context: str) -> JsonObject:
@@ -158,21 +71,13 @@ def expect_str(value: Any, context: str) -> str:
     return value
 
 
-def expect_optional_str(value: Any, context: str) -> str | None:
-    if value is None:
-        return None
-    return expect_str(value, context)
-
-
 def expect_int(value: Any, context: str) -> int:
-    if not isinstance(value, int):
+    if isinstance(value, bool) or not isinstance(value, int):
         raise ValueError(f"{context} must be an integer")
     return value
 
 
-def validate_enum(value: str | None, allowed_values: set[str], context: str) -> None:
-    if value is None:
-        return
+def validate_enum(value: str, allowed_values: set[str], context: str) -> None:
     if value not in allowed_values:
         expected = ", ".join(sorted(allowed_values))
         raise ValueError(
@@ -180,43 +85,9 @@ def validate_enum(value: str | None, allowed_values: set[str], context: str) -> 
         )
 
 
-def validate_degree_list(values: list[Any], context: str) -> list[str]:
-    degrees = [
-        expect_str(value, f"{context}[{index}]") for index, value in enumerate(values)
-    ]
-    for degree in degrees:
-        validate_enum(degree, CHORD_DEGREE_VALUES, context)
-    return degrees
-
-
-def validate_pitch_class(value: int | None, context: str) -> None:
-    if value is not None and not 0 <= value <= 11:
+def validate_pitch_class(value: int, context: str) -> None:
+    if not 0 <= value <= 11:
         raise ValueError(f"{context} must be between 0 and 11")
-
-
-def validate_components(components: JsonObject) -> None:
-    missing = CHORD_COMPONENT_KIND_VALUES - set(components)
-    if missing:
-        raise ValueError(f"components is missing keys: {', '.join(sorted(missing))}")
-    for kind in CHORD_COMPONENT_KIND_VALUES:
-        items = expect_list(components[kind], f"components.{kind}")
-        for index, item in enumerate(items):
-            component = expect_object(item, f"components.{kind}[{index}]")
-            expect_str(component.get("value"), f"components.{kind}[{index}].value")
-            validate_enum(
-                expect_str(
-                    component.get("degree"), f"components.{kind}[{index}].degree"
-                ),
-                CHORD_DEGREE_VALUES,
-                f"components.{kind}[{index}].degree",
-            )
-            raw_degree = expect_optional_str(
-                component.get("rawDegree"),
-                f"components.{kind}[{index}].rawDegree",
-            )
-            validate_enum(
-                raw_degree, CHORD_DEGREE_VALUES, f"components.{kind}[{index}].rawDegree"
-            )
 
 
 def validate_display_tokens(tokens: list[Any]) -> None:
@@ -224,48 +95,60 @@ def validate_display_tokens(tokens: list[Any]) -> None:
         token = expect_object(item, f"displayTokens[{index}]")
         validate_enum(
             expect_str(token.get("type"), f"displayTokens[{index}].type"),
-            CHORD_DISPLAY_TOKEN_TYPE_VALUES,
+            DISPLAY_TOKEN_TYPES,
             f"displayTokens[{index}].type",
         )
         expect_str(token.get("value"), f"displayTokens[{index}].value")
+        teaching_role = token.get("teachingRole")
+        if teaching_role is not None:
+            validate_enum(
+                expect_str(teaching_role, f"displayTokens[{index}].teachingRole"),
+                TEACHING_ROLES,
+                f"displayTokens[{index}].teachingRole",
+            )
 
 
 def validate_tones(tones: list[Any], context: str) -> None:
+    if not tones:
+        raise ValueError(f"{context} must not be empty")
+    bass_count = 0
     for index, item in enumerate(tones):
         tone = expect_object(item, f"{context}[{index}]")
-        validate_enum(
-            expect_str(tone.get("degree"), f"{context}[{index}].degree"),
-            CHORD_DEGREE_VALUES,
-            f"{context}[{index}].degree",
+        if set(tone) != {
+            "degree",
+            "pitch",
+            "midiPitchClass",
+            "teachingRole",
+            "voicingRole",
+            "isBass",
+        }:
+            raise ValueError(
+                f"{context}[{index}] must contain only canonical tone fields"
+            )
+        expect_str(tone.get("degree"), f"{context}[{index}].degree")
+        expect_str(tone.get("pitch"), f"{context}[{index}].pitch")
+        validate_pitch_class(
+            expect_int(
+                tone.get("midiPitchClass"), f"{context}[{index}].midiPitchClass"
+            ),
+            f"{context}[{index}].midiPitchClass",
         )
         validate_enum(
-            expect_str(tone.get("rawDegree"), f"{context}[{index}].rawDegree"),
-            CHORD_DEGREE_VALUES,
-            f"{context}[{index}].rawDegree",
+            expect_str(tone.get("teachingRole"), f"{context}[{index}].teachingRole"),
+            TEACHING_ROLES,
+            f"{context}[{index}].teachingRole",
         )
         validate_enum(
-            expect_str(tone.get("pitch"), f"{context}[{index}].pitch"),
-            CHORD_PITCH_VALUES,
-            f"{context}[{index}].pitch",
+            expect_str(tone.get("voicingRole"), f"{context}[{index}].voicingRole"),
+            VOICING_ROLES,
+            f"{context}[{index}].voicingRole",
         )
-        pitch_class = expect_int(
-            tone.get("pitchClass"), f"{context}[{index}].pitchClass"
-        )
-        validate_pitch_class(pitch_class, f"{context}[{index}].pitchClass")
-        expect_int(
-            tone.get("semitonesFromRoot"), f"{context}[{index}].semitonesFromRoot"
-        )
-        validate_enum(
-            expect_str(tone.get("importance"), f"{context}[{index}].importance"),
-            CHORD_TONE_IMPORTANCE_VALUES,
-            f"{context}[{index}].importance",
-        )
-        expect_str(tone.get("explanation"), f"{context}[{index}].explanation")
-        validate_enum(
-            expect_str(tone.get("tendency"), f"{context}[{index}].tendency"),
-            CHORD_TONE_TENDENCY_VALUES,
-            f"{context}[{index}].tendency",
-        )
+        is_bass = tone.get("isBass")
+        if not isinstance(is_bass, bool):
+            raise ValueError(f"{context}[{index}].isBass must be a boolean")
+        bass_count += int(is_bass)
+    if bass_count != 1:
+        raise ValueError(f"{context} must contain exactly one bass tone")
 
 
 def load_profile(path: Path) -> dict[str, Any]:
@@ -279,86 +162,27 @@ def load_profile(path: Path) -> dict[str, Any]:
             profile.get("normalizedSymbol"), f"{path}.normalizedSymbol"
         )
         root = expect_str(profile.get("root"), f"{path}.root")
-        bass = expect_optional_str(profile.get("bass"), f"{path}.bass")
-        validate_enum(root, CHORD_PITCH_VALUES, f"{path}.root")
-        validate_enum(bass, CHORD_PITCH_VALUES, f"{path}.bass")
-
-        quality = expect_object(profile.get("quality"), f"{path}.quality")
-        quality_symbol = expect_optional_str(
-            quality.get("symbol"), f"{path}.quality.symbol"
-        )
-        quality_name = expect_optional_str(quality.get("name"), f"{path}.quality.name")
-        validate_enum(
-            quality_symbol, CHORD_QUALITY_SYMBOL_VALUES, f"{path}.quality.symbol"
-        )
-        validate_enum(quality_name, CHORD_QUALITY_NAME_VALUES, f"{path}.quality.name")
-        quality_base_formula = validate_degree_list(
-            expect_list(quality.get("baseFormula"), f"{path}.quality.baseFormula"),
-            f"{path}.quality.baseFormula",
-        )
-
-        family = [
-            expect_str(value, f"{path}.family[{index}]")
-            for index, value in enumerate(
-                expect_list(profile.get("family"), f"{path}.family")
-            )
-        ]
-        for value in family:
-            validate_enum(value, CHORD_FAMILY_VALUES, f"{path}.family")
-
-        components = expect_object(profile.get("components"), f"{path}.components")
-        validate_components(components)
-
+        bass_value = profile.get("bass")
+        if bass_value is not None:
+            expect_str(bass_value, f"{path}.bass")
         display_tokens = expect_list(
             profile.get("displayTokens"), f"{path}.displayTokens"
         )
         validate_display_tokens(display_tokens)
 
         tones = expect_list(profile.get("tones"), f"{path}.tones")
-        omitted_tones = expect_list(profile.get("omittedTones"), f"{path}.omittedTones")
         validate_tones(tones, f"{path}.tones")
-        validate_tones(omitted_tones, f"{path}.omittedTones")
-
-        midi = expect_object(profile.get("midi"), f"{path}.midi")
-        root_pitch_class = expect_int(
-            midi.get("rootPitchClass"), f"{path}.midi.rootPitchClass"
-        )
-        bass_pitch_class_value = midi.get("bassPitchClass")
-        bass_pitch_class = (
-            None
-            if bass_pitch_class_value is None
-            else expect_int(bass_pitch_class_value, f"{path}.midi.bassPitchClass")
-        )
-        pitch_classes = [
-            expect_int(value, f"{path}.midi.pitchClasses[{index}]")
-            for index, value in enumerate(
-                expect_list(midi.get("pitchClasses"), f"{path}.midi.pitchClasses")
-            )
-        ]
-        validate_pitch_class(root_pitch_class, f"{path}.midi.rootPitchClass")
-        validate_pitch_class(bass_pitch_class, f"{path}.midi.bassPitchClass")
-        for index, value in enumerate(pitch_classes):
-            validate_pitch_class(value, f"{path}.midi.pitchClasses[{index}]")
 
         return {
             "id": path.stem,
             "normalizedSymbol": normalized_symbol,
             "root": root,
-            "bass": bass,
-            "quality_symbol": quality_symbol,
-            "quality_name": quality_name,
-            "quality_baseFormula": quality_base_formula,
-            "family": family,
-            "components_extensions": components["extensions"],
-            "components_additions": components["additions"],
-            "components_alterations": components["alterations"],
-            "components_omissions": components["omissions"],
+            "bass": bass_value,
             "displayTokens": display_tokens,
+            "structuralShapeId": expect_str(
+                profile.get("structuralShapeId"), f"{path}.structuralShapeId"
+            ),
             "tones": tones,
-            "omittedTones": omitted_tones,
-            "midi_rootPitchClass": root_pitch_class,
-            "midi_bassPitchClass": bass_pitch_class,
-            "midi_pitchClasses": pitch_classes,
         }
     except json.JSONDecodeError as error:
         raise ValueError(f"{path} is not valid JSON: {error}") from error

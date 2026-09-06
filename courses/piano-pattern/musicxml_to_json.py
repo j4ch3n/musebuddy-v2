@@ -377,45 +377,39 @@ def chord_candidates() -> list[ChordCandidate]:
     for root in generate.ROOTS:
         for spec in generate.chord_specs():
             profile = generate.build_profile(root, spec)
-            midi = require_dict(profile, "midi")
             tones = require_list(profile, "tones")
-            components = require_dict(profile, "components")
-            omissions = components.get("omissions")
-            alterations = components.get("alterations")
-            if not isinstance(omissions, list):
-                raise TypeError("Chord profile omissions must be a list")
-            if not isinstance(alterations, list):
-                raise TypeError("Chord profile alterations must be a list")
-
-            root_name = require_string(profile, "root")
-            bass_value = profile.get("bass")
-            if bass_value is not None and not isinstance(bass_value, str):
-                raise TypeError("Chord profile bass must be a string or null")
-            root_pitch_class = require_int(midi, "rootPitchClass")
-            bass_pitch_class_value = midi.get("bassPitchClass")
-            if bass_pitch_class_value is not None and not isinstance(
-                bass_pitch_class_value, int
-            ):
-                raise TypeError("Chord profile bass pitch class must be an integer")
-            bass_pitch_class = (
-                root_pitch_class
-                if bass_pitch_class_value is None
-                else bass_pitch_class_value
-            )
 
             pitch_classes: set[int] = set()
             essential_pitch_classes: set[int] = set()
             tone_names: dict[int, set[str]] = {}
+            root_name: str | None = None
+            root_pitch_class: int | None = None
+            bass_name: str | None = None
+            bass_pitch_class: int | None = None
             for tone in tones:
                 if not isinstance(tone, dict):
                     raise TypeError("Chord profile tone must be an object")
-                pitch_class = require_int(tone, "pitchClass")
+                if tone.get("voicingRole") == "omitted":
+                    continue
+                pitch_class = require_int(tone, "midiPitchClass")
                 pitch_classes.add(pitch_class)
                 tone_names.setdefault(pitch_class, set()).add(
                     require_string(tone, "pitch")
                 )
-                if tone.get("importance") == "essential":
+                harmonic_role = require_string(tone, "harmonicRole")
+                if harmonic_role in {"root", "third", "seventh", "suspension"}:
                     essential_pitch_classes.add(pitch_class)
+                if harmonic_role == "root":
+                    root_name = require_string(tone, "pitch")
+                    root_pitch_class = pitch_class
+                if tone.get("isBass") is True:
+                    bass_name = require_string(tone, "pitch")
+                    bass_pitch_class = pitch_class
+
+            if root_name is None or root_pitch_class is None:
+                raise TypeError("Chord profile must contain a sounding root tone")
+            if bass_name is None or bass_pitch_class is None:
+                raise TypeError("Chord profile must contain a sounding bass tone")
 
             candidates.append(
                 ChordCandidate(
@@ -423,7 +417,7 @@ def chord_candidates() -> list[ChordCandidate]:
                     symbol=require_string(profile, "normalizedSymbol"),
                     root_name=root_name,
                     root_pitch_class=root_pitch_class,
-                    bass_name=bass_value or root_name,
+                    bass_name=bass_name,
                     bass_pitch_class=bass_pitch_class,
                     pitch_classes=frozenset(pitch_classes),
                     essential_pitch_classes=frozenset(essential_pitch_classes),
@@ -431,11 +425,9 @@ def chord_candidates() -> list[ChordCandidate]:
                         pitch_class: frozenset(names)
                         for pitch_class, names in tone_names.items()
                     },
-                    quality_name=require_string(
-                        require_dict(profile, "quality"), "name"
-                    ),
-                    omission_count=len(omissions),
-                    alteration_count=len(alterations),
+                    quality_name=spec.quality_name or "major",
+                    omission_count=len(spec.omitted_degrees),
+                    alteration_count=len(spec.components.get("alterations", ())),
                 )
             )
     return candidates

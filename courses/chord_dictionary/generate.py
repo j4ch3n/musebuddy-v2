@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import argparse
 import json
-from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Literal, TypedDict
+from typing import Literal
 
 
 ChordDisplayTokenType = Literal[
@@ -30,36 +29,8 @@ ChordFamily = Literal[
     "slash",
 ]
 
-ChordToneTendency = Literal[
-    "stable",
-    "context-dependent",
-    "coloristic",
-    "up-by-step",
-    "down-by-step",
-    "resolve-to-third",
-    "resolve-to-root",
-    "resolve-to-fifth",
-    "leading-tone-up",
-    "chordal-seventh-down",
-    "alteration-resolves-up",
-    "alteration-resolves-down",
-    "alteration-resolves-by-step",
-    "inward",
-    "outward",
-    "chromatic-neighbor",
-    "bass-anchor",
-    "pedal-tone",
-    "omitted",
-]
-
-ToneImportance = Literal["essential", "supporting", "color", "optional"]
 ComponentKind = Literal["extensions", "additions", "alterations", "omissions"]
-
-
-class ChordComponentJson(TypedDict, total=False):
-    value: str
-    degree: str
-    rawDegree: str
+ChordTeachingRole = Literal["anchor", "quality", "guide", "color", "voicing"]
 
 
 @dataclass(frozen=True)
@@ -68,37 +39,25 @@ class ChordComponent:
     degree: str
     raw_degree: str | None = None
 
-    def to_json(self) -> ChordComponentJson:
-        value: ChordComponentJson = {
-            "value": self.value,
-            "degree": self.degree,
-        }
-        if self.raw_degree is not None:
-            value["rawDegree"] = self.raw_degree
-        return value
-
 
 @dataclass(frozen=True)
 class ChordTone:
     degree: str
-    raw_degree: str
     pitch: str
     pitch_class: int
     semitones_from_root: int
-    importance: ToneImportance
-    explanation: str
-    tendency: ChordToneTendency
+    teaching_role: ChordTeachingRole
+    voicing_role: str
+    is_bass: bool
 
     def to_json(self) -> dict[str, object]:
         return {
             "degree": self.degree,
-            "rawDegree": self.raw_degree,
             "pitch": self.pitch,
-            "pitchClass": self.pitch_class,
-            "semitonesFromRoot": self.semitones_from_root,
-            "importance": self.importance,
-            "explanation": self.explanation,
-            "tendency": self.tendency,
+            "midiPitchClass": self.pitch_class,
+            "teachingRole": self.teaching_role,
+            "voicingRole": self.voicing_role,
+            "isBass": self.is_bass,
         }
 
 
@@ -406,6 +365,92 @@ def chord_specs() -> tuple[ChordSpec, ...]:
             components={"extensions": (ChordComponent("13", "13", "6"),)},
         ),
         ChordSpec(
+            slug="minor-eleventh",
+            quality_symbol="m",
+            quality_name="minor",
+            base_formula=("1", "b3", "5"),
+            sounding_degrees=("1", "b3", "5", "b7", "9", "11"),
+            family=("seventh", "extended"),
+            suffix="m11",
+            components={"extensions": (ChordComponent("11", "11", "4"),)},
+        ),
+        ChordSpec(
+            slug="dominant-seventh-suspended-fourth",
+            quality_symbol="sus4",
+            quality_name="suspended",
+            base_formula=("1", "4", "5"),
+            sounding_degrees=("1", "4", "5", "b7"),
+            family=("seventh", "suspended"),
+            suffix="7sus4",
+            components={"extensions": (ChordComponent("7", "b7"),)},
+        ),
+        ChordSpec(
+            slug="dominant-ninth-suspended-fourth",
+            quality_symbol="sus4",
+            quality_name="suspended",
+            base_formula=("1", "4", "5"),
+            sounding_degrees=("1", "4", "5", "b7", "9"),
+            family=("seventh", "extended", "suspended"),
+            suffix="9sus4",
+            components={"extensions": (ChordComponent("9", "9", "2"),)},
+        ),
+        ChordSpec(
+            slug="major-seventh-sharp-eleventh",
+            quality_symbol=None,
+            quality_name="major",
+            base_formula=("1", "3", "5"),
+            sounding_degrees=("1", "3", "5", "7", "#11"),
+            family=("seventh", "extended", "altered"),
+            suffix="maj7",
+            parenthetical_values=(("alteration", "#11"),),
+            components={
+                "extensions": (ChordComponent("maj7", "7"),),
+                "alterations": (ChordComponent("#11", "#11", "#4"),),
+            },
+        ),
+        ChordSpec(
+            slug="dominant-seventh-flat-fifth",
+            quality_symbol=None,
+            quality_name="dominant",
+            base_formula=("1", "3", "b5"),
+            sounding_degrees=("1", "3", "b5", "b7"),
+            family=("seventh", "altered"),
+            suffix="7",
+            parenthetical_values=(("alteration", "b5"),),
+            components={
+                "extensions": (ChordComponent("7", "b7"),),
+                "alterations": (ChordComponent("b5", "b5"),),
+            },
+        ),
+        ChordSpec(
+            slug="dominant-seventh-sharp-fifth",
+            quality_symbol=None,
+            quality_name="dominant",
+            base_formula=("1", "3", "#5"),
+            sounding_degrees=("1", "3", "#5", "b7"),
+            family=("seventh", "altered"),
+            suffix="7",
+            parenthetical_values=(("alteration", "#5"),),
+            components={
+                "extensions": (ChordComponent("7", "b7"),),
+                "alterations": (ChordComponent("#5", "#5"),),
+            },
+        ),
+        ChordSpec(
+            slug="dominant-seventh-flat-thirteenth",
+            quality_symbol=None,
+            quality_name="dominant",
+            base_formula=("1", "3", "5"),
+            sounding_degrees=("1", "3", "5", "b7", "b13"),
+            family=("seventh", "altered"),
+            suffix="7",
+            parenthetical_values=(("alteration", "b13"),),
+            components={
+                "extensions": (ChordComponent("7", "b7"),),
+                "alterations": (ChordComponent("b13", "b13", "b6"),),
+            },
+        ),
+        ChordSpec(
             slug="add-ninth",
             quality_symbol=None,
             quality_name="major",
@@ -557,7 +602,7 @@ def build_profile(root: str, spec: ChordSpec) -> dict[str, object]:
     if bass is not None:
         normalized_symbol = f"{normalized_symbol}/{bass}"
 
-    tones = [
+    sounding_tones = [
         build_tone(root, degree, spec, bass=bass, omitted=False)
         for degree in spec.sounding_degrees
     ]
@@ -565,51 +610,32 @@ def build_profile(root: str, spec: ChordSpec) -> dict[str, object]:
         build_tone(root, degree, spec, bass=bass, omitted=True)
         for degree in spec.omitted_degrees
     ]
-    pitch_classes = unique_pitch_classes(tone.pitch_class for tone in tones)
-    root_pitch = pitch_for_degree(root, "1")
+    tones = sorted(
+        [*sounding_tones, *omitted_tones], key=lambda tone: tone.semitones_from_root
+    )
 
     return {
         "id": profile_id(root, spec),
         "normalizedSymbol": normalized_symbol,
         "root": root,
         "bass": bass,
-        "quality": {
-            "symbol": spec.quality_symbol,
-            "name": spec.quality_name,
-            "baseFormula": list(spec.base_formula),
-        },
-        "family": list(spec.family),
-        "components": {
-            "extensions": [
-                component.to_json()
-                for component in spec.components.get("extensions", ())
-            ],
-            "additions": [
-                component.to_json()
-                for component in spec.components.get("additions", ())
-            ],
-            "alterations": [
-                component.to_json()
-                for component in spec.components.get("alterations", ())
-            ],
-            "omissions": [
-                component.to_json()
-                for component in spec.components.get("omissions", ())
-            ],
-        },
         "displayTokens": display_tokens(root, spec, bass),
         "tones": [tone.to_json() for tone in tones],
-        "omittedTones": [tone.to_json() for tone in omitted_tones],
-        "midi": {
-            "rootPitchClass": root_pitch.pitch_class,
-            "bassPitchClass": (
-                pitch_for_degree(root, spec.slash_degree).pitch_class
-                if spec.slash_degree
-                else None
-            ),
-            "pitchClasses": pitch_classes,
-        },
+        "structuralShapeId": structural_shape_id(sounding_tones),
     }
+
+
+def structural_shape_id(tones: list[ChordTone]) -> str:
+    ordered = sorted(tones, key=lambda tone: tone.semitones_from_root)
+    bass_index = next(index for index, tone in enumerate(ordered) if tone.is_bass)
+    bass_degree = ordered[bass_index].degree
+    bass_position = [
+        tone.semitones_from_root + (12 if index < bass_index else 0)
+        for index, tone in enumerate(ordered)
+    ]
+    bass_position = bass_position[bass_index:] + bass_position[:bass_index]
+    intervals = [right - left for left, right in zip(bass_position, bass_position[1:])]
+    return f"bass-position-v2:{bass_degree}:{'-'.join(str(interval) for interval in intervals)}"
 
 
 def build_tone(
@@ -621,22 +647,15 @@ def build_tone(
     omitted: bool,
 ) -> ChordTone:
     pitch = pitch_for_degree(root, degree)
-    degree_name = DEGREE_NAMES.get(degree, degree)
-    importance = tone_importance(degree, spec, omitted)
-    tendency = tone_tendency(degree, spec, pitch.pitch == bass, omitted)
-    explanation = tone_explanation(
-        pitch.pitch, degree, degree_name, spec, bass, omitted
-    )
 
     return ChordTone(
-        degree=semantic_degree(degree),
-        raw_degree=raw_degree(degree),
+        degree=degree,
         pitch=pitch.pitch,
         pitch_class=pitch.pitch_class,
         semitones_from_root=pitch.semitones_from_root,
-        importance=importance,
-        explanation=explanation,
-        tendency=tendency,
+        teaching_role=teaching_role(degree, spec),
+        voicing_role=voicing_role(degree, spec, omitted),
+        is_bass=pitch.pitch == (bass or root),
     )
 
 
@@ -697,206 +716,138 @@ def spell_pitch(letter: str, target_pc: int) -> str:
     return f"{letter}{'b' * abs(delta)}"
 
 
-def semantic_degree(degree: str) -> str:
-    return {"2": "9", "#4": "#11"}.get(degree, degree)
-
-
-def raw_degree(degree: str) -> str:
-    return {
-        "9": "2",
-        "b9": "b2",
-        "#9": "#2",
-        "11": "4",
-        "#11": "#4",
-        "13": "6",
-        "b13": "b6",
-    }.get(
-        degree,
-        degree,
-    )
-
-
-def tone_importance(degree: str, spec: ChordSpec, omitted: bool) -> ToneImportance:
-    if omitted:
-        return "optional"
-    if degree in ("1", "b3", "3", "b7", "7", "bb7"):
-        return "essential"
-    if degree in ("5", "b5", "#5"):
-        return "supporting"
+def teaching_role(degree: str, spec: ChordSpec) -> ChordTeachingRole:
+    if degree == "1":
+        return "anchor"
+    if degree in ("3", "b3", "2", "4"):
+        return "quality"
+    if degree in ("b5", "#5") and spec.quality_name in ("augmented", "diminished"):
+        return "quality"
+    if degree in ("7", "b7", "bb7"):
+        return "guide"
+    if degree == "5":
+        return "voicing"
     return "color"
 
 
-def tone_tendency(
-    degree: str, spec: ChordSpec, is_bass: bool, omitted: bool
-) -> ChordToneTendency:
+def voicing_role(degree: str, spec: ChordSpec, omitted: bool) -> str:
     if omitted:
         return "omitted"
-    if is_bass and spec.slash_degree is not None:
-        return "bass-anchor"
-    if degree == "1":
-        return "stable"
-    if degree == "2" and "suspended" in spec.family:
-        return "resolve-to-root"
-    if degree == "4" and "suspended" in spec.family:
-        return "resolve-to-third"
-    if degree in ("3", "b3"):
-        context_sensitive = any(
-            family in spec.family for family in ("altered", "suspended", "slash")
-        )
-        return "context-dependent" if context_sensitive else "stable"
-    if degree == "5":
-        return "stable"
-    if degree == "7":
-        return "leading-tone-up"
-    if degree in ("b7", "bb7"):
-        return "chordal-seventh-down"
-    if degree in ("#5", "#9", "#11"):
-        return "alteration-resolves-up"
-    if degree in ("b5", "b9", "b13"):
-        return "alteration-resolves-down"
-    if degree in ("9", "11", "13", "6"):
-        return "coloristic"
-    return "context-dependent"
-
-
-def tone_explanation(
-    pitch: str,
-    degree: str,
-    degree_name: str,
-    spec: ChordSpec,
-    bass: str | None,
-    omitted: bool,
-) -> str:
-    if omitted:
-        return (
-            f"is the {degree_name}, but it is omitted. "
-            "Omitting it creates space and changes the chord's weight."
-        )
-
-    if degree == "1":
-        explanation = "is the root. It names and anchors the chord."
-        if bass is not None and bass != pitch:
-            explanation += (
-                f" The bass is {bass}, so the root is not the lowest sounding note."
-            )
-        return explanation
-
-    if degree in ("b3", "3"):
-        quality = spec.quality_name or "major"
-        explanation = f"is the {degree_name}. It defines the chord as {quality}."
-    elif degree == "5":
-        explanation = f"is the {degree_name}. It reinforces the chord structure."
-    elif degree in ("b7", "7", "bb7"):
-        explanation = (
-            f"is the {degree_name}. It adds {seventh_color(degree)} "
-            "and helps define the seventh-chord quality."
-        )
-    elif degree in ("2", "4") and "suspended" in spec.family:
-        explanation = (
-            "is the suspension tone. "
-            "It delays or replaces the third and wants resolution in many contexts."
-        )
-    elif degree in ("b5", "#5", "b9", "#9", "#11", "b13"):
-        explanation = (
-            f"is the {degree_name}. It creates {alteration_color(degree)} "
-            "against the basic chord shape."
-        )
-    else:
-        explanation = (
-            f"is the {degree_name}. "
-            f"It adds {extension_color(degree)} without replacing the basic chord identity."
-        )
-
-    if bass == pitch:
-        explanation += " It also appears in the bass."
-    return explanation
-
-
-def seventh_color(degree: str) -> str:
-    if degree == "7":
-        return "bright tension"
-    if degree == "bb7":
-        return "diminished tension"
-    return "soft tension"
-
-
-def alteration_color(degree: str) -> str:
-    return {
-        "b5": "dark instability",
-        "#5": "wide augmented tension",
-        "b9": "sharp dissonance",
-        "#9": "bluesy tension",
-        "#11": "bright tension",
-        "b13": "dark upper color",
-    }.get(degree, "chromatic tension")
-
-
-def extension_color(degree: str) -> str:
-    return {
-        "6": "warm added color",
-        "9": "open color",
-        "11": "suspended color",
-        "13": "broad upper color",
-    }.get(semantic_degree(degree), "color")
+    if degree == "5" and any(
+        family in spec.family for family in ("extended", "altered")
+    ):
+        return "optional"
+    return "required"
 
 
 def display_tokens(
     root: str, spec: ChordSpec, bass: str | None
-) -> list[dict[str, str]]:
-    tokens: list[dict[str, str]] = [{"type": "root", "value": root}]
+) -> list[dict[str, str | None]]:
+    tokens: list[dict[str, str | None]] = [
+        {"type": "root", "value": root, "teachingRole": "anchor"}
+    ]
     suffix_tokens = suffix_display_tokens(spec.suffix)
     tokens.extend(suffix_tokens)
     if spec.parenthetical_values:
-        tokens.append({"type": "separator", "value": "("})
+        tokens.append({"type": "separator", "value": "(", "teachingRole": None})
         for index, (token_type, value) in enumerate(spec.parenthetical_values):
             if index > 0:
-                tokens.append({"type": "separator", "value": ","})
-            tokens.append({"type": token_type, "value": value})
-        tokens.append({"type": "separator", "value": ")"})
+                tokens.append({"type": "separator", "value": ",", "teachingRole": None})
+            tokens.append(
+                {
+                    "type": token_type,
+                    "value": value,
+                    "teachingRole": token_teaching_role(token_type, value),
+                }
+            )
+        tokens.append({"type": "separator", "value": ")", "teachingRole": None})
     if bass is not None:
-        tokens.append({"type": "separator", "value": "/"})
-        tokens.append({"type": "bass", "value": bass})
+        tokens.append({"type": "separator", "value": "/", "teachingRole": None})
+        tokens.append({"type": "bass", "value": bass, "teachingRole": "anchor"})
     return tokens
 
 
-def suffix_display_tokens(suffix: str) -> list[dict[str, str]]:
+def suffix_display_tokens(suffix: str) -> list[dict[str, str | None]]:
     if not suffix:
         return []
+    if suffix == "7sus4":
+        return [
+            {"type": "extension", "value": "7", "teachingRole": "guide"},
+            {"type": "quality", "value": "sus4", "teachingRole": "quality"},
+        ]
+    if suffix == "9sus4":
+        return [
+            {"type": "extension", "value": "9", "teachingRole": "color"},
+            {"type": "quality", "value": "sus4", "teachingRole": "quality"},
+        ]
     if suffix.startswith("m") and suffix not in ("maj7", "maj9", "maj13"):
         remainder = suffix[1:]
-        tokens = [{"type": "quality", "value": "m"}]
+        tokens: list[dict[str, str | None]] = [
+            {"type": "quality", "value": "m", "teachingRole": "quality"}
+        ]
         if remainder:
+            if remainder == "7b5":
+                return [
+                    *tokens,
+                    {"type": "extension", "value": "7", "teachingRole": "guide"},
+                    {"type": "alteration", "value": "b5", "teachingRole": "color"},
+                ]
             token_type = (
                 "addition" if remainder.startswith(("6", "add")) else "extension"
             )
-            tokens.append({"type": token_type, "value": remainder})
+            tokens.append(
+                {
+                    "type": token_type,
+                    "value": remainder,
+                    "teachingRole": token_teaching_role(token_type, remainder),
+                }
+            )
         return tokens
     if suffix.startswith("maj"):
-        return [{"type": "extension", "value": suffix}]
+        return [
+            {
+                "type": "extension",
+                "value": suffix,
+                "teachingRole": token_teaching_role("extension", suffix),
+            }
+        ]
     if suffix in ("dim", "aug", "sus2", "sus4"):
-        token_type = "quality" if suffix in ("dim", "aug") else "quality"
-        return [{"type": token_type, "value": suffix}]
+        return [{"type": "quality", "value": suffix, "teachingRole": "quality"}]
     if suffix in ("6", "6add9"):
-        return [{"type": "addition", "value": suffix}]
+        return [{"type": "addition", "value": suffix, "teachingRole": "color"}]
     if suffix.startswith("add") or "add" in suffix:
-        return [{"type": "addition", "value": suffix}]
-    return [{"type": "extension", "value": suffix}]
+        return [{"type": "addition", "value": suffix, "teachingRole": "color"}]
+    return [
+        {
+            "type": "extension",
+            "value": suffix,
+            "teachingRole": token_teaching_role("extension", suffix),
+        }
+    ]
+
+
+def token_teaching_role(
+    token_type: ChordDisplayTokenType, value: str
+) -> ChordTeachingRole | None:
+    if token_type == "omission":
+        return None
+    if token_type in ("addition", "alteration"):
+        return "color"
+    if token_type == "quality":
+        return "quality"
+    if token_type in ("root", "bass"):
+        return "anchor"
+    if token_type == "extension" and value in ("7", "maj7", "Maj7", "dim7"):
+        return "guide"
+    if token_type == "extension":
+        return "color"
+    return None
 
 
 def format_parenthetical(values: tuple[tuple[ChordDisplayTokenType, str], ...]) -> str:
     if not values:
         return ""
     return f"({','.join(value for _, value in values)})"
-
-
-def unique_pitch_classes(values: Iterable[int]) -> list[int]:
-    pitch_classes: list[int] = []
-    for value in values:
-        if not isinstance(value, int):
-            raise TypeError(f"Expected pitch class int, received {value!r}")
-        if value not in pitch_classes:
-            pitch_classes.append(value)
-    return pitch_classes
 
 
 def profile_id(root: str, spec: ChordSpec) -> str:
