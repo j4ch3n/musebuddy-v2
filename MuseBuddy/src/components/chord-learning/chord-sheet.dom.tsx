@@ -19,7 +19,8 @@ const STAVE_WIDTH = 328;
 const STAVE_GAP = 8;
 const STAVE_INSET_X = 4;
 const STAVE_RENDER_WIDTH = (STAVE_WIDTH - STAVE_INSET_X * 2 - STAVE_GAP) / 2;
-const BASS_TOP_MIDI_LIMIT = 64;
+
+type Clef = 'bass' | 'treble';
 
 export default function ChordSheet({ height = DEFAULT_STAVE_HEIGHT, notes }: ChordSheetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -51,10 +52,9 @@ export default function ChordSheet({ height = DEFAULT_STAVE_HEIGHT, notes }: Cho
     const context = factory.getContext();
     context.setFillStyle(museBuddyColors.notation);
     context.setStrokeStyle(museBuddyColors.notation);
-    const bassOctaveOffset = getBassOctaveOffset(notes);
     const staveY = Math.max(4, (height - 92) / 2);
 
-    (['treble', 'bass'] as const).forEach((clef, index) => {
+    (['bass', 'treble'] as const).forEach((clef, index) => {
       const stave = factory.Stave({
         width: STAVE_RENDER_WIDTH,
         x: STAVE_INSET_X + index * (STAVE_RENDER_WIDTH + STAVE_GAP),
@@ -63,21 +63,26 @@ export default function ChordSheet({ height = DEFAULT_STAVE_HEIGHT, notes }: Cho
       stave.addClef(clef);
       stave.setContext(context).draw();
 
-      const octaveOffset = clef === 'bass' ? bassOctaveOffset : 0;
+      const staveNotes = getNotesForClef(notes, clef);
+
+      if (staveNotes.length === 0) {
+        return;
+      }
+
       const staveNote = new StaveNote({
         clef,
         duration: 'w',
-        keys: notes.map((note) => `${note.letter.toLowerCase()}/${note.octave + octaveOffset}`),
+        keys: staveNotes.map((note) => `${note.letter.toLowerCase()}/${note.octave}`),
       });
 
-      notes.forEach((note, noteIndex) => {
+      staveNotes.forEach((note, noteIndex) => {
         const toneRole = note.isRoot ? 'anchor' : (note.teachingRole ?? 'voicing');
         const color = chordToneRoleColors[toneRole].color;
         const noteStyle = { fillStyle: color, strokeStyle: color };
 
         staveNote.setKeyStyle(noteIndex, noteStyle);
 
-        if (note.accidental) {
+        if (isNotationAccidental(note.accidental)) {
           const accidental = new Accidental(note.accidental);
           accidental.setStyle(noteStyle);
           staveNote.addModifier(accidental, noteIndex);
@@ -117,10 +122,19 @@ export default function ChordSheet({ height = DEFAULT_STAVE_HEIGHT, notes }: Cho
   );
 }
 
-function getBassOctaveOffset(notes: readonly ChordDisplayNote[]) {
-  const highestMidi = Math.max(...notes.map((note) => note.midi));
+function getNotesForClef(notes: readonly ChordDisplayNote[], clef: Clef) {
+  const hand = clef === 'bass' ? 'left' : 'right';
+  const assignedNotes = notes.filter((note) => note.hand === hand);
 
-  return highestMidi > BASS_TOP_MIDI_LIMIT
-    ? -Math.ceil((highestMidi - BASS_TOP_MIDI_LIMIT) / 12)
-    : 0;
+  if (assignedNotes.length > 0) {
+    return assignedNotes;
+  }
+
+  return clef === 'bass'
+    ? notes.filter((note) => note.isBass)
+    : notes.filter((note) => !note.isBass);
+}
+
+function isNotationAccidental(accidental: string): accidental is '#' | '##' | 'b' | 'bb' | 'n' {
+  return ['#', '##', 'b', 'bb', 'n'].includes(accidental);
 }

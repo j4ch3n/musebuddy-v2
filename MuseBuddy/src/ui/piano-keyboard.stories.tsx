@@ -17,6 +17,7 @@ type ChordPreset =
 
 type PianoKeyboardStoryArgs = {
   chordPreset: ChordPreset;
+  emphasizedKeys: PianoPitchClass[];
   root: PianoPitchClass;
   keys: PianoPitchClass[];
   markerTones: Partial<Record<PianoPitchClass, PianoKeyboardMarkerTone>>;
@@ -53,6 +54,7 @@ const meta = {
   component: PianoKeyboard,
   args: {
     chordPreset: 'C major',
+    emphasizedKeys: [],
     root: 0,
     keys: [4, 7],
     markerTones: {
@@ -73,15 +75,29 @@ const meta = {
       control: 'object',
     },
   },
-  render: ({ chordPreset, keys, markerTones, root }: PianoKeyboardStoryArgs) => {
+  render: ({ chordPreset, emphasizedKeys, keys, markerTones, root }: PianoKeyboardStoryArgs) => {
     if (chordPreset === 'Manual') {
-      return <PianoKeyboard keys={keys} markerTones={markerTones} root={root} width={320} />;
+      return (
+        <PianoKeyboard
+          emphasizedKeys={emphasizedKeys}
+          keys={keys}
+          markerTones={markerTones}
+          root={root}
+          width={320}
+        />
+      );
     }
 
     const preset = chordPresets[chordPreset];
 
     return (
-      <PianoKeyboard keys={preset.keys} markerTones={markerTones} root={preset.root} width={320} />
+      <PianoKeyboard
+        emphasizedKeys={emphasizedKeys}
+        keys={preset.keys}
+        markerTones={markerTones}
+        root={preset.root}
+        width={320}
+      />
     );
   },
 } satisfies Meta<PianoKeyboardStoryArgs>;
@@ -91,3 +107,10 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Chord: Story = {};
+
+export const EmphasizedTone: Story = {
+  args: {
+    chordPreset: 'C major',
+    emphasizedKeys: [4],
+  },
+};

@@ -20,6 +20,8 @@ export function createTrainingSession(measureCount = 1): TrainingSession {
         tones: [
           {
             degree: '1',
+            finger: 5,
+            hand: 'left',
             isBass: true,
             pitch: 'C',
             pitchClass: 0,
@@ -28,6 +30,8 @@ export function createTrainingSession(measureCount = 1): TrainingSession {
           },
           {
             degree: '3',
+            finger: 3,
+            hand: 'right',
             isBass: false,
             pitch: 'E',
             pitchClass: 4,
@@ -36,6 +40,8 @@ export function createTrainingSession(measureCount = 1): TrainingSession {
           },
           {
             degree: '5',
+            finger: 1,
+            hand: 'left',
             isBass: false,
             pitch: 'G',
             pitchClass: 7,

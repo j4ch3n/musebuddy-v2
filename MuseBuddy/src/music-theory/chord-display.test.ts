@@ -8,7 +8,7 @@ import type {
 } from '@/contexts/training-session-schema';
 import type { PianoPitchClass } from '@schema/music-theory-schema';
 
-import { buildChordDisplay } from './chord-display';
+import { buildChordDisplay, normalizeChordNotesForHand } from './chord-display';
 
 function tone(
   degree: ChordDegree,
@@ -73,6 +73,24 @@ describe('buildChordDisplay', () => {
       isRoot: true,
       pitchClass: 0,
     });
+  });
+
+  it('preserves curated hand and finger instructions for the hand-shape cue', () => {
+    const display = buildChordDisplay({
+      displayTokens: [{ type: 'root', value: 'C' }],
+      idName: 'c-major',
+      normalizedSymbol: 'C',
+      root: 'C',
+      tones: [
+        { ...tone('1', 'C', 0, 'essential', 'root explanation'), finger: 5, hand: 'left' },
+        { ...tone('3', 'E', 4, 'essential', 'third explanation'), finger: 3, hand: 'right' },
+      ],
+    });
+
+    expect(display.notes.map(({ finger, hand }) => ({ finger, hand }))).toEqual([
+      { finger: 5, hand: 'left' },
+      { finger: 3, hand: 'right' },
+    ]);
   });
 
   it('uses every pitch class directly for keyboard positions', () => {
@@ -143,6 +161,35 @@ describe('buildChordDisplay', () => {
       { degree: '3', teachingRole: 'quality', voicingRole: 'required' },
       { degree: '5', teachingRole: 'voicing', voicingRole: 'required' },
       { degree: '7', teachingRole: 'guide', voicingRole: 'required' },
+    ]);
+  });
+
+  it('normalizes each hand into its dedicated C-to-B octave while preserving spelling', () => {
+    const display = buildChordDisplay({
+      displayTokens: [{ type: 'root', value: 'F' }],
+      idName: 'f-major',
+      normalizedSymbol: 'F',
+      root: 'F',
+      tones: [
+        { ...tone('1', 'F', 5, 'essential', 'root explanation'), hand: 'left' },
+        { ...tone('3', 'A', 9, 'essential', 'third explanation'), hand: 'right' },
+        { ...tone('5', 'C', 0, 'supporting', 'fifth explanation'), hand: 'right' },
+      ],
+    });
+
+    const left = normalizeChordNotesForHand(
+      display.notes.filter((note) => note.hand === 'left'),
+      'left',
+    );
+    const right = normalizeChordNotesForHand(
+      display.notes.filter((note) => note.hand === 'right'),
+      'right',
+    );
+
+    expect(left[0]).toMatchObject({ midi: 53, octave: 3, text: 'F', vexflowKey: 'f/3' });
+    expect(right).toEqual([
+      expect.objectContaining({ midi: 69, octave: 4, text: 'A', vexflowKey: 'a/4' }),
+      expect.objectContaining({ midi: 60, octave: 4, text: 'C', vexflowKey: 'c/4' }),
     ]);
   });
 

@@ -12,3 +12,4 @@ type Story = StoryObj<typeof meta>;
 export const Ready: Story = {};
 export const Playing: Story = { args: { isPlaying: true } };
 export const Disabled: Story = { args: { disabled: true } };
+export const WithoutShadow: Story = { args: { showShadow: false } };

@@ -11,11 +11,14 @@ import { ChordToneLegend } from './chord-role-legend';
 
 const PREVIEW_KEYBOARD_SIDE_BLEED = -13;
 const PREVIEW_KEYBOARD_RIGHT_SHIFT = 10;
+const PREVIEW_KEYBOARD_WIDTH = 320;
 
 type ChordKeyboardCardProps = {
   display: ChordDisplay;
   displayMode?: 'full' | 'keyboard' | 'notation';
+  emphasizedKeys?: readonly PianoPitchClass[];
   errorMessage?: string;
+  fitKeyboardToContainer?: boolean;
   liveKeys?: Partial<Record<PianoPitchClass, PianoKeyboardLiveKeyState>>;
   showKeyHighlightDots?: boolean;
   showKeyHighlightLabels?: boolean;
@@ -26,18 +29,20 @@ type ChordKeyboardCardProps = {
 export function ChordKeyboardCard({
   display,
   displayMode = 'full',
+  emphasizedKeys,
   errorMessage,
-  liveKeys = {},
+  fitKeyboardToContainer = false,
+  liveKeys,
   showKeyHighlightDots = true,
   showKeyHighlightLabels = true,
   showSheetNotation = true,
   visibleNotes,
 }: ChordKeyboardCardProps) {
   const notes = visibleNotes ?? display.notes;
-  const rootNote = notes.find((note) => note.isRoot) ?? notes[0];
-  const selectedKeys = notes
-    .filter((note) => note.pitchClass !== rootNote.pitchClass)
-    .map((note) => note.pitchClass);
+  const rootNote =
+    notes.find((note) => note.isRoot) ??
+    (visibleNotes === undefined ? display.notes.find((note) => note.isRoot) : undefined);
+  const selectedKeys = notes.filter((note) => !note.isRoot).map((note) => note.pitchClass);
   const noteNames = notes.map((note) => note.text).join(' - ');
   const markerLabels = showKeyHighlightLabels
     ? notes.reduce<Partial<Record<PianoPitchClass, string>>>((labels, note) => {
@@ -68,16 +73,25 @@ export function ChordKeyboardCard({
 
   if (displayMode === 'keyboard') {
     return (
-      <View style={styles.previewKeyboardFrame}>
+      <View
+        style={[
+          styles.previewKeyboardFrame,
+          fitKeyboardToContainer
+            ? styles.containedPreviewKeyboardFrame
+            : styles.fixedPreviewKeyboardFrame,
+        ]}
+      >
         <PianoKeyboard
           accessibilityLabel={`Piano keyboard highlighting ${noteNames}`}
+          emphasizedKeys={emphasizedKeys}
           keys={selectedKeys}
           markerAppearances={chordToneMarkerAppearances}
           markerLabels={markerLabels}
           markerTones={markerTones}
           liveKeys={liveKeys}
-          root={rootNote.pitchClass}
+          root={rootNote?.pitchClass}
           showMarkers={showKeyHighlightDots}
+          width={fitKeyboardToContainer ? undefined : PREVIEW_KEYBOARD_WIDTH}
         />
       </View>
     );
@@ -88,12 +102,13 @@ export function ChordKeyboardCard({
       <View style={styles.keyboardFrame}>
         <PianoKeyboard
           accessibilityLabel={`Piano keyboard highlighting ${noteNames}`}
+          emphasizedKeys={emphasizedKeys}
           keys={selectedKeys}
           markerAppearances={chordToneMarkerAppearances}
           markerLabels={markerLabels}
           markerTones={markerTones}
           liveKeys={liveKeys}
-          root={rootNote.pitchClass}
+          root={rootNote?.pitchClass}
           showMarkers={showKeyHighlightDots}
         />
       </View>
@@ -145,9 +160,20 @@ const styles = StyleSheet.create({
   },
   previewKeyboardFrame: {
     alignSelf: 'center',
+    justifyContent: 'flex-start',
+  },
+  containedPreviewKeyboardFrame: {
+    alignSelf: 'stretch',
+    marginHorizontal: 0,
+    transform: [],
+    width: '100%',
+  },
+  fixedPreviewKeyboardFrame: {
+    height: 180,
     // With the card's 18 pt inset and the SVG's internal key bounds, this balances visible sides.
     marginHorizontal: PREVIEW_KEYBOARD_SIDE_BLEED,
     transform: [{ translateX: PREVIEW_KEYBOARD_RIGHT_SHIFT }],
+    width: PREVIEW_KEYBOARD_WIDTH,
   },
   sheet: {
     backgroundColor: museBuddyColors.mist,

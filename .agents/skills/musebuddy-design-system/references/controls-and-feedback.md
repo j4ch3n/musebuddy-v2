@@ -27,6 +27,11 @@ Use solid offset shadows, never blurred elevation. Small controls offset 3–4 p
 
 Use shadows to reinforce hierarchy: primary buttons strongest, current-stage tiles smaller, content cards restrained, and informational chips usually flat.
 
+When choosing a fixed height for a container, include the full visual footprint of its children.
+If a bottom child has an offset shadow, reserve clearance for the shadow's downward offset in the
+container or scene height, especially when an ancestor clips overflow. Verify the normal and
+pressed shadow states so the shadow is never cut off at the bottom edge.
+
 ## Typography
 
 Use a friendly rounded sans-serif with clear numerals. Keep hero titles to Home; use compact semibold activity titles, bold primary labels, regular or medium body copy, and medium metadata. Deep teal is the default type color. Avoid all caps except short eyebrow labels. Keep musical symbols and note names especially clear.

@@ -50,6 +50,11 @@ export const chordVoicingRoleSchema = z.enum(['required', 'optional', 'omitted']
 
 export const chordToneSchema = z.object({
   degree: chordDegreeSchema,
+  finger: z
+    .union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)])
+    .nullable()
+    .optional(),
+  hand: z.enum(['left', 'right']).nullable().optional(),
   isBass: z.boolean(),
   pitch: chordPitchSchema,
   pitchClass: pianoPitchClassSchema,

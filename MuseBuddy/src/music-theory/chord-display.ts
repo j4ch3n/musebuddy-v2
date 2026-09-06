@@ -25,6 +25,8 @@ export type ChordDisplayToken = {
 
 export type ChordDisplayNote = MusicDisplayNote & {
   degree: ChordDegree;
+  finger?: 1 | 2 | 3 | 4 | 5 | null;
+  hand?: 'left' | 'right' | null;
   /** @deprecated Chord-learning copy is derived from teachingRole. */
   explanation?: string;
   /** @deprecated Chord-learning color is derived from teachingRole. */
@@ -45,8 +47,12 @@ export type ChordDisplay = {
   tokens: readonly ChordDisplayToken[];
 };
 
+export type ChordHandSide = 'left' | 'right';
+
 type ChordDisplayInputTone = {
   degree: ChordDegree;
+  finger?: 1 | 2 | 3 | 4 | 5 | null;
+  hand?: 'left' | 'right' | null;
   isBass?: boolean;
   pitch: string;
   pitchClass: number;
@@ -85,6 +91,19 @@ export function buildChordDisplay(chord: ChordDisplayInput): ChordDisplay {
   };
 }
 
+/** Places each hand's notes in a predictable one-octave notation zone. */
+export function normalizeChordNotesForHand(
+  notes: readonly ChordDisplayNote[],
+  hand: ChordHandSide,
+): readonly ChordDisplayNote[] {
+  const baseMidi = hand === 'left' ? 48 : 60;
+
+  return notes.map((note) => ({
+    ...note,
+    ...midiToDisplayNote(baseMidi + note.pitchClass, note.text),
+  }));
+}
+
 function buildChordNotes(chord: ChordDisplayInput) {
   const soundingTones = chord.tones.filter((tone) => tone.voicingRole !== 'omitted');
   const foundBassIndex = soundingTones.findIndex((tone) => tone.isBass);
@@ -118,6 +137,8 @@ function buildChordNote(root: string, midi: number, tone: ChordDisplayInputTone)
   return {
     ...note,
     degree: tone.degree,
+    finger: tone.finger ?? null,
+    hand: tone.hand ?? null,
     isBass: tone.isBass ?? false,
     isRoot: tone.pitch === root,
     pitchClass: tone.pitchClass as PianoPitchClass,

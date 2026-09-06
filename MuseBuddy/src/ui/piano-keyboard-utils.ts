@@ -6,10 +6,12 @@ export type PianoKeyboardMarker = {
 };
 
 export function getPianoKeyboardMarkers(
-  root: PianoPitchClass,
+  root: PianoPitchClass | undefined,
   keys: readonly PianoPitchClass[] = [],
 ): PianoKeyboardMarker[] {
-  const selectedPitchClasses = new Set<PianoPitchClass>([root, ...keys]);
+  const selectedPitchClasses = new Set<PianoPitchClass>(
+    root === undefined ? keys : [root, ...keys],
+  );
 
   return [...selectedPitchClasses].map((pitchClass) => ({
     isRoot: pitchClass === root,

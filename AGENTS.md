@@ -163,6 +163,8 @@ pnpm --dir MuseBuddy <script>
   `use`.
 - Keep platform-specific native behavior in the local Expo module behind typed TypeScript interfaces.
 - Keep UI simple, accessible, and responsive.
+- When choosing a fixed height for a container, include the full visual footprint of its children;
+  reserve clearance for any bottom offset shadow, especially inside an overflow-clipped ancestor.
 - Handle permission denial, model-loading failures, recording failures, and transcription failures explicitly.
 - Never perform Core ML inference or heavy audio processing on the main thread.
 

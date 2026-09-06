@@ -9,7 +9,12 @@ import {
   type TabDescriptor,
 } from 'react-native-tab-view';
 
-import { ChordKeyboardCard, ChordName, ChordToneLegend } from '@/components/chord-learning';
+import {
+  ChordHandShapeCue,
+  ChordKeyboardCard,
+  ChordName,
+  ChordToneLegend,
+} from '@/components/chord-learning';
 import { RhythmViewer } from '@/components/rhythm-trainer';
 import { museBuddyColors } from '@/constants/design-tokens';
 import type { TrainingDetailTab } from '@/contexts/training-session-context';
@@ -222,6 +227,7 @@ function ChordDetail({
         <ChordName display={chord} />
         <Text style={styles.friendlyName}>{chord.friendlyName}</Text>
       </View>
+      <ChordHandShapeCue notes={chord.notes} />
       <MusicViewFlip
         keyboard={<ChordKeyboardCard display={chord} displayMode="keyboard" liveKeys={liveKeys} />}
         notation={<ChordKeyboardCard display={chord} displayMode="notation" />}

@@ -10,9 +10,15 @@ type PlayButtonProps = {
   disabled?: boolean;
   isPlaying?: boolean;
   onPress: () => void;
+  showShadow?: boolean;
 };
 
-export function PlayButton({ disabled = false, isPlaying = false, onPress }: PlayButtonProps) {
+export function PlayButton({
+  disabled = false,
+  isPlaying = false,
+  onPress,
+  showShadow = true,
+}: PlayButtonProps) {
   const [frame, setFrame] = useState(0);
 
   useEffect(() => {
@@ -33,7 +39,8 @@ export function PlayButton({ disabled = false, isPlaying = false, onPress }: Pla
       onPress={onPress}
       style={({ pressed }) => [
         styles.button,
-        pressed && styles.pressed,
+        showShadow ? styles.shadow : null,
+        showShadow && pressed ? styles.pressed : null,
         disabled && styles.disabled,
       ]}
     >
@@ -53,12 +60,12 @@ const styles = StyleSheet.create({
     borderColor: museBuddyColors.pine,
     borderRadius: museBuddyRadii.round,
     borderWidth: museBuddyBorders.standard,
-    boxShadow: `3px 3px 0 ${museBuddyColors.sky}`,
     height: 44,
     justifyContent: 'center',
     width: 44,
   },
   disabled: { opacity: 0.45 },
+  shadow: { boxShadow: `3px 3px 0 ${museBuddyColors.sky}` },
   pressed: {
     boxShadow: `1px 1px 0 ${museBuddyColors.sky}`,
     transform: [{ translateX: 2 }, { translateY: 2 }],

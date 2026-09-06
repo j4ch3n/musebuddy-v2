@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
+import { useReducedMotion } from 'react-native-reanimated';
 import Svg, { Circle, ClipPath, Defs, G, Rect, Text as SvgText } from 'react-native-svg';
 
 import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
@@ -35,7 +36,9 @@ export type PianoKeyboardLiveKeyState = {
 };
 
 export type PianoKeyboardProps = {
-  root: PianoPitchClass;
+  accessibilityLabel?: string;
+  emphasizedKeys?: readonly PianoPitchClass[];
+  root?: PianoPitchClass;
   keys?: readonly PianoPitchClass[];
   width?: number;
   markerAppearances?: Partial<Record<PianoKeyboardMarkerTone, PianoKeyboardMarkerAppearance>>;
@@ -43,7 +46,6 @@ export type PianoKeyboardProps = {
   markerTones?: Partial<Record<PianoPitchClass, PianoKeyboardMarkerTone>>;
   liveKeys?: Partial<Record<PianoPitchClass, PianoKeyboardLiveKeyState>>;
   showMarkers?: boolean;
-  accessibilityLabel?: string;
 };
 
 const KEYBOARD_HEIGHT = 180;
@@ -67,6 +69,9 @@ const BLACK_MARKER_Y = 85;
 const MARKER_CORE_RADIUS_OFFSET = 4;
 const MARKER_HALO_RADIUS_OFFSET = 0;
 const MARKER_HALO_OPACITY = 0.32;
+const MARKER_BREATH_DURATION_MS = 2000;
+const EMPHASIZED_MARKER_MIN_OPACITY = 0.8;
+const EMPHASIZED_RIPPLE_MAX_RADIUS_OFFSET = 14;
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
@@ -122,6 +127,7 @@ function getMarkerPosition(pitchClass: PianoPitchClass) {
 
 export function PianoKeyboard({
   accessibilityLabel,
+  emphasizedKeys = [],
   keys = [],
   markerAppearances,
   markerLabels,
@@ -261,41 +267,18 @@ export function PianoKeyboard({
         {showMarkers ? (
           <G>
             {markers.map(({ isRoot, pitchClass }) => {
-              const { cx, cy, r } = getMarkerPosition(pitchClass);
               const label = markerLabels?.[pitchClass];
               const tone = markerTones?.[pitchClass] ?? (isRoot ? 'anchor' : 'supporting');
               const appearance = markerAppearances?.[tone] ?? markerToneAppearances[tone];
 
               return (
-                <G key={`marker-${pitchClass}-${root}`}>
-                  <Circle
-                    cx={cx}
-                    cy={cy}
-                    fill="none"
-                    r={r + MARKER_HALO_RADIUS_OFFSET}
-                    stroke={appearance.fill}
-                    strokeOpacity={MARKER_HALO_OPACITY}
-                    strokeWidth={2}
-                  />
-                  <Circle
-                    cx={cx}
-                    cy={cy}
-                    fill={appearance.fill}
-                    r={r - MARKER_CORE_RADIUS_OFFSET}
-                  />
-                  {label ? (
-                    <SvgText
-                      fill={appearance.label}
-                      fontSize={label.length > 1 ? 10 : 13}
-                      fontWeight="900"
-                      textAnchor="middle"
-                      x={cx}
-                      y={cy + 3}
-                    >
-                      {label}
-                    </SvgText>
-                  ) : null}
-                </G>
+                <KeyboardMarker
+                  appearance={appearance}
+                  emphasized={emphasizedKeys.includes(pitchClass)}
+                  key={`marker-${pitchClass}-${root}`}
+                  label={label}
+                  pitchClass={pitchClass}
+                />
               );
             })}
           </G>
@@ -383,6 +366,96 @@ function getKeyAppearance(
 ) {
   const tone = markerTones?.[pitchClass] ?? 'supporting';
   return markerAppearances?.[tone] ?? markerToneAppearances[tone];
+}
+
+function KeyboardMarker({
+  appearance,
+  emphasized,
+  label,
+  pitchClass,
+}: {
+  appearance: PianoKeyboardMarkerAppearance;
+  emphasized: boolean;
+  label: string | undefined;
+  pitchClass: PianoPitchClass;
+}) {
+  const reducedMotion = useReducedMotion();
+  const [progress] = useState(() => new Animated.Value(0));
+  const { cx, cy, r } = getMarkerPosition(pitchClass);
+
+  useEffect(() => {
+    if (!emphasized || reducedMotion) {
+      progress.stopAnimation();
+      progress.setValue(0);
+      return;
+    }
+
+    const animation = Animated.loop(
+      Animated.timing(progress, {
+        duration: MARKER_BREATH_DURATION_MS,
+        toValue: 1,
+        useNativeDriver: false,
+      }),
+    );
+    progress.setValue(0);
+    animation.start();
+    return () => animation.stop();
+  }, [emphasized, progress, reducedMotion]);
+
+  const isAnimated = emphasized && !reducedMotion;
+  const coreOpacity = isAnimated
+    ? progress.interpolate({
+        inputRange: [0, 0.5, 1],
+        outputRange: [1, EMPHASIZED_MARKER_MIN_OPACITY, 1],
+      })
+    : 1;
+
+  return (
+    <G>
+      <Circle
+        cx={cx}
+        cy={cy}
+        fill="none"
+        r={r + MARKER_HALO_RADIUS_OFFSET}
+        stroke={appearance.fill}
+        strokeOpacity={MARKER_HALO_OPACITY}
+        strokeWidth={2}
+      />
+      {isAnimated ? (
+        <AnimatedCircle
+          cx={cx}
+          cy={cy}
+          fill="none"
+          opacity={progress.interpolate({ inputRange: [0, 0.72, 1], outputRange: [0.4, 0, 0] })}
+          r={progress.interpolate({
+            inputRange: [0, 1],
+            outputRange: [r + MARKER_HALO_RADIUS_OFFSET, r + EMPHASIZED_RIPPLE_MAX_RADIUS_OFFSET],
+          })}
+          stroke={appearance.fill}
+          strokeWidth={2}
+        />
+      ) : null}
+      <AnimatedCircle
+        cx={cx}
+        cy={cy}
+        fill={appearance.fill}
+        opacity={coreOpacity}
+        r={r - MARKER_CORE_RADIUS_OFFSET}
+      />
+      {label ? (
+        <SvgText
+          fill={appearance.label}
+          fontSize={label.length > 1 ? 10 : 13}
+          fontWeight="900"
+          textAnchor="middle"
+          x={cx}
+          y={cy + 3}
+        >
+          {label}
+        </SvgText>
+      ) : null}
+    </G>
+  );
 }
 
 function KeyboardKeyShadow({
