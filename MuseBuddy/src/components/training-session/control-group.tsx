@@ -1,58 +1,32 @@
 import Lucide from '@react-native-vector-icons/lucide';
-import { useRouter } from 'expo-router';
+import { type ReactNode } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 
-import { PlayButtonGroup } from './play-button-group';
 import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 import { BpmControl, TactileControlAction } from '@/ui';
 
-type NavigatorProps = {
+type ControlGroupProps = {
+  action: ReactNode;
   bpm: number;
-  canMoveBack: boolean;
-  canMoveForward: boolean;
-  countdownValue: number;
-  isPlaying: boolean;
-  isPreparing: boolean;
   onBpmChange: (bpm: number) => void;
+  onExit: () => void;
   onExitConfirmed: () => void;
-  onMoveBack: () => void;
-  onMoveForward: () => void;
-  onPlayPress: () => void;
-  playDisabled: boolean;
-  view: 'bar-details' | 'sheet';
 };
 
-export function Navigator({
+/**
+ * The persistent training control dock. Each activity supplies its own primary action,
+ * while tempo and exit controls stay consistent across performance and quiz stages.
+ */
+export function ControlGroup({
+  action,
   bpm,
-  canMoveBack,
-  canMoveForward,
-  countdownValue,
-  isPlaying,
-  isPreparing,
   onBpmChange,
+  onExit,
   onExitConfirmed,
-  onMoveBack,
-  onMoveForward,
-  onPlayPress,
-  playDisabled,
-  view,
-}: NavigatorProps) {
-  const router = useRouter();
-
+}: ControlGroupProps) {
   return (
     <View accessibilityLabel="Training controls" style={styles.row}>
-      <PlayButtonGroup
-        canMoveBack={canMoveBack}
-        canMoveForward={canMoveForward}
-        countdownValue={countdownValue}
-        isPlaying={isPlaying}
-        isPreparing={isPreparing}
-        onMoveBack={onMoveBack}
-        onMoveForward={onMoveForward}
-        onPlayPress={onPlayPress}
-        playDisabled={playDisabled}
-        view={view}
-      />
+      <View style={styles.action}>{action}</View>
       <View style={styles.spacer} />
       <BpmControl direction="up" onChange={onBpmChange} value={bpm} />
       <TactileControlAction
@@ -65,7 +39,7 @@ export function Navigator({
               style: 'destructive',
               onPress: () => {
                 onExitConfirmed();
-                router.dismissTo('/');
+                onExit();
               },
             },
           ])
@@ -80,6 +54,7 @@ export function Navigator({
 }
 
 const styles = StyleSheet.create({
+  action: { minWidth: 0 },
   exitButton: {
     alignItems: 'center',
     backgroundColor: museBuddyColors.mist,

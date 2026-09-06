@@ -103,6 +103,25 @@ theme tokens, Tamagui configuration, component visuals, or interaction states, c
 rules; the design skill is the source of truth for color, typography, mood, shadows,
 component feel, and visual review criteria.
 
+## Storybook Component States
+
+Use the on-device Storybook as the visual catalogue for reusable UI components and their
+meaningful states. When creating or materially changing a reusable component, add or update its
+co-located `*.stories.tsx` file. Include the default state and every applicable state such as
+loading, disabled, error, success, selected, or active playback; do not use Storybook merely as a
+gallery of unrelated screens.
+
+Stories must be deterministic and self-contained: use local fixtures and no-op callbacks, inject
+navigation or external side effects through props, and never call live APIs, microphone access,
+Core ML, or SoundFont playback. This lets a component render outside Expo Router while retaining
+its real visual and interaction states.
+
+Storybook uses the `STORYBOOK_ENABLED=true` entry-point swap, so it has no Expo Router navigation
+context. Do not import or mount Storybook from `src/app/_layout.tsx`. Developers can launch it with
+`pnpm ios:storybook` (or `pnpm ios:device:storybook`) and, after a Storybook development client is
+installed, `pnpm start:storybook`. Agents do not launch Storybook; run `pnpm storybook-generate`
+after changing stories or Storybook configuration, followed by the applicable static checks.
+
 ## Package and Command Policy
 
 Use pnpm exclusively:
