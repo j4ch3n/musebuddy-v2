@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Literal
 
@@ -31,6 +31,7 @@ ChordFamily = Literal[
 
 ComponentKind = Literal["extensions", "additions", "alterations", "omissions"]
 ChordTeachingRole = Literal["anchor", "quality", "guide", "color", "voicing"]
+PianoHand = Literal["left", "right"]
 
 
 @dataclass(frozen=True)
@@ -49,15 +50,19 @@ class ChordTone:
     teaching_role: ChordTeachingRole
     voicing_role: str
     is_bass: bool
+    hand: PianoHand | None = None
+    finger: int | None = None
 
     def to_json(self) -> dict[str, object]:
         return {
             "degree": self.degree,
             "pitch": self.pitch,
-            "midiPitchClass": self.pitch_class,
+            "pitchClass": self.pitch_class,
             "teachingRole": self.teaching_role,
             "voicingRole": self.voicing_role,
             "isBass": self.is_bass,
+            "hand": self.hand,
+            "finger": self.finger,
         }
 
 
@@ -602,10 +607,12 @@ def build_profile(root: str, spec: ChordSpec) -> dict[str, object]:
     if bass is not None:
         normalized_symbol = f"{normalized_symbol}/{bass}"
 
-    sounding_tones = [
-        build_tone(root, degree, spec, bass=bass, omitted=False)
-        for degree in spec.sounding_degrees
-    ]
+    sounding_tones = assign_fingering(
+        [
+            build_tone(root, degree, spec, bass=bass, omitted=False)
+            for degree in spec.sounding_degrees
+        ]
+    )
     omitted_tones = [
         build_tone(root, degree, spec, bass=bass, omitted=True)
         for degree in spec.omitted_degrees
@@ -621,21 +628,57 @@ def build_profile(root: str, spec: ChordSpec) -> dict[str, object]:
         "bass": bass,
         "displayTokens": display_tokens(root, spec, bass),
         "tones": [tone.to_json() for tone in tones],
-        "structuralShapeId": structural_shape_id(sounding_tones),
     }
 
 
-def structural_shape_id(tones: list[ChordTone]) -> str:
+def assign_fingering(tones: list[ChordTone]) -> list[ChordTone]:
+    """Assign stable, teachable two-hand fingering patterns to sounding tones."""
     ordered = sorted(tones, key=lambda tone: tone.semitones_from_root)
     bass_index = next(index for index, tone in enumerate(ordered) if tone.is_bass)
-    bass_degree = ordered[bass_index].degree
-    bass_position = [
-        tone.semitones_from_root + (12 if index < bass_index else 0)
-        for index, tone in enumerate(ordered)
+    bass_position = ordered[bass_index:] + ordered[:bass_index]
+    grouped: dict[PianoHand, list[ChordTone]] = {"left": [], "right": []}
+    for tone in bass_position:
+        hand: PianoHand = (
+            "left"
+            if tone.is_bass or tone.degree == "1" or tone.teaching_role == "voicing"
+            else "right"
+        )
+        grouped[hand].append(tone)
+
+    patterns: dict[PianoHand, dict[int, tuple[int, ...]]] = {
+        "left": {
+            1: (5,),
+            2: (5, 1),
+            3: (5, 3, 1),
+            4: (5, 3, 2, 1),
+            5: (5, 4, 3, 2, 1),
+        },
+        "right": {
+            1: (3,),
+            2: (1, 5),
+            3: (1, 3, 5),
+            4: (1, 2, 4, 5),
+            5: (1, 2, 3, 4, 5),
+        },
+    }
+    assignments: dict[str, tuple[PianoHand, int]] = {}
+    for hand, hand_tones in grouped.items():
+        if not hand_tones:
+            continue
+        pattern = patterns[hand].get(len(hand_tones))
+        if pattern is None:
+            raise ValueError(
+                f"{hand} hand has too many tones for a five-finger voicing"
+            )
+        assignments.update(
+            {tone.degree: (hand, finger) for tone, finger in zip(hand_tones, pattern)}
+        )
+    return [
+        replace(
+            tone, hand=assignments[tone.degree][0], finger=assignments[tone.degree][1]
+        )
+        for tone in tones
     ]
-    bass_position = bass_position[bass_index:] + bass_position[:bass_index]
-    intervals = [right - left for left, right in zip(bass_position, bass_position[1:])]
-    return f"bass-position-v2:{bass_degree}:{'-'.join(str(interval) for interval in intervals)}"
 
 
 def build_tone(

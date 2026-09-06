@@ -38,6 +38,7 @@ DISPLAY_TOKEN_TYPES = {
 }
 TEACHING_ROLES = {"anchor", "quality", "guide", "color", "voicing"}
 VOICING_ROLES = {"required", "optional", "omitted"}
+PIANO_HANDS = {"left", "right"}
 
 
 class ChordProfile(Base):
@@ -49,7 +50,6 @@ class ChordProfile(Base):
     root = Column(Text, nullable=False)
     bass = Column(Text, nullable=True)
     displayTokens = Column("displayTokens", JSONB, nullable=False)
-    structuralShapeId = Column("structuralShapeId", Text, nullable=False)
     tones = Column(JSONB, nullable=False)
 
 
@@ -112,15 +112,18 @@ def validate_tones(tones: list[Any], context: str) -> None:
     if not tones:
         raise ValueError(f"{context} must not be empty")
     bass_count = 0
+    fingers_by_hand: dict[str, set[int]] = {"left": set(), "right": set()}
     for index, item in enumerate(tones):
         tone = expect_object(item, f"{context}[{index}]")
         if set(tone) != {
             "degree",
             "pitch",
-            "midiPitchClass",
+            "pitchClass",
             "teachingRole",
             "voicingRole",
             "isBass",
+            "hand",
+            "finger",
         }:
             raise ValueError(
                 f"{context}[{index}] must contain only canonical tone fields"
@@ -128,10 +131,8 @@ def validate_tones(tones: list[Any], context: str) -> None:
         expect_str(tone.get("degree"), f"{context}[{index}].degree")
         expect_str(tone.get("pitch"), f"{context}[{index}].pitch")
         validate_pitch_class(
-            expect_int(
-                tone.get("midiPitchClass"), f"{context}[{index}].midiPitchClass"
-            ),
-            f"{context}[{index}].midiPitchClass",
+            expect_int(tone.get("pitchClass"), f"{context}[{index}].pitchClass"),
+            f"{context}[{index}].pitchClass",
         )
         validate_enum(
             expect_str(tone.get("teachingRole"), f"{context}[{index}].teachingRole"),
@@ -147,6 +148,37 @@ def validate_tones(tones: list[Any], context: str) -> None:
         if not isinstance(is_bass, bool):
             raise ValueError(f"{context}[{index}].isBass must be a boolean")
         bass_count += int(is_bass)
+        hand = tone.get("hand")
+        finger = tone.get("finger")
+        if tone.get("voicingRole") == "omitted":
+            if hand is not None or finger is not None:
+                raise ValueError(
+                    f"{context}[{index}] omitted tones must not have a fingering"
+                )
+        else:
+            validate_enum(
+                expect_str(hand, f"{context}[{index}].hand"),
+                PIANO_HANDS,
+                f"{context}[{index}].hand",
+            )
+            if finger not in {1, 2, 3, 4, 5}:
+                raise ValueError(f"{context}[{index}].finger must be between 1 and 5")
+            if finger in fingers_by_hand[hand]:
+                raise ValueError(
+                    f"{context}[{index}].finger duplicates another {hand} hand tone"
+                )
+            fingers_by_hand[hand].add(finger)
+            expected_hand = (
+                "left"
+                if is_bass
+                or tone.get("degree") == "1"
+                or tone.get("teachingRole") == "voicing"
+                else "right"
+            )
+            if hand != expected_hand:
+                raise ValueError(
+                    f"{context}[{index}].hand must be {expected_hand} for this teaching role"
+                )
     if bass_count != 1:
         raise ValueError(f"{context} must contain exactly one bass tone")
 
@@ -179,9 +211,6 @@ def load_profile(path: Path) -> dict[str, Any]:
             "root": root,
             "bass": bass_value,
             "displayTokens": display_tokens,
-            "structuralShapeId": expect_str(
-                profile.get("structuralShapeId"), f"{path}.structuralShapeId"
-            ),
             "tones": tones,
         }
     except json.JSONDecodeError as error:

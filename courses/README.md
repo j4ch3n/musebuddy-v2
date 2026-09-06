@@ -28,9 +28,10 @@ courses/chord_dictionary/output/
 
 Each chord JSON contains only the canonical visual data persisted in
 `chord_profiles`: stable `id`, `normalizedSymbol`, `displayTokens`,
-`root`, nullable `bass`, `structuralShapeId`, and an ordered `tones` list.
-Every tone provides its spelled `pitch`, pedagogical `degree`, `midiPitchClass`,
-`teachingRole`, `voicingRole`, and `isBass`. Teaching roles are `anchor`,
+`root`, nullable `bass`, and an ordered `tones` list.
+Every tone provides its spelled `pitch`, pedagogical `degree`, `pitchClass`,
+`teachingRole`, `voicingRole`, `isBass`, and a curated `hand` and `finger` cue.
+Teaching roles are `anchor`,
 `quality`, `guide`, `color`, and `voicing`; the app derives captions and visual
 layers from them rather than storing duplicate copy.
 
