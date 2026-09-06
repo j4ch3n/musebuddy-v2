@@ -12,31 +12,35 @@ export function createTrainingSession(measureCount = 1): TrainingSession {
   return {
     chords: [
       {
-        displayTokens: [{ type: 'root', value: 'C' }],
+        bass: null,
+        displayTokens: [{ teachingRole: 'anchor', type: 'root', value: 'C' }],
         idName: 'c-major',
         normalizedSymbol: 'C',
         root: 'C',
         tones: [
           {
             degree: '1',
-            explanation: 'is the root.',
-            importance: 'essential',
+            isBass: true,
             pitch: 'C',
             pitchClass: 0,
+            teachingRole: 'anchor',
+            voicingRole: 'required',
           },
           {
             degree: '3',
-            explanation: 'is the third.',
-            importance: 'essential',
+            isBass: false,
             pitch: 'E',
             pitchClass: 4,
+            teachingRole: 'quality',
+            voicingRole: 'required',
           },
           {
             degree: '5',
-            explanation: 'is the fifth.',
-            importance: 'supporting',
+            isBass: false,
             pitch: 'G',
             pitchClass: 7,
+            teachingRole: 'voicing',
+            voicingRole: 'required',
           },
         ],
       },

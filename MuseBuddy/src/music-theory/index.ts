@@ -29,4 +29,9 @@ export {
   buildRhythmSoundFontPlaybackConfiguration,
 } from './sound-font-playback';
 export { deriveRhythmFromPatternBeats } from './rhythm-arrangement';
+export {
+  derivePianoHandShape,
+  type ChordHandShapeTone,
+  type DerivedPianoHandShape,
+} from './chord-hand-shape';
 export { BPM_OPTIONS, DEFAULT_BPM } from './tempo';

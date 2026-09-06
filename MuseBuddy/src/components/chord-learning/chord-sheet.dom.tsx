@@ -6,7 +6,7 @@ import { Accidental, Factory, StaveNote } from 'vexflow';
 import { museBuddyColors } from '@/constants/design-tokens';
 import type { ChordDisplayNote } from '@/music-theory';
 
-import { chordToneRoleByImportance, chordToneRoleColors } from './chord-color-role';
+import { chordToneRoleColors } from './chord-color-role';
 
 type ChordSheetProps = {
   dom?: import('expo/dom').DOMProps;
@@ -71,7 +71,7 @@ export default function ChordSheet({ height = DEFAULT_STAVE_HEIGHT, notes }: Cho
       });
 
       notes.forEach((note, noteIndex) => {
-        const toneRole = note.isRoot ? 'root' : chordToneRoleByImportance[note.importance];
+        const toneRole = note.isRoot ? 'anchor' : (note.teachingRole ?? 'voicing');
         const color = chordToneRoleColors[toneRole].color;
         const noteStyle = { fillStyle: color, strokeStyle: color };
 

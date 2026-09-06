@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ChordDegree, ChordToneImportance } from '@/contexts/training-session-schema';
+import type {
+  ChordDegree,
+  ChordTeachingRole,
+  ChordToneImportance,
+  ChordVoicingRole,
+} from '@/contexts/training-session-schema';
 import type { PianoPitchClass } from '@schema/music-theory-schema';
 
 import { buildChordDisplay } from './chord-display';
@@ -12,7 +17,22 @@ function tone(
   importance: ChordToneImportance,
   explanation: string,
 ) {
-  return { degree, explanation, importance, pitch, pitchClass };
+  return {
+    degree,
+    isBass: degree === '1',
+    pitch,
+    pitchClass,
+    teachingRole: (degree === '1'
+      ? 'anchor'
+      : degree === '3' || degree === 'b3'
+        ? 'quality'
+        : degree === '7' || degree === 'b7'
+          ? 'guide'
+          : degree === '5'
+            ? 'voicing'
+            : 'color') as ChordTeachingRole,
+    voicingRole: (importance === 'optional' ? 'optional' : 'required') as ChordVoicingRole,
+  };
 }
 
 describe('buildChordDisplay', () => {
@@ -49,8 +69,7 @@ describe('buildChordDisplay', () => {
     expect(display.notes.map((note) => note.text)).toEqual(['C', 'E', 'G', 'B']);
     expect(display.notes[0]).toMatchObject({
       degree: '1',
-      explanation: 'root explanation',
-      importance: 'essential',
+      teachingRole: 'anchor',
       isRoot: true,
       pitchClass: 0,
     });
@@ -114,16 +133,16 @@ describe('buildChordDisplay', () => {
     expect(display.notes.map((note) => note.pitchClass)).toEqual([5, 9, 0, 4]);
     expect(display.notes.map((note) => note.midi)).toEqual([65, 69, 72, 76]);
     expect(
-      display.notes.map(({ degree, explanation, importance }) => ({
+      display.notes.map(({ degree, teachingRole, voicingRole }) => ({
         degree,
-        explanation,
-        importance,
+        teachingRole,
+        voicingRole,
       })),
     ).toEqual([
-      { degree: '1', explanation: 'root explanation', importance: 'essential' },
-      { degree: '3', explanation: 'third explanation', importance: 'essential' },
-      { degree: '5', explanation: 'fifth explanation', importance: 'supporting' },
-      { degree: '7', explanation: 'seventh explanation', importance: 'color' },
+      { degree: '1', teachingRole: 'anchor', voicingRole: 'required' },
+      { degree: '3', teachingRole: 'quality', voicingRole: 'required' },
+      { degree: '5', teachingRole: 'voicing', voicingRole: 'required' },
+      { degree: '7', teachingRole: 'guide', voicingRole: 'required' },
     ]);
   });
 
@@ -144,13 +163,12 @@ describe('buildChordDisplay', () => {
       ],
     });
 
-    expect(display.tokens).toContainEqual({ text: 'add9', type: 'addition' });
+    expect(display.tokens).toContainEqual({ teachingRole: null, text: 'add9', type: 'addition' });
     expect(display.notes.map((note) => note.text)).toEqual(['A', 'C#', 'E', 'B']);
     expect(display.notes.map((note) => note.midi)).toEqual([69, 73, 76, 83]);
     expect(display.notes.at(-1)).toMatchObject({
       degree: '9',
-      explanation: 'ninth explanation',
-      importance: 'color',
+      teachingRole: 'color',
     });
   });
 

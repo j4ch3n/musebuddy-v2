@@ -3,7 +3,11 @@ import { StyleSheet, Text, type StyleProp, type TextStyle } from 'react-native';
 import { museBuddyColors } from '@/constants/design-tokens';
 import type { ChordDisplay, ChordDisplayTokenType } from '@/music-theory';
 
-import { chordSyntaxRoleByTokenType, chordSyntaxRoleColors } from './chord-color-role';
+import {
+  chordSyntaxRoleByTokenType,
+  chordSyntaxRoleColors,
+  chordToneRoleColors,
+} from './chord-color-role';
 
 type ChordNameSize = 'large' | 'compact';
 
@@ -24,7 +28,7 @@ export function ChordName({ colorized = true, display, size = 'large', style }: 
         <Text
           key={`${token.type}-${token.text}-${index}`}
           style={[
-            colorized ? tokenStyles[token.type] : styles.symbolText,
+            colorized ? tokenStyle(token) : styles.symbolText,
             isDetailToken(token.type) ? tokenSizeStyles[size] : null,
           ]}
         >
@@ -47,6 +51,13 @@ const tokenStyles = StyleSheet.create(
     ]),
   ) as Record<ChordDisplayTokenType, TextStyle>,
 );
+
+function tokenStyle(token: ChordDisplay['tokens'][number]) {
+  if (token.teachingRole) {
+    return { color: chordToneRoleColors[token.teachingRole].color };
+  }
+  return tokenStyles[token.type];
+}
 
 const styles = StyleSheet.create({
   symbol: {

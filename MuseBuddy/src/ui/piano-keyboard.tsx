@@ -10,7 +10,16 @@ import { getPianoKeyboardMarkers } from './piano-keyboard-utils';
 export type { PianoKeyboardMarker } from './piano-keyboard-utils';
 export { getPianoKeyboardMarkers } from './piano-keyboard-utils';
 
-export type PianoKeyboardMarkerTone = 'color' | 'essential' | 'optional' | 'root' | 'supporting';
+export type PianoKeyboardMarkerTone =
+  | 'anchor'
+  | 'quality'
+  | 'guide'
+  | 'color'
+  | 'voicing'
+  | 'essential'
+  | 'optional'
+  | 'root'
+  | 'supporting';
 
 export type PianoKeyboardMarkerAppearance = {
   fill: string;
@@ -254,7 +263,7 @@ export function PianoKeyboard({
             {markers.map(({ isRoot, pitchClass }) => {
               const { cx, cy, r } = getMarkerPosition(pitchClass);
               const label = markerLabels?.[pitchClass];
-              const tone = isRoot ? 'root' : (markerTones?.[pitchClass] ?? 'supporting');
+              const tone = markerTones?.[pitchClass] ?? (isRoot ? 'anchor' : 'supporting');
               const appearance = markerAppearances?.[tone] ?? markerToneAppearances[tone];
 
               return (
@@ -524,6 +533,10 @@ function LiveKeyRipple({
 }
 
 const markerToneAppearances: Record<PianoKeyboardMarkerTone, PianoKeyboardMarkerAppearance> = {
+  anchor: { fill: museBuddyColors.wildflower, label: museBuddyColors.mist },
+  quality: { fill: museBuddyColors.chordEssential, label: museBuddyColors.mist },
+  guide: { fill: museBuddyColors.chordSupporting, label: museBuddyColors.mist },
+  voicing: { fill: museBuddyColors.chordOptional, label: museBuddyColors.mist },
   color: {
     fill: museBuddyColors.cyan,
     label: museBuddyColors.mist,

@@ -1,12 +1,12 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { museBuddyColors, museBuddyTypography } from '@/constants/design-tokens';
-import type { ChordDisplay } from '@/music-theory';
+import type { ChordDisplay, ChordDisplayNote } from '@/music-theory';
 import { PianoKeyboard, type PianoKeyboardLiveKeyState, type PianoKeyboardMarkerTone } from '@/ui';
 import type { PianoPitchClass } from '@schema/music-theory-schema';
 
 import ChordSheet from './chord-sheet.dom';
-import { chordToneRoleByImportance, chordToneMarkerAppearances } from './chord-color-role';
+import { chordToneMarkerAppearances } from './chord-color-role';
 import { ChordToneLegend } from './chord-role-legend';
 
 const PREVIEW_KEYBOARD_SIDE_BLEED = -13;
@@ -18,7 +18,9 @@ type ChordKeyboardCardProps = {
   errorMessage?: string;
   liveKeys?: Partial<Record<PianoPitchClass, PianoKeyboardLiveKeyState>>;
   showKeyHighlightDots?: boolean;
+  showKeyHighlightLabels?: boolean;
   showSheetNotation?: boolean;
+  visibleNotes?: readonly ChordDisplayNote[];
 };
 
 export function ChordKeyboardCard({
@@ -27,36 +29,38 @@ export function ChordKeyboardCard({
   errorMessage,
   liveKeys = {},
   showKeyHighlightDots = true,
+  showKeyHighlightLabels = true,
   showSheetNotation = true,
+  visibleNotes,
 }: ChordKeyboardCardProps) {
-  const rootNote = display.notes.find((note) => note.isRoot) ?? display.notes[0];
-  const selectedKeys = display.notes
+  const notes = visibleNotes ?? display.notes;
+  const rootNote = notes.find((note) => note.isRoot) ?? notes[0];
+  const selectedKeys = notes
     .filter((note) => note.pitchClass !== rootNote.pitchClass)
     .map((note) => note.pitchClass);
-  const noteNames = display.notes.map((note) => note.text).join(' - ');
-  const markerLabels = display.notes.reduce<Partial<Record<PianoPitchClass, string>>>(
-    (labels, note) => {
-      labels[note.pitchClass] = note.text;
-      return labels;
-    },
-    {},
-  );
+  const noteNames = notes.map((note) => note.text).join(' - ');
+  const markerLabels = showKeyHighlightLabels
+    ? notes.reduce<Partial<Record<PianoPitchClass, string>>>((labels, note) => {
+        labels[note.pitchClass] = note.text;
+        return labels;
+      }, {})
+    : {};
   const markerTones = display.notes.reduce<
     Partial<Record<PianoPitchClass, PianoKeyboardMarkerTone>>
   >((tones, note) => {
-    tones[note.pitchClass] = note.isRoot ? 'root' : chordToneRoleByImportance[note.importance];
+    tones[note.pitchClass] = note.isRoot ? 'anchor' : (note.teachingRole ?? 'voicing');
     return tones;
   }, {});
   if (displayMode === 'notation') {
     return (
       <View
-        accessibilityLabel={`Sheet notes: ${display.notes.map((note) => note.text).join(', ')}`}
+        accessibilityLabel={`Sheet notes: ${notes.map((note) => note.text).join(', ')}`}
         style={styles.compactSheetFrame}
       >
         <ChordSheet
           dom={{ scrollEnabled: false, style: styles.notationSheet }}
           height={160}
-          notes={display.notes}
+          notes={notes}
         />
       </View>
     );
@@ -97,7 +101,7 @@ export function ChordKeyboardCard({
       <View
         accessibilityLabel={
           showSheetNotation
-            ? `Sheet notes: ${display.notes.map((note) => note.text).join(', ')}`
+            ? `Sheet notes: ${notes.map((note) => note.text).join(', ')}`
             : undefined
         }
         style={styles.sheetFrame}
@@ -107,7 +111,7 @@ export function ChordKeyboardCard({
             scrollEnabled: false,
             style: styles.sheet,
           }}
-          notes={display.notes}
+          notes={notes}
         />
         {!showSheetNotation ? (
           <View

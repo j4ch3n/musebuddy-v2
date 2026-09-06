@@ -1,6 +1,6 @@
 import { museBuddyColors } from '@/constants/design-tokens';
 import type { ChordDisplayTokenType } from '@/music-theory';
-import type { ChordToneImportance } from '@/contexts/training-session-schema';
+import type { ChordTeachingRole } from '@/contexts/training-session-schema';
 
 export type ChordSyntaxColorRole =
   | 'addition'
@@ -12,7 +12,7 @@ export type ChordSyntaxColorRole =
   | 'root'
   | 'separator';
 
-export type ChordToneColorRole = 'color' | 'essential' | 'optional' | 'root' | 'supporting';
+export type ChordToneColorRole = ChordTeachingRole;
 
 type ChordToneMarkerAppearance = {
   fill: string;
@@ -30,12 +30,21 @@ export const chordSyntaxRoleByTokenType: Record<ChordDisplayTokenType, ChordSynt
   separator: 'separator',
 };
 
-export const chordToneRoleByImportance: Record<ChordToneImportance, ChordToneColorRole> = {
+export const chordToneRoleByTeachingRole: Record<ChordTeachingRole, ChordToneColorRole> = {
+  anchor: 'anchor',
   color: 'color',
-  essential: 'essential',
-  optional: 'optional',
-  supporting: 'supporting',
+  guide: 'guide',
+  quality: 'quality',
+  voicing: 'voicing',
 };
+
+/** @deprecated Existing fixtures may still use the pre-canonical vocabulary. */
+export const chordToneRoleByImportance = {
+  color: 'color',
+  essential: 'quality',
+  optional: 'voicing',
+  supporting: 'guide',
+} as const;
 
 export const chordSyntaxRoleLabels: Record<ChordSyntaxColorRole, string> = {
   addition: 'Added tone',
@@ -49,45 +58,42 @@ export const chordSyntaxRoleLabels: Record<ChordSyntaxColorRole, string> = {
 };
 
 export const chordToneRoleLabels: Record<ChordToneColorRole, string> = {
+  anchor: 'Anchor',
   color: 'Color tone',
-  essential: 'Essential',
-  optional: 'Optional',
-  root: 'Root',
-  supporting: 'Supporting',
+  guide: 'Guide tone',
+  quality: 'Quality',
+  voicing: 'Voicing tone',
 };
 
 export const chordToneRoleColors: Record<ChordToneColorRole, { color: string; label: string }> = {
+  anchor: { color: museBuddyColors.wildflower, label: museBuddyColors.mist },
   color: {
     color: museBuddyColors.chordColorTone,
     label: museBuddyColors.mist,
   },
-  essential: {
+  guide: {
+    color: museBuddyColors.chordSupporting,
+    label: museBuddyColors.mist,
+  },
+  quality: {
     color: museBuddyColors.chordEssential,
     label: museBuddyColors.mist,
   },
-  optional: {
+  voicing: {
     color: museBuddyColors.chordOptional,
-    label: museBuddyColors.mist,
-  },
-  root: {
-    color: museBuddyColors.chordRoot,
-    label: museBuddyColors.mist,
-  },
-  supporting: {
-    color: museBuddyColors.chordSupporting,
     label: museBuddyColors.mist,
   },
 };
 
 const chordToneRoleBySyntaxRole: Record<ChordSyntaxColorRole, ChordToneColorRole> = {
   addition: 'color',
-  alteration: 'optional',
-  bass: 'optional',
+  alteration: 'color',
+  bass: 'anchor',
   extension: 'color',
-  omission: 'supporting',
-  quality: 'essential',
-  root: 'root',
-  separator: 'supporting',
+  omission: 'voicing',
+  quality: 'quality',
+  root: 'anchor',
+  separator: 'voicing',
 };
 
 export const chordSyntaxRoleColors: Record<ChordSyntaxColorRole, { color: string }> =

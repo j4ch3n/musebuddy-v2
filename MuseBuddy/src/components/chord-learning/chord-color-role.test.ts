@@ -23,33 +23,33 @@ describe('chord color roles', () => {
     });
   });
 
-  it('assigns stable harmonic roles by importance', () => {
+  it('maps legacy importance to canonical teaching roles', () => {
     expect(chordToneRoleByImportance).toEqual({
       color: 'color',
-      essential: 'essential',
-      optional: 'optional',
-      supporting: 'supporting',
+      essential: 'quality',
+      optional: 'voicing',
+      supporting: 'guide',
     });
   });
 
   it('uses one display color for sheet, keyboard, and legend harmonic notes', () => {
     expect(chordToneRoleColors).toMatchObject({
       color: { color: museBuddyColors.chordColorTone },
-      essential: { color: museBuddyColors.chordEssential },
-      optional: { color: museBuddyColors.chordOptional },
-      root: { color: museBuddyColors.chordRoot },
-      supporting: { color: museBuddyColors.chordSupporting },
+      anchor: { color: museBuddyColors.wildflower },
+      quality: { color: museBuddyColors.chordEssential },
+      guide: { color: museBuddyColors.chordSupporting },
+      voicing: { color: museBuddyColors.chordOptional },
     });
   });
 
   it('uses one display color for chord-name syntax and its legend', () => {
     expect(chordSyntaxRoleColors).toMatchObject({
       addition: { color: museBuddyColors.chordColorTone },
-      alteration: { color: museBuddyColors.chordOptional },
-      bass: { color: museBuddyColors.chordOptional },
+      alteration: { color: museBuddyColors.chordColorTone },
+      bass: { color: museBuddyColors.wildflower },
       extension: { color: museBuddyColors.chordColorTone },
       quality: { color: museBuddyColors.chordEssential },
-      root: { color: museBuddyColors.chordRoot },
+      root: { color: museBuddyColors.wildflower },
     });
   });
 });

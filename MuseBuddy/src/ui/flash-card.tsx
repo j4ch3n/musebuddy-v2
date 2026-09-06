@@ -1,5 +1,11 @@
 import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
+import Animated, {
+  interpolate,
+  useAnimatedStyle,
+  useDerivedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { YStack } from 'tamagui';
 
 import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
@@ -7,6 +13,7 @@ import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/d
 import { Carousel } from './carousel';
 
 type FlashCardSurface = 'hero' | 'supporting';
+export type FlashCardHeightMode = 'home-postcard' | 'daily-training' | 'fill';
 
 export type FlashCardPage = {
   content: ReactNode;
@@ -17,8 +24,7 @@ export type FlashCardPage = {
 type FlashCardBaseProps = {
   accessibilityLabel?: string;
   footer?: ReactNode;
-  isFlipped?: boolean;
-  onFlipChange?: (isFlipped: boolean) => void;
+  heightMode?: FlashCardHeightMode;
   onPageChange?: (pageIndex: number) => void;
   padded?: boolean;
   pages?: readonly FlashCardPage[];
@@ -48,9 +54,8 @@ type FlashCardProps = FlashCardBaseProps & (FramedFlashCardProps | FramelessFlas
 export function FlashCard({
   accessibilityLabel,
   footer,
+  heightMode,
   frameless = false,
-  isFlipped: controlledIsFlipped,
-  onFlipChange,
   onPageChange,
   padded = true,
   pages,
@@ -63,8 +68,16 @@ export function FlashCard({
   style,
   surface = 'hero',
 }: FlashCardProps) {
-  const [uncontrolledIsFlipped, setUncontrolledIsFlipped] = useState(false);
-  const isFlipped = controlledIsFlipped ?? uncontrolledIsFlipped;
+  const [isFlipped, setIsFlipped] = useState(false);
+  const flipProgress = useDerivedValue(() => withTiming(isFlipped ? 1 : 0, { duration: 280 }));
+  const frontFaceStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(flipProgress.value, [0, 0.45, 0.55, 1], [1, 0, 0, 0]),
+    transform: [{ perspective: 900 }, { rotateY: `${flipProgress.value * 180}deg` }],
+  }));
+  const backFaceStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(flipProgress.value, [0, 0.45, 0.55, 1], [0, 0, 0, 1]),
+    transform: [{ perspective: 900 }, { rotateY: `${180 + flipProgress.value * 180}deg` }],
+  }));
   const backgroundStyle = frameless
     ? styles.framelessSurface
     : surfaceColor
@@ -72,7 +85,6 @@ export function FlashCard({
       : surface === 'supporting'
         ? styles.supportingSurface
         : styles.heroSurface;
-  const activeSide = isFlipped && sideB ? sideB : sideA;
   const content = pages ? (
     <Carousel
       accessibilityLabel={accessibilityLabel ?? 'Flash card pages'}
@@ -83,8 +95,27 @@ export function FlashCard({
       renderItem={(page) => page.content}
       selectedIndex={selectedPageIndex}
     />
+  ) : sideB ? (
+    <YStack style={styles.flipSurface}>
+      <Animated.View
+        accessibilityElementsHidden={isFlipped}
+        importantForAccessibility={isFlipped ? 'no-hide-descendants' : 'auto'}
+        pointerEvents={isFlipped ? 'none' : 'auto'}
+        style={[styles.face, frontFaceStyle]}
+      >
+        {sideA}
+      </Animated.View>
+      <Animated.View
+        accessibilityElementsHidden={!isFlipped}
+        importantForAccessibility={isFlipped ? 'auto' : 'no-hide-descendants'}
+        pointerEvents={isFlipped ? 'auto' : 'none'}
+        style={[styles.face, backFaceStyle]}
+      >
+        {sideB}
+      </Animated.View>
+    </YStack>
   ) : (
-    activeSide
+    sideA
   );
 
   return (
@@ -93,6 +124,7 @@ export function FlashCard({
       style={[
         frameless ? styles.frameless : styles.card,
         backgroundStyle,
+        heightMode ? heightModeStyles[heightMode] : null,
         frameless ? null : { borderColor, boxShadow: `6px 6px 0 ${shadowColor}` },
         style,
       ]}
@@ -100,19 +132,11 @@ export function FlashCard({
       <YStack style={[styles.inner, backgroundStyle, padded ? styles.padded : null]}>
         {content}
         {footer ? <YStack style={styles.footer}>{footer}</YStack> : null}
-        {sideB ? (
+        {sideB && !pages ? (
           <Pressable
             accessibilityLabel={isFlipped ? 'Show front of card' : 'Show back of card'}
             accessibilityRole="button"
-            onPress={() => {
-              const nextIsFlipped = !isFlipped;
-
-              if (controlledIsFlipped === undefined) {
-                setUncontrolledIsFlipped(nextIsFlipped);
-              }
-
-              onFlipChange?.(nextIsFlipped);
-            }}
+            onPress={() => setIsFlipped((currentIsFlipped) => !currentIsFlipped)}
             style={({ pressed }) => [
               styles.flipButton,
               { boxShadow: `${pressed ? 1 : 4}px ${pressed ? 1 : 4}px 0 ${shadowColor}` },
@@ -159,6 +183,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '900',
   },
+  face: {
+    alignItems: 'stretch',
+    backfaceVisibility: 'hidden',
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
+  flipSurface: { flex: 1, minHeight: 0 },
   footer: {
     marginTop: 12,
   },
@@ -173,4 +207,10 @@ const styles = StyleSheet.create({
   heroSurface: {
     backgroundColor: museBuddyColors.paper,
   },
+});
+
+const heightModeStyles = StyleSheet.create({
+  'daily-training': { height: 640 },
+  fill: { flex: 1, minHeight: 0 },
+  'home-postcard': { height: 410 },
 });

@@ -1,8 +1,9 @@
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ControlGroup } from '@/components/training-session';
+import { ControlGroup, TrainingSessionStage } from '@/components/training-session';
 import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 import { useTrainingSession } from '@/contexts/training-session-context';
 import { TactileControlAction } from '@/ui';
@@ -14,9 +15,12 @@ export function TrainingSessionPage() {
     learningConfig,
     phase,
     resetTrainingSession,
+    rhythmStaff,
     selectedPhraseIndex,
     session,
     setBpm,
+    setRhythmStaff,
+    trainingFocus,
   } = useTrainingSession();
   const barCount = session?.bars.length ?? 0;
   const progress = barCount > 0 ? Math.min((selectedPhraseIndex + 1) / barCount, 1) : 0;
@@ -26,7 +30,14 @@ export function TrainingSessionPage() {
       <View style={styles.progressTrack}>
         <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
       </View>
-      <TrainingStage errorMessage={errorMessage} isLoading={phase === 'loading'} />
+      <TrainingStage
+        errorMessage={errorMessage}
+        isLoading={phase === 'loading'}
+        rhythmStaff={rhythmStaff}
+        setRhythmStaff={setRhythmStaff}
+        session={session}
+        trainingFocus={trainingFocus}
+      />
       <ControlGroup
         action={<StageAction />}
         bpm={learningConfig.bpm}
@@ -38,7 +49,34 @@ export function TrainingSessionPage() {
   );
 }
 
-function TrainingStage({ errorMessage, isLoading }: { errorMessage: string; isLoading: boolean }) {
+function TrainingStage({
+  errorMessage,
+  isLoading,
+  rhythmStaff,
+  session,
+  setRhythmStaff,
+  trainingFocus,
+}: {
+  errorMessage: string;
+  isLoading: boolean;
+  rhythmStaff: 'bass' | 'treble';
+  session: ReturnType<typeof useTrainingSession>['session'];
+  setRhythmStaff: (staff: 'bass' | 'treble') => void;
+  trainingFocus: ReturnType<typeof useTrainingSession>['trainingFocus'];
+}) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  if (session && !isLoading && !errorMessage) {
+    return (
+      <TrainingSessionStage
+        focus={trainingFocus}
+        isPlaying={isPlaying}
+        onPlayPress={() => setIsPlaying((current) => !current)}
+        onRhythmStaffChange={setRhythmStaff}
+        rhythmStaff={rhythmStaff}
+        session={session}
+      />
+    );
+  }
   const description = errorMessage
     ? errorMessage
     : isLoading

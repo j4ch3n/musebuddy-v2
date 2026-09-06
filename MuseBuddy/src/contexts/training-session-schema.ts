@@ -15,6 +15,7 @@ const displayTokenTypeSchema = z.enum([
 
 export const chordDisplayTokenSchema = z.object({
   type: displayTokenTypeSchema,
+  teachingRole: z.enum(['anchor', 'quality', 'guide', 'color', 'voicing']).nullable(),
   value: z.string(),
 });
 
@@ -44,14 +45,16 @@ export const chordDegreeSchema = z.enum([
   'bb7',
 ]);
 
-export const chordToneImportanceSchema = z.enum(['essential', 'supporting', 'color', 'optional']);
+export const chordTeachingRoleSchema = z.enum(['anchor', 'quality', 'guide', 'color', 'voicing']);
+export const chordVoicingRoleSchema = z.enum(['required', 'optional', 'omitted']);
 
 export const chordToneSchema = z.object({
   degree: chordDegreeSchema,
-  explanation: z.string().min(1),
-  importance: chordToneImportanceSchema,
+  isBass: z.boolean(),
   pitch: chordPitchSchema,
   pitchClass: pianoPitchClassSchema,
+  teachingRole: chordTeachingRoleSchema,
+  voicingRole: chordVoicingRoleSchema,
 });
 
 export const rhythmStepSchema = z.union([z.literal('s'), z.literal('w'), z.literal('h'), z.null()]);
@@ -174,6 +177,7 @@ export const rhythmSchema = z.object({
 });
 
 export const trainingSessionChordSchema = z.object({
+  bass: chordPitchSchema.nullable().optional(),
   displayTokens: z.array(chordDisplayTokenSchema).min(1),
   idName: z.string().min(1),
   normalizedSymbol: z.string().min(1),
@@ -268,4 +272,7 @@ export type PatternStaffName = keyof TrainingSessionPatternBeat['staves'];
 export type ChordDisplayTokenValue = z.infer<typeof chordDisplayTokenSchema>;
 export type ChordDegree = z.infer<typeof chordDegreeSchema>;
 export type ChordTone = z.infer<typeof chordToneSchema>;
-export type ChordToneImportance = z.infer<typeof chordToneImportanceSchema>;
+export type ChordTeachingRole = z.infer<typeof chordTeachingRoleSchema>;
+export type ChordVoicingRole = z.infer<typeof chordVoicingRoleSchema>;
+/** @deprecated Test-only compatibility; never part of the training-session payload. */
+export type ChordToneImportance = 'essential' | 'supporting' | 'color' | 'optional';

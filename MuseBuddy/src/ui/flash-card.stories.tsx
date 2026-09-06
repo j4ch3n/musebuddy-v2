@@ -31,16 +31,9 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Hero: Story = {};
-
-export const Supporting: Story = {
-  args: {
-    surface: 'supporting',
-  },
-};
-
 export const Flippable: Story = {
   args: {
+    heightMode: 'fill',
     sideB: (
       <YStack gap={10}>
         <Text color={museBuddyColors.pine} fontSize={12} fontWeight="900">

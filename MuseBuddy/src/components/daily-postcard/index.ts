@@ -1,1 +1,1 @@
-export { DailyPostcard } from './daily-postcard';
+export { DailyPostcard, DailyPostcardCard } from './daily-postcard';

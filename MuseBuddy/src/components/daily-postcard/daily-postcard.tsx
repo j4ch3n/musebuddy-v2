@@ -18,13 +18,24 @@ const buddySource = require('@assets/images/brand/musebuddy-buddy.png');
 export function DailyPostcard({ compact }: { compact: boolean }) {
   const { session } = useTrainingSession();
   const [previewStepIndex] = useState(selectPreviewStepIndex);
-  const score = useMemo(() => {
-    if (!session) return null;
+  if (!session) return null;
+  return (
+    <DailyPostcardCard compact={compact} previewStepIndex={previewStepIndex} session={session} />
+  );
+}
 
-    return paginateScore(session.score, 1)[0] ?? session.score;
-  }, [session]);
+type DailyPostcardCardProps = {
+  compact: boolean;
+  previewStepIndex?: number | null;
+  session: PreparedTrainingSession;
+};
 
-  if (!session || !score) return null;
+export function DailyPostcardCard({
+  compact,
+  previewStepIndex = null,
+  session,
+}: DailyPostcardCardProps) {
+  const score = useMemo(() => paginateScore(session.score, 1)[0] ?? session.score, [session.score]);
 
   return (
     <View style={[styles.card, compact && styles.cardCompact]}>

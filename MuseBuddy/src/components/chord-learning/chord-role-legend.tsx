@@ -4,9 +4,6 @@ import { museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 import type { ChordDisplayToken } from '@/music-theory';
 
 import {
-  chordSyntaxRoleByTokenType,
-  chordSyntaxRoleColors,
-  chordSyntaxRoleLabels,
   chordToneRoleColors,
   chordToneRoleLabels,
   type ChordToneColorRole,
@@ -18,21 +15,16 @@ type ChordSyntaxLegendProps = {
 
 export function ChordSyntaxLegend({ tokens }: ChordSyntaxLegendProps) {
   const roles = [
-    ...new Set(
-      tokens
-        .map((token) => chordSyntaxRoleByTokenType[token.type])
-        .filter((role) => role !== 'separator'),
-    ),
+    ...new Set(tokens.flatMap((token) => (token.teachingRole ? [token.teachingRole] : []))),
   ];
 
   return (
     <View accessibilityLabel="Chord symbol color key" style={styles.legend}>
       {roles.map((role) => (
         <LegendItem
-          color={chordSyntaxRoleColors[role].color}
+          color={chordToneRoleColors[role].color}
           key={role}
-          label={chordSyntaxRoleLabels[role]}
-          outlined={role === 'omission'}
+          label={chordToneRoleLabels[role]}
         />
       ))}
     </View>
@@ -40,8 +32,8 @@ export function ChordSyntaxLegend({ tokens }: ChordSyntaxLegendProps) {
 }
 
 const chordToneLegendRows = [
-  ['root', 'essential', 'supporting'],
-  ['color', 'optional'],
+  ['anchor', 'quality', 'guide'],
+  ['color', 'voicing'],
 ] as const satisfies readonly (readonly ChordToneColorRole[])[];
 
 export function ChordToneLegend() {

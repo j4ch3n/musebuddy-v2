@@ -9,6 +9,7 @@ import {
 } from 'react';
 
 import { initialize, BasicPitchError } from '@modules/basic-pitch';
+import { nextTrainingFocus, type TrainingFocus } from '@/components/training-session';
 import { prepareTrainingSessionDisplay, type PreparedTrainingSession } from '@/music-theory';
 import { createLogger } from '@/utils/logger';
 import { fetchDailyTrainingSession } from './training-session-api';
@@ -25,6 +26,7 @@ export type TrainingLearningConfig = {
 };
 
 type TrainingSessionContextValue = {
+  advanceTrainingFocus: () => void;
   errorMessage: string;
   learningConfig: TrainingLearningConfig;
   phase: TrainingSessionPhase;
@@ -32,6 +34,9 @@ type TrainingSessionContextValue = {
   selectedDetailTab: TrainingDetailTab | null;
   selectedPhraseIndex: number;
   session: PreparedTrainingSession | null;
+  rhythmStaff: 'bass' | 'treble';
+  trainingFocus: TrainingFocus;
+  setRhythmStaff: (staff: 'bass' | 'treble') => void;
   setBpm: (bpm: number) => void;
   openBarDetails: (barIndex: number, tab: TrainingDetailTab) => void;
   resetTrainingSession: () => void;
@@ -71,6 +76,12 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
   const [selectedDetailTab, setSelectedDetailTab] = useState<TrainingDetailTab | null>(null);
   const [session, setSession] = useState<PreparedTrainingSession | null>(null);
   const [view, setView] = useState<TrainingSessionView>('sheet');
+  const [trainingFocus, setTrainingFocus] = useState<TrainingFocus>('chords');
+  const [rhythmStaff, setRhythmStaff] = useState<'bass' | 'treble'>('treble');
+
+  const advanceTrainingFocus = useCallback(() => {
+    setTrainingFocus((focus) => nextTrainingFocus(focus) ?? focus);
+  }, []);
 
   const setBpm = useCallback((bpm: number) => {
     setLearningConfig((currentConfig) => ({
@@ -103,6 +114,8 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
     setLearningConfig(DEFAULT_LEARNING_CONFIG);
     setSelectedPhraseIndex(0);
     setSelectedDetailTab(null);
+    setTrainingFocus('chords');
+    setRhythmStaff('treble');
     setView('sheet');
   }, []);
 
@@ -118,6 +131,8 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
       setSession(preparedSession);
       setSelectedPhraseIndex(0);
       setSelectedDetailTab(null);
+      setTrainingFocus('chords');
+      setRhythmStaff('treble');
       setView('sheet');
       setPhase('ready');
     } catch (error) {
@@ -149,6 +164,7 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
 
   const value = useMemo(
     () => ({
+      advanceTrainingFocus,
       errorMessage,
       learningConfig,
       phase,
@@ -158,12 +174,16 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
       selectedDetailTab,
       selectedPhraseIndex,
       session,
+      rhythmStaff,
+      setRhythmStaff,
       setBpm,
       setSelectedPhraseIndex: selectPhrase,
       showSheet,
       view,
+      trainingFocus,
     }),
     [
+      advanceTrainingFocus,
       errorMessage,
       learningConfig,
       phase,
@@ -174,9 +194,11 @@ export function TrainingSessionProvider({ children }: TrainingSessionProviderPro
       selectPhrase,
       selectedPhraseIndex,
       session,
+      rhythmStaff,
       setBpm,
       showSheet,
       view,
+      trainingFocus,
     ],
   );
 
