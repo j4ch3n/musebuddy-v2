@@ -1,9 +1,13 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ControlGroup, TrainingSessionStage } from '@/components/training-session';
+import {
+  ControlGroup,
+  TrainingChordStageOverview,
+  TrainingRhythmStageOverview,
+  TrainingVoicingStageOverview,
+} from '@/components/training-session';
 import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 import { useTrainingSession } from '@/contexts/training-session-context';
 import { TactileControlAction } from '@/ui';
@@ -19,7 +23,6 @@ export function TrainingSessionPage() {
     selectedPhraseIndex,
     session,
     setBpm,
-    setRhythmStaff,
     trainingFocus,
   } = useTrainingSession();
   const barCount = session?.bars.length ?? 0;
@@ -34,7 +37,6 @@ export function TrainingSessionPage() {
         errorMessage={errorMessage}
         isLoading={phase === 'loading'}
         rhythmStaff={rhythmStaff}
-        setRhythmStaff={setRhythmStaff}
         session={session}
         trainingFocus={trainingFocus}
       />
@@ -54,28 +56,20 @@ function TrainingStage({
   isLoading,
   rhythmStaff,
   session,
-  setRhythmStaff,
   trainingFocus,
 }: {
   errorMessage: string;
   isLoading: boolean;
   rhythmStaff: 'bass' | 'treble';
   session: ReturnType<typeof useTrainingSession>['session'];
-  setRhythmStaff: (staff: 'bass' | 'treble') => void;
   trainingFocus: ReturnType<typeof useTrainingSession>['trainingFocus'];
 }) {
-  const [isPlaying, setIsPlaying] = useState(false);
   if (session && !isLoading && !errorMessage) {
-    return (
-      <TrainingSessionStage
-        focus={trainingFocus}
-        isPlaying={isPlaying}
-        onPlayPress={() => setIsPlaying((current) => !current)}
-        onRhythmStaffChange={setRhythmStaff}
-        rhythmStaff={rhythmStaff}
-        session={session}
-      />
-    );
+    if (trainingFocus === 'chords') return <TrainingChordStageOverview />;
+    if (trainingFocus === 'rhythm') {
+      return <TrainingRhythmStageOverview staff={rhythmStaff} />;
+    }
+    return <TrainingVoicingStageOverview />;
   }
   const description = errorMessage
     ? errorMessage

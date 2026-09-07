@@ -5,4 +5,6 @@ export { ControlGroup } from './control-group';
 export { PlayButtonGroup } from './play-button-group';
 export { ProgressionOverview } from './progression-overview';
 export { nextTrainingFocus, trainingFocuses, type TrainingFocus } from './training-focus';
-export { TrainingSessionStage } from './training-session-stage';
+export { TrainingChordStageOverview } from './training-chord-stage-overview';
+export { TrainingRhythmStageOverview } from './training-rhythm-stage-overview';
+export { TrainingVoicingStageOverview } from './training-voicing-stage-overview';
