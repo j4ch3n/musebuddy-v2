@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   ControlGroup,
+  createTrainingChordStageOverviewConfig,
   TrainingChordStageOverview,
   TrainingRhythmStageOverview,
   TrainingVoicingStageOverview,
@@ -65,7 +66,11 @@ function TrainingStage({
   trainingFocus: ReturnType<typeof useTrainingSession>['trainingFocus'];
 }) {
   if (session && !isLoading && !errorMessage) {
-    if (trainingFocus === 'chords') return <TrainingChordStageOverview />;
+    if (trainingFocus === 'chords') {
+      return (
+        <TrainingChordStageOverview config={createTrainingChordStageOverviewConfig(session)} />
+      );
+    }
     if (trainingFocus === 'rhythm') {
       return <TrainingRhythmStageOverview staff={rhythmStaff} />;
     }
