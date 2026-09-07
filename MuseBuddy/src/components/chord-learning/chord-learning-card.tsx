@@ -8,10 +8,9 @@ import {
   type TabDescriptor,
 } from 'react-native-tab-view';
 
-import { PlayButton } from '@/components/training-session';
 import { museBuddyColors } from '@/constants/design-tokens';
 import { normalizeChordNotesForHand, type ChordDisplay, type ChordHandSide } from '@/music-theory';
-import { FlashCard, MusicViewFlip } from '@/ui';
+import { FlashCard, MusicViewFlip, PlayButton } from '@/ui';
 
 import { ChordHandShapeCue } from './chord-hand-shape-cue';
 import { ChordKeyboardCard } from './chord-keyboard-card';

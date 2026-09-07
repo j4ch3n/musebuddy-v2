@@ -4,9 +4,8 @@ import { PianoPatternScore } from '@/components/piano-pattern-score';
 import { RhythmViewer } from '@/components/rhythm-trainer';
 import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 import type { PreparedTrainingSession } from '@/music-theory';
-import { FlashCard } from '@/ui';
+import { FlashCard, PlayButton } from '@/ui';
 
-import { PlayButton } from './play-button';
 import { ProgressionOverview } from './progression-overview';
 import type { TrainingFocus } from './training-focus';
 

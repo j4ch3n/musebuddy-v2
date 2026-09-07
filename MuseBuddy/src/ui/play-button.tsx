@@ -10,15 +10,9 @@ type PlayButtonProps = {
   disabled?: boolean;
   isPlaying?: boolean;
   onPress: () => void;
-  showShadow?: boolean;
 };
 
-export function PlayButton({
-  disabled = false,
-  isPlaying = false,
-  onPress,
-  showShadow = true,
-}: PlayButtonProps) {
+export function PlayButton({ disabled = false, isPlaying = false, onPress }: PlayButtonProps) {
   const [frame, setFrame] = useState(0);
 
   useEffect(() => {
@@ -39,8 +33,8 @@ export function PlayButton({
       onPress={onPress}
       style={({ pressed }) => [
         styles.button,
-        showShadow ? styles.shadow : null,
-        showShadow && pressed ? styles.pressed : null,
+        styles.shadow,
+        pressed && styles.pressed,
         disabled && styles.disabled,
       ]}
     >

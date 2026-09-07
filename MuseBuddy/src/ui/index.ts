@@ -11,6 +11,7 @@ export {
 export { TrainingStageIcon, type TrainingStageIconId } from './training-stage-icon';
 export { FlashCard } from './flash-card';
 export { MusicViewFlip } from './music-view-flip';
+export { PlayButton } from './play-button';
 export {
   getPianoKeyboardMarkers,
   PianoKeyboard,
