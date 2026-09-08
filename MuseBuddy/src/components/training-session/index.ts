@@ -17,5 +17,11 @@ export {
   type TrainingChordTileDisplayMode,
   type TrainingChordTileProps,
 } from './training-chord-tile';
-export { TrainingRhythmStageOverview } from './training-rhythm-stage-overview';
+export {
+  createTrainingRhythmStageOverviewConfig,
+  TrainingRhythmStageOverview,
+  type TrainingRhythmHand,
+  type TrainingRhythmStageOverviewConfig,
+  type TrainingRhythmStageOverviewProps,
+} from './training-rhythm-stage-overview';
 export { TrainingVoicingStageOverview } from './training-voicing-stage-overview';

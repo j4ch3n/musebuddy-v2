@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ControlGroup,
   createTrainingChordStageOverviewConfig,
+  createTrainingRhythmStageOverviewConfig,
   TrainingChordStageOverview,
   TrainingRhythmStageOverview,
   TrainingVoicingStageOverview,
@@ -72,7 +73,14 @@ function TrainingStage({
       );
     }
     if (trainingFocus === 'rhythm') {
-      return <TrainingRhythmStageOverview staff={rhythmStaff} />;
+      return (
+        <TrainingRhythmStageOverview
+          config={createTrainingRhythmStageOverviewConfig(
+            session,
+            rhythmStaff === 'treble' ? 'right' : 'left',
+          )}
+        />
+      );
     }
     return <TrainingVoicingStageOverview />;
   }

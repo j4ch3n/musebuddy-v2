@@ -7,7 +7,6 @@ import {
   TrainingChordStageOverview,
   type TrainingChordStageOverviewConfig,
 } from './training-chord-stage-overview';
-import { TrainingRhythmStageOverview } from './training-rhythm-stage-overview';
 import { TrainingVoicingStageOverview } from './training-voicing-stage-overview';
 
 type StoryChordToken = Parameters<typeof buildChordDisplay>[0]['displayTokens'][number];
@@ -215,7 +214,6 @@ const meta = {
 } satisfies Meta<typeof TrainingChordStageOverview>;
 export default meta;
 type Story = StoryObj<typeof meta>;
-type RhythmStory = StoryObj<{ staff: 'bass' | 'treble' }>;
 
 const chordOverviewArgTypes: Story['argTypes'] = {
   config: {
@@ -241,17 +239,6 @@ export const RootPath: Story = {
     displayMode: { table: { disable: true } },
   },
   render: (args) => <TrainingChordStageOverview {...args} />,
-};
-
-export const Rhythm: RhythmStory = {
-  args: { staff: 'treble' },
-  argTypes: {
-    staff: {
-      control: 'select',
-      options: ['treble', 'bass'],
-    },
-  },
-  render: ({ staff }) => <TrainingRhythmStageOverview staff={staff} />,
 };
 
 export const Voicing: Story = {
