@@ -16,10 +16,17 @@ Core principles:
 * No horizontal or vertical scrolling is required for the primary task.
 * Repetition creates familiarity; state changes create excitement.
 
+## Implementation foundation
+
+MuseBuddy uses Tamagui as its UI primitive and styling system. Express shared visual values
+through the Tamagui configuration and semantic theme tokens, compose interfaces from Tamagui
+primitives, and use Tamagui `styled` components and `variants` for reusable component states.
+Do not introduce a competing styling system or component primitive.
+
 ## Palette
 
-The CSS palette is intentionally organized into two groups. Keep the existing token names; the
-group identifies where a color belongs, rather than creating a new naming convention.
+The Tamagui palette is intentionally organized into two groups. Keep the existing token names;
+the group identifies where a color belongs, rather than creating a new naming convention.
 
 | Group | Token name | Value | Functional role |
 | --- | --- | --- | --- |

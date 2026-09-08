@@ -97,8 +97,10 @@ Consult the relevant file in `.agents/references/` before changing an area it co
 
 ## Design System
 
-MuseBuddy uses Tamagui for its design-system foundation. Before changing UI styling,
-theme tokens, Tamagui configuration, component visuals, or interaction states, consult
+MuseBuddy uses Tamagui as its UI primitive and styling system. Build shared UI with Tamagui
+components, theme tokens, and `styled`/`variants`; do not introduce a competing styling system
+or component primitive. Before changing UI styling, theme tokens, Tamagui configuration,
+component visuals, or interaction states, consult
 `.agents/skills/musebuddy-design-system/SKILL.md`. Keep `AGENTS.md` focused on engineering
 rules; the design skill is the source of truth for color, typography, mood, shadows,
 component feel, and visual review criteria.
