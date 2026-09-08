@@ -7,7 +7,7 @@ import { chordNameSymbolForDisplay, ChordName, type ChordNameDisplayMode } from 
 export type TrainingChordTileProps = {
   chord: Pick<ChordDisplay, 'idName' | 'symbol' | 'tokens'>;
   colorized?: boolean;
-  degree?: string;
+  degree: string;
   displayMode?: TrainingChordTileDisplayMode;
 };
 
@@ -23,24 +23,25 @@ export function TrainingChordTile({
 
   return (
     <View
-      accessibilityLabel={degree ? `${displayedSymbol}, degree ${degree}` : displayedSymbol}
+      accessibilityLabel={`${displayedSymbol}, degree ${degree}`}
       accessible
       style={styles.tile}
     >
       <View style={styles.content}>
-        <ChordName
-          colorized={colorized}
-          display={chord}
-          displayMode={displayMode}
-          size="compact"
-          style={styles.chordName}
-        />
-        {degree ? (
-          <View style={styles.degreePanel}>
-            <Text style={styles.degreeLabel}>DEGREE</Text>
-            <Text style={styles.degree}>{degree}</Text>
-          </View>
-        ) : null}
+        <View style={styles.chordNameZone}>
+          <ChordName
+            adjustsFontSizeToFit
+            colorized={colorized}
+            display={chord}
+            displayMode={displayMode}
+            minimumFontScale={0.8}
+            size="compact"
+            style={styles.chordName}
+          />
+        </View>
+        <View style={styles.degreeRow}>
+          <Text style={styles.degree}>{degree}</Text>
+        </View>
       </View>
     </View>
   );
@@ -59,43 +60,33 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   content: {
-    alignItems: 'center',
     flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     paddingHorizontal: 10,
-    paddingVertical: 14,
+    position: 'relative',
+  },
+  chordNameZone: {
+    flex: 1,
+    justifyContent: 'center',
+    minWidth: 0,
   },
   chordName: {
     color: museBuddyColors.pine,
-    flex: 1,
-    flexShrink: 1,
-    fontSize: 27,
-    lineHeight: 30,
+    fontSize: 30,
+    height: 36,
+    lineHeight: 36,
     textAlign: 'left',
   },
-  degreePanel: {
-    borderLeftColor: museBuddyColors.pine,
-    borderLeftWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 8,
-    paddingLeft: 8,
-    width: 46,
+  degreeRow: {
+    bottom: 14,
+    position: 'absolute',
+    right: 10,
   },
   degree: {
     color: museBuddyColors.pine,
     fontSize: 24,
     fontWeight: '800',
     lineHeight: 26,
-    textAlign: 'center',
-  },
-  degreeLabel: {
-    color: museBuddyColors.pine,
-    fontSize: 8,
-    fontWeight: '800',
-    letterSpacing: 0,
-    lineHeight: 13,
-    textAlign: 'center',
+    textAlign: 'right',
+    width: 42,
   },
 });

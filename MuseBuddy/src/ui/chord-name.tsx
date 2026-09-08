@@ -19,17 +19,21 @@ export type { ChordNameDisplayMode } from './chord-name-display';
 export type ChordNameSize = 'large' | 'compact';
 
 export type ChordNameProps = {
+  adjustsFontSizeToFit?: boolean;
   colorized?: boolean;
   display: Pick<ChordDisplay, 'symbol' | 'tokens'>;
   displayMode?: ChordNameDisplayMode;
+  minimumFontScale?: number;
   size?: ChordNameSize;
   style?: StyleProp<TextStyle>;
 };
 
 export function ChordName({
+  adjustsFontSizeToFit = false,
   colorized = true,
   display,
   displayMode = 'full-chord',
+  minimumFontScale,
   size = 'large',
   style,
 }: ChordNameProps) {
@@ -39,6 +43,10 @@ export function ChordName({
   return (
     <Text
       accessibilityLabel={`Chord symbol ${displayedSymbol}`}
+      adjustsFontSizeToFit={adjustsFontSizeToFit}
+      ellipsizeMode="clip"
+      minimumFontScale={minimumFontScale}
+      numberOfLines={1}
       style={[styles.symbol, sizeStyles[size], style]}
     >
       {displayedTokens.map((token, index) => (
