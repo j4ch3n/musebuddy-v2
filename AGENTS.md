@@ -153,6 +153,11 @@ pnpm --dir MuseBuddy <script>
 
 ## Code Standards
 
+- Prefer reuse over creating a new thing. Before adding a component, hook, utility, type, token,
+  or other abstraction, search the existing source and references for an equivalent or composable
+  implementation. Extend an existing abstraction when the behavior and ownership still fit; create
+  a new one only when it represents a genuinely distinct responsibility or public contract. Keep
+  shared logic in its established package and avoid parallel implementations that can drift.
 - Use strict TypeScript and avoid `any`.
 - Use functional React components and hooks.
 - Use kebab-case filenames and folders, for example `rhythm-trainer/`,

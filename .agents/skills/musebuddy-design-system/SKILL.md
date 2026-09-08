@@ -23,6 +23,8 @@ Then read only the reference that matches the work:
   press-and-hold feedback, solid shadows, and typography.
 - [references/illustration-and-viewport.md](references/illustration-and-viewport.md):
   illustrations, small-viewport adaptation, and final visual balance.
+- [references/ui-components.md](references/ui-components.md): the reusable components and public
+  supporting exports under `MuseBuddy/src/ui/`.
 
 For a broad screen redesign or final UI review, read all three routed references. These files are
 the authoritative design guidance.
