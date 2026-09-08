@@ -1,9 +1,8 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { ChordName } from '@/components/chord-learning';
 import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 import type { PreparedTrainingBar } from '@/music-theory';
-import { PlayButton } from '@/ui';
+import { ChordName, PlayButton } from '@/ui';
 
 import type { TrainingFocus } from './training-focus';
 

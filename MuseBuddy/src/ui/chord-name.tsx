@@ -7,24 +7,41 @@ import {
   chordSyntaxRoleByTokenType,
   chordSyntaxRoleColors,
   chordToneRoleColors,
-} from './chord-color-role';
+} from '@/components/chord-learning/chord-color-role';
+import {
+  chordNameSymbolForDisplay,
+  chordNameTokensForDisplay,
+  type ChordNameDisplayMode,
+} from './chord-name-display';
 
-type ChordNameSize = 'large' | 'compact';
+export { chordNameSymbolForDisplay } from './chord-name-display';
+export type { ChordNameDisplayMode } from './chord-name-display';
+export type ChordNameSize = 'large' | 'compact';
 
-type ChordNameProps = {
+export type ChordNameProps = {
   colorized?: boolean;
-  display: ChordDisplay;
+  display: Pick<ChordDisplay, 'symbol' | 'tokens'>;
+  displayMode?: ChordNameDisplayMode;
   size?: ChordNameSize;
   style?: StyleProp<TextStyle>;
 };
 
-export function ChordName({ colorized = true, display, size = 'large', style }: ChordNameProps) {
+export function ChordName({
+  colorized = true,
+  display,
+  displayMode = 'full-chord',
+  size = 'large',
+  style,
+}: ChordNameProps) {
+  const displayedTokens = chordNameTokensForDisplay(display.tokens, displayMode);
+  const displayedSymbol = chordNameSymbolForDisplay(display.tokens, displayMode);
+
   return (
     <Text
-      accessibilityLabel={`Chord symbol ${display.symbol}`}
+      accessibilityLabel={`Chord symbol ${displayedSymbol}`}
       style={[styles.symbol, sizeStyles[size], style]}
     >
-      {display.tokens.map((token, index) => (
+      {displayedTokens.map((token, index) => (
         <Text
           key={`${token.type}-${token.text}-${index}`}
           style={[

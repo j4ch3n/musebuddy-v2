@@ -9,17 +9,12 @@ import {
   type TabDescriptor,
 } from 'react-native-tab-view';
 
-import {
-  ChordHandShapeCue,
-  ChordKeyboardCard,
-  ChordName,
-  ChordToneLegend,
-} from '@/components/chord-learning';
+import { ChordHandShapeCue, ChordKeyboardCard, ChordToneLegend } from '@/components/chord-learning';
 import { RhythmViewer } from '@/components/rhythm-trainer';
 import { museBuddyColors } from '@/constants/design-tokens';
 import type { TrainingDetailTab } from '@/contexts/training-session-context';
 import type { PreparedTrainingBar } from '@/music-theory';
-import { FlashCard, MusicViewFlip } from '@/ui';
+import { ChordName, FlashCard, MusicViewFlip } from '@/ui';
 import type { PianoKeyboardLiveKeyState } from '@/ui';
 import type { PianoPitchClass } from '@schema/music-theory-schema';
 

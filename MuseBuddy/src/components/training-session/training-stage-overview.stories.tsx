@@ -10,33 +10,54 @@ import {
 import { TrainingRhythmStageOverview } from './training-rhythm-stage-overview';
 import { TrainingVoicingStageOverview } from './training-voicing-stage-overview';
 
-const chord = (root: string, suffix: string, degree: string) => ({
-  chord: buildChordDisplay({
-    displayTokens: [
-      { teachingRole: 'anchor', type: 'root', value: root },
-      ...(suffix
-        ? [
-            {
-              teachingRole: suffix.startsWith('add') ? 'color' : 'quality',
-              type: suffix.startsWith('add') ? 'addition' : 'quality',
-              value: suffix,
-            } as const,
-          ]
-        : []),
-    ],
-    idName: `${root}-${suffix || 'major'}-${degree}`,
-    normalizedSymbol: `${root}${suffix}`,
+type StoryChordToken = Parameters<typeof buildChordDisplay>[0]['displayTokens'][number];
+
+const chordFromTokens = (
+  root: string,
+  suffixTokens: readonly StoryChordToken[],
+  degree: string,
+) => {
+  const displayTokens = [
+    { teachingRole: 'anchor', type: 'root', value: root },
+    ...suffixTokens,
+  ] as const satisfies readonly StoryChordToken[];
+  const symbol = displayTokens.map((token) => token.value).join('');
+
+  return {
+    chord: buildChordDisplay({
+      displayTokens,
+      idName: `${symbol}-${degree}`,
+      normalizedSymbol: symbol,
+      root,
+      tones: [
+        {
+          degree: '1',
+          pitch: root,
+          pitchClass: midiToPitchClass(pitchClassToMidi(root, 4)),
+        },
+      ],
+    }),
+    degree,
+  };
+};
+
+const chord = (root: string, suffix: string, degree: string) =>
+  chordFromTokens(
     root,
-    tones: [
-      {
-        degree: '1',
-        pitch: root,
-        pitchClass: midiToPitchClass(pitchClassToMidi(root, 4)),
-      },
-    ],
-  }),
-  degree,
-});
+    suffix
+      ? [
+          {
+            teachingRole: suffix.startsWith('add') ? 'color' : 'quality',
+            type: suffix.startsWith('add') ? 'addition' : 'quality',
+            value: suffix,
+          },
+        ]
+      : [],
+    degree,
+  );
+
+const longChord = (root: string, suffixTokens: readonly StoryChordToken[], degree: string) =>
+  chordFromTokens(root, suffixTokens, degree);
 
 const progressionConfigs = {
   '1-2-2-1': {
@@ -52,7 +73,7 @@ const progressionConfigs = {
       },
       { chords: [chord('C', 'add9', 'I')], id: 'bar-4' },
     ],
-    keyLabel: 'C MAJOR · 4/4',
+    keySignatureLabel: 'C MAJOR',
   },
   '2-1-2-1': {
     bars: [
@@ -67,7 +88,114 @@ const progressionConfigs = {
       },
       { chords: [chord('C', 'add9', 'I')], id: 'bar-4' },
     ],
-    keyLabel: 'C MAJOR · 4/4',
+    keySignatureLabel: 'C MAJOR',
+  },
+  '2-2-2-2': {
+    bars: [
+      {
+        chords: [
+          longChord(
+            'C',
+            [
+              { type: 'quality', value: 'maj' },
+              { type: 'extension', value: '7' },
+              { type: 'separator', value: '(' },
+              { type: 'alteration', value: '#11' },
+              { type: 'separator', value: ')' },
+            ],
+            'I',
+          ),
+          longChord(
+            'A',
+            [
+              { type: 'quality', value: 'm' },
+              { type: 'extension', value: '9' },
+              { type: 'separator', value: '(' },
+              { type: 'addition', value: 'add11' },
+              { type: 'separator', value: ')' },
+            ],
+            'vi',
+          ),
+        ],
+        id: 'bar-1',
+      },
+      {
+        chords: [
+          longChord(
+            'F',
+            [
+              { type: 'quality', value: 'maj' },
+              { type: 'extension', value: '9' },
+              { type: 'separator', value: '/' },
+              { type: 'bass', value: 'A' },
+            ],
+            'IV',
+          ),
+          longChord(
+            'G',
+            [
+              { type: 'extension', value: '13' },
+              { type: 'quality', value: 'sus4' },
+            ],
+            'V',
+          ),
+        ],
+        id: 'bar-2',
+      },
+      {
+        chords: [
+          longChord(
+            'D',
+            [
+              { type: 'quality', value: 'm' },
+              { type: 'extension', value: '11' },
+              { type: 'separator', value: '/' },
+              { type: 'bass', value: 'C' },
+            ],
+            'ii',
+          ),
+          longChord(
+            'B',
+            [
+              { type: 'quality', value: 'm' },
+              { type: 'extension', value: '7' },
+              { type: 'separator', value: '(' },
+              { type: 'alteration', value: 'b5' },
+              { type: 'separator', value: ')' },
+            ],
+            'viiø',
+          ),
+        ],
+        id: 'bar-3',
+      },
+      {
+        chords: [
+          longChord(
+            'E',
+            [
+              { type: 'extension', value: '7' },
+              { type: 'separator', value: '(' },
+              { type: 'alteration', value: '#9' },
+              { type: 'separator', value: ',' },
+              { type: 'alteration', value: 'b13' },
+              { type: 'separator', value: ')' },
+            ],
+            'III',
+          ),
+          longChord(
+            'A',
+            [
+              { type: 'addition', value: 'add9' },
+              { type: 'separator', value: '/' },
+              { type: 'bass', value: 'C#' },
+            ],
+            'vi',
+          ),
+        ],
+        id: 'bar-4',
+      },
+    ],
+    keySignatureLabel: 'C MAJOR',
   },
 } satisfies Record<string, TrainingChordStageOverviewConfig>;
 
@@ -89,13 +217,28 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 type RhythmStory = StoryObj<{ staff: 'bass' | 'treble' }>;
 
-export const Chord: Story = {
+const chordOverviewArgTypes: Story['argTypes'] = {
+  config: {
+    control: 'select',
+    mapping: progressionConfigs,
+    options: progressionOptions,
+  },
+};
+
+export const FullChord: Story = {
+  args: { colorized: true, displayMode: 'full-chord' },
   argTypes: {
-    config: {
-      control: 'select',
-      mapping: progressionConfigs,
-      options: progressionOptions,
-    },
+    ...chordOverviewArgTypes,
+    displayMode: { table: { disable: true } },
+  },
+  render: (args) => <TrainingChordStageOverview {...args} />,
+};
+
+export const RootPath: Story = {
+  args: { colorized: false, displayMode: 'root-only' },
+  argTypes: {
+    ...chordOverviewArgTypes,
+    displayMode: { table: { disable: true } },
   },
   render: (args) => <TrainingChordStageOverview {...args} />,
 };

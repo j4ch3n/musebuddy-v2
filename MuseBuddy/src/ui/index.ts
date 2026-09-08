@@ -1,6 +1,13 @@
 export { BPM_OPTIONS, DEFAULT_BPM } from '@/music-theory';
 export { BpmControl } from './bpm-control';
 export { Button } from './button';
+export {
+  chordNameSymbolForDisplay,
+  ChordName,
+  type ChordNameDisplayMode,
+  type ChordNameProps,
+  type ChordNameSize,
+} from './chord-name';
 export { TactileControlAction } from './tactile-control';
 export { Carousel, type CarouselProps } from './carousel';
 export {

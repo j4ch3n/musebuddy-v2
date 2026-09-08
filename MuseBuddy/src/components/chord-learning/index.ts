@@ -1,6 +1,5 @@
 export { ChordKeyboardCard } from './chord-keyboard-card';
 export { ChordToneLegend } from './chord-role-legend';
-export { ChordName } from './chord-name';
 export { ChordHandShapeCue, type ChordHand } from './chord-hand-shape-cue';
 export { ChordLearningCard } from './chord-learning-card';
 export {

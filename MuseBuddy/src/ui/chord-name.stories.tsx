@@ -24,12 +24,20 @@ const colorfulChord: ChordDisplay = {
 };
 
 const meta = {
-  title: 'Components/ChordLearning/ChordName',
+  title: 'UI/ChordName',
   component: ChordName,
   args: {
     colorized: true,
     display: colorfulChord,
+    displayMode: 'full-chord',
     size: 'large',
+  },
+  argTypes: {
+    colorized: { control: 'boolean' },
+    displayMode: {
+      control: 'select',
+      options: ['full-chord', 'root-only'],
+    },
   },
 } satisfies Meta<typeof ChordName>;
 
@@ -42,5 +50,19 @@ export const Colorized: Story = {};
 export const Monochrome: Story = {
   args: {
     colorized: false,
+  },
+};
+
+export const RootOnlyColorized: Story = {
+  args: {
+    colorized: true,
+    displayMode: 'root-only',
+  },
+};
+
+export const RootOnlyMonochrome: Story = {
+  args: {
+    colorized: false,
+    displayMode: 'root-only',
   },
 };

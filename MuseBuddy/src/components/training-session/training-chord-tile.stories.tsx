@@ -24,7 +24,16 @@ const meta = {
         { degree: '3', pitch: 'F', pitchClass: 5 },
       ],
     }),
+    colorized: true,
     degree: 'vi',
+    displayMode: 'full-chord',
+  },
+  argTypes: {
+    colorized: { control: 'boolean' },
+    displayMode: {
+      control: 'select',
+      options: ['full-chord', 'root-only'],
+    },
   },
 } satisfies Meta<typeof TrainingChordTile>;
 export default meta;

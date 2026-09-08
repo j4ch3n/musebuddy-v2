@@ -12,6 +12,10 @@ export {
   type TrainingChordStageOverviewConfig,
   type TrainingChordStageOverviewProps,
 } from './training-chord-stage-overview';
-export { TrainingChordTile, type TrainingChordTileProps } from './training-chord-tile';
+export {
+  TrainingChordTile,
+  type TrainingChordTileDisplayMode,
+  type TrainingChordTileProps,
+} from './training-chord-tile';
 export { TrainingRhythmStageOverview } from './training-rhythm-stage-overview';
 export { TrainingVoicingStageOverview } from './training-voicing-stage-overview';

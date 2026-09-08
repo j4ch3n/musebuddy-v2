@@ -10,11 +10,10 @@ import {
 
 import { museBuddyColors } from '@/constants/design-tokens';
 import { normalizeChordNotesForHand, type ChordDisplay, type ChordHandSide } from '@/music-theory';
-import { FlashCard, MusicViewFlip, PlayButton } from '@/ui';
+import { ChordName, FlashCard, MusicViewFlip, PlayButton } from '@/ui';
 
 import { ChordHandShapeCue } from './chord-hand-shape-cue';
 import { ChordKeyboardCard } from './chord-keyboard-card';
-import { ChordName } from './chord-name';
 import { ChordToneLegend } from './chord-role-legend';
 import {
   availableChordToneStages,
