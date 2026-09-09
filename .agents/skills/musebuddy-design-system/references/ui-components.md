@@ -13,6 +13,7 @@ full prop contract and meaningful states.
 | `Carousel` | `carousel.tsx` | Swipeable, accessible paging through a typed collection of rendered items. |
 | `ChordName` | `chord-name.tsx` | Rendering chord symbols with shared full-chord/root-only display modes, compact/large sizing, and optional teaching-role colorization. |
 | `FlashCard` | `flash-card.tsx` | Hero or supporting learning cards with an optional flip between two faces or carousel pages. |
+| `HandSilhouette` | `hand-silhouette.tsx` | Rendering a right- or left-hand SVG silhouette for instructional cues and decorative watermarks. |
 | `MusicViewFlip` | `music-view-flip.tsx` | Switching a learning surface between keyboard and notation views. |
 | `PianoKeyboard` | `piano-keyboard.tsx` | Displaying piano keys, note markers, emphasized keys, and live detection feedback. |
 | `PillButtonController` | `pill-button-controller.tsx` | Selecting one value from a compact labelled group of pill-style options. |

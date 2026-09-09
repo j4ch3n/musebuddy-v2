@@ -17,6 +17,7 @@ export {
 } from './carousel-utils';
 export { TrainingStageIcon, type TrainingStageIconId } from './training-stage-icon';
 export { FlashCard } from './flash-card';
+export { HandSilhouette, type HandSilhouetteProps } from './hand-silhouette';
 export { MusicViewFlip } from './music-view-flip';
 export { PlayButton } from './play-button';
 export {
