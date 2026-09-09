@@ -381,6 +381,10 @@ type Story = StoryObj<typeof meta>;
 
 export const Chord: Story = {};
 
+export const KeyboardHandWatermarks: Story = {
+  args: { chord: 'D minor seventh' },
+};
+
 export const LongChordName: Story = {
   args: {
     chord: 'C sharp dominant thirteenth flat ninth sharp eleventh over G sharp',

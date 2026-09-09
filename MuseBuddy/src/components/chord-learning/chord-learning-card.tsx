@@ -10,7 +10,7 @@ import {
 
 import { museBuddyColors } from '@/constants/design-tokens';
 import { normalizeChordNotesForHand, type ChordDisplay } from '@/music-theory';
-import { ChordName, FlashCard, MusicViewFlip, PlayButton } from '@/ui';
+import { ChordName, FlashCard, HandSilhouette, MusicViewFlip, PlayButton } from '@/ui';
 
 import { ChordHandShapeCue } from './chord-hand-shape-cue';
 import { ChordKeyboardCard } from './chord-keyboard-card';
@@ -26,12 +26,18 @@ import {
 
 const TAB_STROKE_BASE_WIDTH = 96;
 const TAB_STROKE_SCALE = 1.12;
-const STACKED_HAND_KEYBOARD_WIDTH = 250;
+const STACKED_HAND_KEYBOARD_WIDTH = 280;
 const STACKED_PANEL_GAP = 12;
-const COMPACT_NOTATION_HEIGHT = 136;
-const COMPACT_NOTATION_ROW_GAP = 12;
-const COMPACT_NOTATION_CUE_WIDTH = 140;
-const COMPACT_NOTATION_WIDTH = 168;
+const BASS_KEYBOARD_HORIZONTAL_OFFSET = 15;
+const TREBLE_KEYBOARD_HORIZONTAL_OFFSET = 30;
+const HAND_WATERMARK_WIDTH = 85;
+const HAND_WATERMARK_HEIGHT = 98;
+const TREBLE_HAND_WATERMARK_LEFT_OFFSET = -10;
+const BASS_HAND_WATERMARK_RIGHT_OFFSET = 0;
+const COMPACT_NOTATION_HEIGHT = 160;
+const COMPACT_NOTATION_ROW_GAP = 0;
+const COMPACT_NOTATION_CUE_WIDTH = 118;
+const COMPACT_NOTATION_WIDTH = 210;
 const activeTabStrokeSource = require('@assets/images/stroke.png');
 
 type ChordLearningCardProps = {
@@ -269,6 +275,7 @@ function ChordLearningStage({
             emphasizedKeys={emphasizedNotes
               .filter((note) => note.hand === 'right')
               .map((note) => note.pitchClass)}
+            hand="right"
             notes={rightNotes}
           />
           <KeyboardPanel
@@ -276,6 +283,7 @@ function ChordLearningStage({
             emphasizedKeys={emphasizedNotes
               .filter((note) => note.hand === 'left')
               .map((note) => note.pitchClass)}
+            hand="left"
             notes={leftNotes}
           />
         </View>
@@ -329,7 +337,7 @@ function NotationHandRow({
         />
       </View>
       <View style={styles.notationCuePanel}>
-        <ChordHandShapeCue align="start" hand={cueHand} notes={cueNotes} size="large" />
+        <ChordHandShapeCue align="end" hand={cueHand} notes={cueNotes} size="large" />
       </View>
     </View>
   );
@@ -338,23 +346,48 @@ function NotationHandRow({
 function KeyboardPanel({
   display,
   emphasizedKeys,
+  hand,
   notes,
 }: {
   display: ChordDisplay;
   emphasizedKeys: readonly ChordDisplay['notes'][number]['pitchClass'][];
+  hand: 'left' | 'right';
   notes: readonly ChordDisplay['notes'][number][];
 }) {
   return (
     <View style={styles.keyboardPanel}>
-      <ChordKeyboardCard
-        display={display}
-        displayMode="keyboard"
-        emphasizedKeys={emphasizedKeys}
-        fitKeyboardToContainer
-        keyboardWidth={STACKED_HAND_KEYBOARD_WIDTH}
-        showKeyHighlightLabels={false}
-        visibleNotes={notes}
-      />
+      <View
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        pointerEvents="none"
+        style={[
+          styles.handWatermark,
+          hand === 'right' ? styles.trebleHandWatermark : styles.bassHandWatermark,
+        ]}
+      >
+        <HandSilhouette
+          fill={museBuddyColors.skyWash}
+          hand={hand}
+          height={HAND_WATERMARK_HEIGHT}
+          width={HAND_WATERMARK_WIDTH}
+        />
+      </View>
+      <View
+        style={[
+          styles.keyboardForeground,
+          hand === 'right' ? styles.trebleKeyboard : styles.bassKeyboard,
+        ]}
+      >
+        <ChordKeyboardCard
+          display={display}
+          displayMode="keyboard"
+          emphasizedKeys={emphasizedKeys}
+          fitKeyboardToContainer
+          keyboardWidth={STACKED_HAND_KEYBOARD_WIDTH}
+          showKeyHighlightLabels={false}
+          visibleNotes={notes}
+        />
+      </View>
     </View>
   );
 }
@@ -382,7 +415,16 @@ const styles = StyleSheet.create({
     paddingBottom: 3,
   },
   heading: { alignItems: 'center', minHeight: 60 },
-  keyboardPanel: { alignSelf: 'stretch' },
+  bassKeyboard: { transform: [{ translateX: -BASS_KEYBOARD_HORIZONTAL_OFFSET }] },
+  bassHandWatermark: { right: BASS_HAND_WATERMARK_RIGHT_OFFSET },
+  handWatermark: {
+    opacity: 0.32,
+    position: 'absolute',
+    top: 22,
+    zIndex: 0,
+  },
+  keyboardForeground: { alignItems: 'center', alignSelf: 'stretch', zIndex: 1 },
+  keyboardPanel: { alignSelf: 'stretch', position: 'relative' },
   keyboardPanels: {
     alignSelf: 'stretch',
     flex: 1,
@@ -392,8 +434,6 @@ const styles = StyleSheet.create({
   },
   notationCuePanel: {
     minWidth: 0,
-    position: 'relative',
-    top: 10,
     width: COMPACT_NOTATION_CUE_WIDTH,
   },
   notationHandRow: {
@@ -443,6 +483,8 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     minWidth: 0,
   },
+  trebleHandWatermark: { left: TREBLE_HAND_WATERMARK_LEFT_OFFSET },
+  trebleKeyboard: { transform: [{ translateX: TREBLE_KEYBOARD_HORIZONTAL_OFFSET }] },
   selectedTabLabel: { fontWeight: '900' },
   strokeImage: { height: '100%', tintColor: museBuddyColors.wildflower, width: '100%' },
 });

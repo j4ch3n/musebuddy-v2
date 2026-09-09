@@ -20,8 +20,8 @@ export type ChordHand = Hand;
 
 const HAND_ICON_WIDTH = 30;
 const HAND_ICON_HEIGHT = 35;
-const LARGE_HAND_ICON_WIDTH = 34;
-const LARGE_HAND_ICON_HEIGHT = 40;
+const LARGE_HAND_ICON_WIDTH = 46;
+const LARGE_HAND_ICON_HEIGHT = 54;
 
 export function ChordHandShapeCue({
   align = 'center',
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
   },
   handCue: { color: museBuddyColors.pine, flexShrink: 1, fontSize: 11, fontWeight: '800' },
-  handCueLarge: { fontSize: 12 },
+  handCueLarge: { fontSize: 15 },
   handDiagram: { alignItems: 'center', flexDirection: 'row', flexWrap: 'nowrap', gap: 4 },
   handDiagramEnd: { alignSelf: 'flex-end' },
   handDiagramStart: { alignSelf: 'flex-start' },
