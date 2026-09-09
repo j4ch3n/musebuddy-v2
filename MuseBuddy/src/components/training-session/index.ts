@@ -18,10 +18,10 @@ export {
   type TrainingChordTileProps,
 } from './training-chord-tile';
 export {
-  createTrainingRhythmStageOverviewConfig,
-  TrainingRhythmStageOverview,
-  type TrainingRhythmHand,
-  type TrainingRhythmStageOverviewConfig,
-  type TrainingRhythmStageOverviewProps,
-} from './training-rhythm-stage-overview';
-export { TrainingVoicingStageOverview } from './training-voicing-stage-overview';
+  createTrainingStagePatternOverviewConfig,
+  TrainingStagePatternOverview,
+  type TrainingPatternHand,
+  type TrainingStagePatternOverviewConfig,
+  type TrainingStagePatternOverviewDetail,
+  type TrainingStagePatternOverviewProps,
+} from './training-stage-pattern-overview';

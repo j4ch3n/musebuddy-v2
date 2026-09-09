@@ -19,6 +19,9 @@ Then read only the reference that matches the work:
 
 - [references/training-layout.md](references/training-layout.md): the Preview, Phrase, and Full
   Play session shell, route navigator, score layouts, progression, and content grouping.
+- [references/training-stage-pattern-overview.md](references/training-stage-pattern-overview.md):
+  the shared rhythm and voicing pattern-overview card, its information hierarchy, and watermark
+  treatment.
 - [references/controls-and-feedback.md](references/controls-and-feedback.md): buttons,
   press-and-hold feedback, solid shadows, and typography.
 - [references/illustration-and-viewport.md](references/illustration-and-viewport.md):

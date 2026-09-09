@@ -7,7 +7,6 @@ import {
   TrainingChordStageOverview,
   type TrainingChordStageOverviewConfig,
 } from './training-chord-stage-overview';
-import { TrainingVoicingStageOverview } from './training-voicing-stage-overview';
 
 type StoryChordToken = Parameters<typeof buildChordDisplay>[0]['displayTokens'][number];
 
@@ -239,10 +238,6 @@ export const RootPath: Story = {
     displayMode: { table: { disable: true } },
   },
   render: (args) => <TrainingChordStageOverview {...args} />,
-};
-
-export const Voicing: Story = {
-  render: () => <TrainingVoicingStageOverview />,
 };
 
 const styles = StyleSheet.create({

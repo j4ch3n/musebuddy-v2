@@ -2,11 +2,11 @@ import type { Meta, StoryObj } from '@storybook/react-native';
 import { StyleSheet, View } from 'react-native';
 
 import {
-  TrainingRhythmStageOverview,
-  type TrainingRhythmHand,
-} from './training-rhythm-stage-overview';
+  TrainingStagePatternOverview,
+  type TrainingPatternHand,
+} from './training-stage-pattern-overview';
 
-const rhythmProgressions = {
+const voicingProgressions = {
   '1 chord': ['I'],
   '2 chords': ['I', 'V'],
   '3 chords': ['I', 'IV', 'V'],
@@ -17,25 +17,26 @@ const rhythmProgressions = {
   '8 chords': ['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii°', 'I'],
 } as const;
 
-type RhythmClef = 'bass' | 'together' | 'treble';
-type RhythmProgression = keyof typeof rhythmProgressions;
+type VoicingClef = 'bass' | 'together' | 'treble';
+type VoicingProgression = keyof typeof voicingProgressions;
 
-type RhythmOverviewStoryProps = {
-  clef: RhythmClef;
-  progression: RhythmProgression;
+type VoicingOverviewStoryProps = {
+  clef: VoicingClef;
+  progression: VoicingProgression;
 };
 
-function handForClef(clef: RhythmClef): TrainingRhythmHand {
+function handForClef(clef: VoicingClef): TrainingPatternHand {
   if (clef === 'treble') return 'right';
   if (clef === 'bass') return 'left';
   return 'together';
 }
 
-function RhythmOverviewStory({ clef, progression }: RhythmOverviewStoryProps) {
+function VoicingOverviewStory({ clef, progression }: VoicingOverviewStoryProps) {
   return (
-    <TrainingRhythmStageOverview
+    <TrainingStagePatternOverview
       config={{
-        degrees: rhythmProgressions[progression],
+        degrees: voicingProgressions[progression],
+        detail: 'voicing',
         hand: handForClef(clef),
         keySignatureLabel: 'C MAJOR',
       }}
@@ -45,7 +46,7 @@ function RhythmOverviewStory({ clef, progression }: RhythmOverviewStoryProps) {
 
 const meta = {
   title: 'Components/TrainingStageOverview',
-  component: RhythmOverviewStory,
+  component: VoicingOverviewStory,
   decorators: [
     (Story) => (
       <View style={styles.fullBleed}>
@@ -64,15 +65,15 @@ const meta = {
     },
     progression: {
       control: 'select',
-      options: Object.keys(rhythmProgressions),
+      options: Object.keys(voicingProgressions),
     },
   },
-} satisfies Meta<typeof RhythmOverviewStory>;
+} satisfies Meta<typeof VoicingOverviewStory>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Rhythm: Story = {};
+export const Voicing: Story = {};
 
 const styles = StyleSheet.create({
   fullBleed: {

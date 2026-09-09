@@ -5,10 +5,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ControlGroup,
   createTrainingChordStageOverviewConfig,
-  createTrainingRhythmStageOverviewConfig,
+  createTrainingStagePatternOverviewConfig,
   TrainingChordStageOverview,
-  TrainingRhythmStageOverview,
-  TrainingVoicingStageOverview,
+  TrainingStagePatternOverview,
 } from '@/components/training-session';
 import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/design-tokens';
 import { useTrainingSession } from '@/contexts/training-session-context';
@@ -74,15 +73,24 @@ function TrainingStage({
     }
     if (trainingFocus === 'rhythm') {
       return (
-        <TrainingRhythmStageOverview
-          config={createTrainingRhythmStageOverviewConfig(
+        <TrainingStagePatternOverview
+          config={createTrainingStagePatternOverviewConfig(
             session,
             rhythmStaff === 'treble' ? 'right' : 'left',
+            'rhythm',
           )}
         />
       );
     }
-    return <TrainingVoicingStageOverview />;
+    return (
+      <TrainingStagePatternOverview
+        config={createTrainingStagePatternOverviewConfig(
+          session,
+          rhythmStaff === 'treble' ? 'right' : 'left',
+          'voicing',
+        )}
+      />
+    );
   }
   const description = errorMessage
     ? errorMessage

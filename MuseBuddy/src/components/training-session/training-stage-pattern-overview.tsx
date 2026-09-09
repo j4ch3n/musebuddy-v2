@@ -1,3 +1,4 @@
+import { Lucide } from '@react-native-vector-icons/lucide';
 import { MaterialDesignIcons } from '@react-native-vector-icons/material-design-icons';
 import { Image } from 'expo-image';
 import { useState } from 'react';
@@ -11,35 +12,42 @@ import { createDegreeWatermarkSlots } from './degree-watermark-layout';
 
 const keyContextStrokeSource = require('@assets/images/stroke.png');
 
-export type TrainingRhythmHand = 'left' | 'right' | 'together';
+export type TrainingPatternHand = 'left' | 'right' | 'together';
+export type TrainingStagePatternOverviewDetail = 'rhythm' | 'voicing';
 
-export type TrainingRhythmStageOverviewConfig = {
+type TrainingStagePatternOverviewBaseConfig = {
   degrees: readonly string[];
-  hand: TrainingRhythmHand;
+  hand: TrainingPatternHand;
   keySignatureLabel: string;
 };
 
-export type TrainingRhythmStageOverviewProps = {
-  config: TrainingRhythmStageOverviewConfig;
+export type TrainingStagePatternOverviewConfig =
+  | (TrainingStagePatternOverviewBaseConfig & { detail: 'rhythm' })
+  | (TrainingStagePatternOverviewBaseConfig & { detail: 'voicing' });
+
+export type TrainingStagePatternOverviewProps = {
+  config: TrainingStagePatternOverviewConfig;
   onPlayPress?: () => void;
 };
 
-/** Builds the rhythm overview configuration from the prepared training-session payload. */
-export function createTrainingRhythmStageOverviewConfig(
+/** Builds a pattern-overview configuration from the prepared training-session payload. */
+export function createTrainingStagePatternOverviewConfig(
   session: PreparedTrainingSession,
-  hand: TrainingRhythmHand,
-): TrainingRhythmStageOverviewConfig {
+  hand: TrainingPatternHand,
+  detail: TrainingStagePatternOverviewDetail,
+): TrainingStagePatternOverviewConfig {
   return {
     degrees: session.pattern.progression_in_major_scale.display,
+    detail,
     hand,
     keySignatureLabel: session.pattern.key_signature_display,
   };
 }
 
-export function TrainingRhythmStageOverview({
+export function TrainingStagePatternOverview({
   config,
   onPlayPress = noop,
-}: TrainingRhythmStageOverviewProps) {
+}: TrainingStagePatternOverviewProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const handLabel =
     config.hand === 'left' ? 'Left hand' : config.hand === 'right' ? 'Right hand' : 'Together';
@@ -50,18 +58,19 @@ export function TrainingRhythmStageOverview({
 
   return (
     <View style={styles.container}>
-      <RhythmOverviewHeader
+      <PatternOverviewHeader
         isPlaying={isPlaying}
         keySignatureLabel={config.keySignatureLabel}
         onPlayPress={handlePlayPress}
       />
       <FlashCard
-        accessibilityLabel={`${handLabel} rhythm overview. Degrees ${config.degrees.join(', ')}`}
+        accessibilityLabel={`${config.detail} ${handLabel.toLowerCase()} pattern overview. Degrees ${config.degrees.join(', ')}`}
         heightMode="fill"
         shadowColor={museBuddyColors.leaf}
         sideA={
           <View style={styles.cardContent}>
             <DegreeWatermarks key={config.degrees.join('|')} degrees={config.degrees} />
+            <DetailWatermark detail={config.detail} hand={config.hand} />
             <View
               accessibilityElementsHidden
               importantForAccessibility="no-hide-descendants"
@@ -79,7 +88,7 @@ export function TrainingRhythmStageOverview({
   );
 }
 
-function RhythmOverviewHeader({
+function PatternOverviewHeader({
   isPlaying,
   keySignatureLabel,
   onPlayPress,
@@ -137,7 +146,33 @@ function DegreeWatermarks({ degrees }: { degrees: readonly string[] }) {
   );
 }
 
-function ClefIllustration({ hand }: { hand: TrainingRhythmHand }) {
+function DetailWatermark({
+  detail,
+  hand,
+}: {
+  detail: TrainingStagePatternOverviewDetail;
+  hand: TrainingPatternHand;
+}) {
+  return (
+    <View
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      pointerEvents="none"
+      style={[
+        styles.detailWatermark,
+        hand === 'together' ? undefined : styles.individualHandDetailWatermark,
+      ]}
+    >
+      <Lucide
+        color={museBuddyColors.pine}
+        name={detail === 'rhythm' ? 'audio-waveform' : 'keyboard-music'}
+        size={144}
+      />
+    </View>
+  );
+}
+
+function ClefIllustration({ hand }: { hand: TrainingPatternHand }) {
   if (hand === 'together') {
     return (
       <View style={styles.togetherClefs}>
@@ -171,6 +206,7 @@ const styles = StyleSheet.create({
   clefIllustration: {
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 1,
   },
   container: {
     backgroundColor: museBuddyColors.mist,
@@ -192,17 +228,31 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
   },
+  detailWatermark: {
+    alignItems: 'center',
+    bottom: 0,
+    justifyContent: 'center',
+    left: 0,
+    opacity: 0.1,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
   handLabel: {
     color: museBuddyColors.pine,
     fontSize: 21,
     fontWeight: '800',
     lineHeight: 27,
     marginTop: 12,
+    zIndex: 1,
   },
   heading: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  individualHandDetailWatermark: {
+    transform: [{ translateY: 10 }],
   },
   keyContext: {
     color: museBuddyColors.pine,
