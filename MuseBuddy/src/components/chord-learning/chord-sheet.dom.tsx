@@ -9,20 +9,26 @@ import type { ChordDisplayNote } from '@/music-theory';
 import { chordToneRoleColors } from './chord-color-role';
 
 type ChordSheetProps = {
+  clef?: Clef;
   dom?: import('expo/dom').DOMProps;
   height?: number;
   notes: readonly ChordDisplayNote[];
+  width?: number;
 };
 
 const DEFAULT_STAVE_HEIGHT = 120;
 const STAVE_WIDTH = 328;
 const STAVE_GAP = 8;
 const STAVE_INSET_X = 4;
-const STAVE_RENDER_WIDTH = (STAVE_WIDTH - STAVE_INSET_X * 2 - STAVE_GAP) / 2;
 
 type Clef = 'bass' | 'treble';
 
-export default function ChordSheet({ height = DEFAULT_STAVE_HEIGHT, notes }: ChordSheetProps) {
+export default function ChordSheet({
+  clef,
+  height = DEFAULT_STAVE_HEIGHT,
+  notes,
+  width = STAVE_WIDTH,
+}: ChordSheetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const elementId = useId().replaceAll(':', '-');
 
@@ -46,7 +52,7 @@ export default function ChordSheet({ height = DEFAULT_STAVE_HEIGHT, notes }: Cho
       renderer: {
         elementId,
         height,
-        width: STAVE_WIDTH,
+        width,
       },
     });
     const context = factory.getContext();
@@ -54,23 +60,27 @@ export default function ChordSheet({ height = DEFAULT_STAVE_HEIGHT, notes }: Cho
     context.setStrokeStyle(museBuddyColors.notation);
     const staveY = Math.max(4, (height - 92) / 2);
 
-    (['bass', 'treble'] as const).forEach((clef, index) => {
+    const clefs = clef ? [clef] : (['bass', 'treble'] as const);
+    const staveRenderWidth =
+      clefs.length === 1 ? width - STAVE_INSET_X * 2 : (width - STAVE_INSET_X * 2 - STAVE_GAP) / 2;
+
+    clefs.forEach((staveClef, index) => {
       const stave = factory.Stave({
-        width: STAVE_RENDER_WIDTH,
-        x: STAVE_INSET_X + index * (STAVE_RENDER_WIDTH + STAVE_GAP),
+        width: staveRenderWidth,
+        x: STAVE_INSET_X + index * (staveRenderWidth + STAVE_GAP),
         y: staveY,
       });
-      stave.addClef(clef);
+      stave.addClef(staveClef);
       stave.setContext(context).draw();
 
-      const staveNotes = getNotesForClef(notes, clef);
+      const staveNotes = getNotesForClef(notes, staveClef);
 
       if (staveNotes.length === 0) {
         return;
       }
 
       const staveNote = new StaveNote({
-        clef,
+        clef: staveClef,
         duration: 'w',
         keys: staveNotes.map((note) => `${note.letter.toLowerCase()}/${note.octave}`),
       });
@@ -94,7 +104,7 @@ export default function ChordSheet({ height = DEFAULT_STAVE_HEIGHT, notes }: Cho
       factory
         .Formatter()
         .joinVoices([voice])
-        .format([voice], STAVE_RENDER_WIDTH - 52);
+        .format([voice], staveRenderWidth - 52);
       voice.draw(context, stave);
     });
 
@@ -102,7 +112,7 @@ export default function ChordSheet({ height = DEFAULT_STAVE_HEIGHT, notes }: Cho
     if (svg) {
       svg.style.backgroundColor = museBuddyColors.paper;
     }
-  }, [elementId, height, notes]);
+  }, [clef, elementId, height, notes, width]);
 
   return (
     <div

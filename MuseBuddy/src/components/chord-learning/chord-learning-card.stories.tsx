@@ -4,7 +4,6 @@ import type { TrainingSessionChord } from '@/contexts/training-session-schema';
 import { buildChordDisplay } from '@/music-theory';
 
 import { ChordLearningCard } from './chord-learning-card';
-import { chordLearningStages, type ChordToneStage } from './chord-tone-stage';
 
 const chordProfiles = {
   cMajor: {
@@ -260,51 +259,132 @@ const chordProfiles = {
       },
     ],
   },
+  cSharpDominantThirteenthFlatNinthSharpEleventhOverGSharp: {
+    displayTokens: [
+      { teachingRole: 'anchor', type: 'root', value: 'C#' },
+      { teachingRole: 'color', type: 'extension', value: '13' },
+      { teachingRole: 'color', type: 'alteration', value: 'b9' },
+      { teachingRole: 'color', type: 'alteration', value: '#11' },
+      { teachingRole: null, type: 'separator', value: '/' },
+      { teachingRole: null, type: 'bass', value: 'G#' },
+    ],
+    idName: 'c-sharp-dominant-thirteenth-flat-ninth-sharp-eleventh-over-g-sharp',
+    normalizedSymbol: 'C#13b9#11/G#',
+    root: 'C#',
+    tones: [
+      {
+        degree: '5',
+        finger: 5,
+        hand: 'left',
+        isBass: true,
+        pitch: 'G#',
+        pitchClass: 8,
+        teachingRole: 'anchor',
+        voicingRole: 'required',
+      },
+      {
+        degree: '1',
+        finger: 2,
+        hand: 'left',
+        isBass: false,
+        pitch: 'C#',
+        pitchClass: 1,
+        teachingRole: 'anchor',
+        voicingRole: 'required',
+      },
+      {
+        degree: '3',
+        finger: 1,
+        hand: 'right',
+        isBass: false,
+        pitch: 'E#',
+        pitchClass: 5,
+        teachingRole: 'quality',
+        voicingRole: 'required',
+      },
+      {
+        degree: 'b7',
+        finger: 2,
+        hand: 'right',
+        isBass: false,
+        pitch: 'B',
+        pitchClass: 11,
+        teachingRole: 'guide',
+        voicingRole: 'required',
+      },
+      {
+        degree: 'b9',
+        finger: 3,
+        hand: 'right',
+        isBass: false,
+        pitch: 'D',
+        pitchClass: 2,
+        teachingRole: 'color',
+        voicingRole: 'required',
+      },
+      {
+        degree: '#11',
+        finger: 4,
+        hand: 'right',
+        isBass: false,
+        pitch: 'G',
+        pitchClass: 7,
+        teachingRole: 'color',
+        voicingRole: 'required',
+      },
+      {
+        degree: '13',
+        finger: 5,
+        hand: 'right',
+        isBass: false,
+        pitch: 'A#',
+        pitchClass: 10,
+        teachingRole: 'color',
+        voicingRole: 'required',
+      },
+    ],
+  },
 } satisfies Record<string, TrainingSessionChord>;
 
 const chordDisplays = {
   'C major': buildChordDisplay(chordProfiles.cMajor),
-  'D minor 7': buildChordDisplay(chordProfiles.dMinor7),
-  'G dominant 7': buildChordDisplay(chordProfiles.gDominant7),
-  Fsus4: buildChordDisplay(chordProfiles.fSus4),
-  C13: buildChordDisplay(chordProfiles.cDominantThirteenth),
+  'C dominant thirteenth': buildChordDisplay(chordProfiles.cDominantThirteenth),
+  'C sharp dominant thirteenth flat ninth sharp eleventh over G sharp': buildChordDisplay(
+    chordProfiles.cSharpDominantThirteenthFlatNinthSharpEleventhOverGSharp,
+  ),
+  'D minor seventh': buildChordDisplay(chordProfiles.dMinor7),
+  'F suspended fourth': buildChordDisplay(chordProfiles.fSus4),
+  'G dominant seventh': buildChordDisplay(chordProfiles.gDominant7),
 } as const;
 
 type ChordPreset = keyof typeof chordDisplays;
 type ChordLearningCardStoryArgs = {
   chord: ChordPreset;
-  stage: ChordToneStage;
 };
 
 const meta = {
   title: 'Components/ChordLearning/ChordLearningCard',
-  args: { chord: 'C major', stage: 'anchor' },
+  args: { chord: 'C major' },
   argTypes: {
     chord: {
       control: 'select',
-      options: ['C major', 'D minor 7', 'G dominant 7', 'Fsus4', 'C13'] satisfies ChordPreset[],
-    },
-    stage: {
-      control: 'select',
-      options: [...chordLearningStages] satisfies ChordToneStage[],
+      options: Object.keys(chordDisplays) as ChordPreset[],
     },
   },
-  render: ({ chord, stage }: ChordLearningCardStoryArgs) => (
-    <ChordLearningCard display={chordDisplays[chord]} onPlayPress={noop} toneStage={stage} />
+  render: ({ chord }: ChordLearningCardStoryArgs) => (
+    <ChordLearningCard display={chordDisplays[chord]} onPlayPress={noop} toneStage="complete" />
   ),
 } satisfies Meta<ChordLearningCardStoryArgs>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const TypicalMajor: Story = {};
-export const SwipeableFullProgression: Story = { args: { chord: 'C13', stage: 'anchor' } };
-export const SkippedStages: Story = { args: { chord: 'C major', stage: 'complete' } };
-export const TypicalMinorSeventh: Story = { args: { chord: 'D minor 7', stage: 'guide' } };
-export const TypicalDominantSeventh: Story = { args: { chord: 'G dominant 7', stage: 'guide' } };
-export const Suspended: Story = { args: { chord: 'Fsus4', stage: 'quality' } };
-export const ExtendedDominant: Story = {
-  args: { chord: 'C13', stage: 'complete' },
+export const Chord: Story = {};
+
+export const LongChordName: Story = {
+  args: {
+    chord: 'C sharp dominant thirteenth flat ninth sharp eleventh over G sharp',
+  },
 };
 
 function noop() {}

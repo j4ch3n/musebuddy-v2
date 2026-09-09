@@ -12,15 +12,22 @@ import { museBuddyBorders, museBuddyColors, museBuddyRadii } from '@/constants/d
 
 const FACE_TOP_INSET = 8;
 const TOGGLE_MINIMUM_GAP = 4;
+const TOGGLE_SHADOW_CLEARANCE = 3;
 
 type MusicViewFlipProps = {
   keyboard: ReactNode;
   notation: ReactNode;
+  sizeToContent?: boolean;
   style?: StyleProp<ViewStyle>;
 };
 
 /** A reusable keyboard/notation flip control for musical learning surfaces. */
-export function MusicViewFlip({ keyboard, notation, style }: MusicViewFlipProps) {
+export function MusicViewFlip({
+  keyboard,
+  notation,
+  sizeToContent = false,
+  style,
+}: MusicViewFlipProps) {
   const [isNotationVisible, setIsNotationVisible] = useState(false);
   const progress = useDerivedValue(() => withTiming(isNotationVisible ? 1 : 0, { duration: 280 }));
   const keyboardStyle = useAnimatedStyle(() => ({
@@ -37,13 +44,13 @@ export function MusicViewFlip({ keyboard, notation, style }: MusicViewFlipProps)
   const nextViewLabel = isNotationVisible ? 'View keyboard' : 'View notation';
 
   return (
-    <View style={[styles.container, style]}>
-      <View style={styles.surface}>
+    <View style={[styles.container, sizeToContent ? styles.contentSizedContainer : null, style]}>
+      <View style={[styles.surface, sizeToContent ? styles.contentSizedSurface : null]}>
         <Animated.View
           accessibilityElementsHidden={isNotationVisible}
           importantForAccessibility={isNotationVisible ? 'no-hide-descendants' : 'auto'}
           pointerEvents={isNotationVisible ? 'none' : 'auto'}
-          style={[styles.face, keyboardStyle]}
+          style={[styles.face, sizeToContent ? styles.sizingFace : null, keyboardStyle]}
         >
           {keyboard}
         </Animated.View>
@@ -76,7 +83,15 @@ export function MusicViewFlip({ keyboard, notation, style }: MusicViewFlipProps)
 
 const styles = StyleSheet.create({
   // The flexible surface keeps the toggle bottom-pinned while this is its minimum clearance.
-  container: { alignItems: 'center', flex: 1, gap: TOGGLE_MINIMUM_GAP, minHeight: 0 },
+  container: {
+    alignItems: 'center',
+    flex: 1,
+    gap: TOGGLE_MINIMUM_GAP,
+    minHeight: 0,
+    paddingBottom: TOGGLE_SHADOW_CLEARANCE,
+  },
+  contentSizedContainer: { flex: 0 },
+  contentSizedSurface: { flex: 0 },
   face: {
     alignItems: 'stretch',
     backfaceVisibility: 'hidden',
@@ -88,6 +103,7 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
   },
+  sizingFace: { alignSelf: 'stretch', position: 'relative' },
   surface: { alignSelf: 'stretch', flex: 1, minHeight: 0 },
   toggle: {
     alignItems: 'center',

@@ -24,6 +24,7 @@ export type FlashCardPage = {
 type FlashCardBaseProps = {
   accessibilityLabel?: string;
   footer?: ReactNode;
+  header?: ReactNode;
   heightMode?: FlashCardHeightMode;
   onPageChange?: (pageIndex: number) => void;
   padded?: boolean;
@@ -54,6 +55,7 @@ type FlashCardProps = FlashCardBaseProps & (FramedFlashCardProps | FramelessFlas
 export function FlashCard({
   accessibilityLabel,
   footer,
+  header,
   heightMode,
   frameless = false,
   onPageChange,
@@ -130,6 +132,7 @@ export function FlashCard({
       ]}
     >
       <YStack style={[styles.inner, backgroundStyle, padded ? styles.padded : null]}>
+        {header ? <YStack style={styles.header}>{header}</YStack> : null}
         {content}
         {footer ? <YStack style={styles.footer}>{footer}</YStack> : null}
         {sideB && !pages ? (
@@ -194,6 +197,7 @@ const styles = StyleSheet.create({
   },
   flipSurface: { flex: 1, minHeight: 0 },
   footer: {
+    flexShrink: 0,
     marginTop: 12,
   },
   inner: {
@@ -206,6 +210,10 @@ const styles = StyleSheet.create({
   },
   heroSurface: {
     backgroundColor: museBuddyColors.paper,
+  },
+  header: {
+    flexShrink: 0,
+    marginBottom: 12,
   },
 });
 

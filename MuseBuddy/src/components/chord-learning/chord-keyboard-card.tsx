@@ -12,6 +12,8 @@ import { ChordToneLegend } from './chord-role-legend';
 const PREVIEW_KEYBOARD_SIDE_BLEED = -13;
 const PREVIEW_KEYBOARD_RIGHT_SHIFT = 10;
 const PREVIEW_KEYBOARD_WIDTH = 320;
+const COMPACT_NOTATION_HEIGHT = 160;
+const COMPACT_NOTATION_WIDTH = 160;
 
 type ChordKeyboardCardProps = {
   display: ChordDisplay;
@@ -19,7 +21,11 @@ type ChordKeyboardCardProps = {
   emphasizedKeys?: readonly PianoPitchClass[];
   errorMessage?: string;
   fitKeyboardToContainer?: boolean;
+  keyboardWidth?: number;
   liveKeys?: Partial<Record<PianoPitchClass, PianoKeyboardLiveKeyState>>;
+  notationClef?: 'bass' | 'treble';
+  notationHeight?: number;
+  notationWidth?: number;
   showKeyHighlightDots?: boolean;
   showKeyHighlightLabels?: boolean;
   showSheetNotation?: boolean;
@@ -32,7 +38,11 @@ export function ChordKeyboardCard({
   emphasizedKeys,
   errorMessage,
   fitKeyboardToContainer = false,
+  keyboardWidth,
   liveKeys,
+  notationClef,
+  notationHeight = COMPACT_NOTATION_HEIGHT,
+  notationWidth = COMPACT_NOTATION_WIDTH,
   showKeyHighlightDots = true,
   showKeyHighlightLabels = true,
   showSheetNotation = true,
@@ -59,13 +69,17 @@ export function ChordKeyboardCard({
   if (displayMode === 'notation') {
     return (
       <View
-        accessibilityLabel={`Sheet notes: ${notes.map((note) => note.text).join(', ')}`}
-        style={styles.compactSheetFrame}
+        accessibilityLabel={`${notationClef ?? 'Treble and bass'} sheet notes: ${notes
+          .map((note) => note.text)
+          .join(', ')}`}
+        style={[styles.compactSheetFrame, { height: notationHeight }]}
       >
         <ChordSheet
-          dom={{ scrollEnabled: false, style: styles.notationSheet }}
-          height={160}
+          clef={notationClef}
+          dom={{ scrollEnabled: false, style: [styles.notationSheet, { height: notationHeight }] }}
+          height={notationHeight}
           notes={notes}
+          width={notationWidth}
         />
       </View>
     );
@@ -91,7 +105,7 @@ export function ChordKeyboardCard({
           liveKeys={liveKeys}
           root={rootNote?.pitchClass}
           showMarkers={showKeyHighlightDots}
-          width={fitKeyboardToContainer ? undefined : PREVIEW_KEYBOARD_WIDTH}
+          width={keyboardWidth ?? (fitKeyboardToContainer ? undefined : PREVIEW_KEYBOARD_WIDTH)}
         />
       </View>
     );
@@ -159,6 +173,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   previewKeyboardFrame: {
+    alignItems: 'center',
     alignSelf: 'center',
     justifyContent: 'flex-start',
   },

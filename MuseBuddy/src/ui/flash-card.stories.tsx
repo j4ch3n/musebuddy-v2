@@ -9,11 +9,13 @@ const meta = {
   title: 'UI/FlashCard',
   component: FlashCard,
   args: {
+    header: (
+      <Text color={museBuddyColors.pine} fontSize={12} fontWeight="900">
+        DAILY CHORD
+      </Text>
+    ),
     sideA: (
       <YStack gap={10}>
-        <Text color={museBuddyColors.pine} fontSize={12} fontWeight="900">
-          DAILY CHORD
-        </Text>
         <Text color={museBuddyColors.pine} fontSize={42} fontWeight="900">
           Cmaj7
         </Text>

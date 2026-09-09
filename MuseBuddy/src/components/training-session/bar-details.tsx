@@ -222,7 +222,10 @@ function ChordDetail({
         <ChordName display={chord} />
         <Text style={styles.friendlyName}>{chord.friendlyName}</Text>
       </View>
-      <ChordHandShapeCue notes={chord.notes} />
+      <View style={styles.handCues}>
+        <ChordHandShapeCue hand="left" notes={chord.notes} />
+        <ChordHandShapeCue hand="right" notes={chord.notes} />
+      </View>
       <MusicViewFlip
         keyboard={<ChordKeyboardCard display={chord} displayMode="keyboard" liveKeys={liveKeys} />}
         notation={<ChordKeyboardCard display={chord} displayMode="notation" />}
@@ -284,6 +287,7 @@ const styles = StyleSheet.create({
     paddingTop: CARD_CONTENT_TOP_INSET,
   },
   friendlyName: { color: museBuddyColors.pine, fontSize: 14, fontWeight: '800' },
+  handCues: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-around' },
   rhythmContent: { flex: 1, minHeight: 0, paddingTop: 8 },
   selectedTabText: { fontWeight: '900' },
   strokeImage: { height: '100%', tintColor: museBuddyColors.wildflower, width: '100%' },

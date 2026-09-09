@@ -57,21 +57,23 @@ type ChordHandShapeCueStoryArgs = {
   align: 'center' | 'end' | 'start';
   hand: 'left' | 'right';
   preset: CuePreset;
+  size: 'default' | 'large';
 };
 
 const meta = {
   title: 'Components/ChordLearning/ChordHandShapeCue',
-  args: { align: 'center', hand: 'left', preset: 'C major' },
+  args: { align: 'center', hand: 'left', preset: 'C major', size: 'default' },
   argTypes: {
     align: { control: 'select', options: ['center', 'start', 'end'] },
     hand: { control: 'select', options: ['left', 'right'] },
     preset: { control: 'select', options: Object.keys(cuePresets) as CuePreset[] },
+    size: { control: 'select', options: ['default', 'large'] },
   },
-  render: ({ align, hand, preset }: ChordHandShapeCueStoryArgs) => (
+  render: ({ align, hand, preset, size }: ChordHandShapeCueStoryArgs) => (
     <FlashCard
       heightMode="daily-training"
       shadowColor={museBuddyColors.sky}
-      sideA={<ChordHandShapeCue align={align} hand={hand} notes={cuePresets[preset]} />}
+      sideA={<ChordHandShapeCue align={align} hand={hand} notes={cuePresets[preset]} size={size} />}
     />
   ),
 } satisfies Meta<ChordHandShapeCueStoryArgs>;

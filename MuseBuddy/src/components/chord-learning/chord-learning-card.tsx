@@ -9,7 +9,7 @@ import {
 } from 'react-native-tab-view';
 
 import { museBuddyColors } from '@/constants/design-tokens';
-import { normalizeChordNotesForHand, type ChordDisplay, type ChordHandSide } from '@/music-theory';
+import { normalizeChordNotesForHand, type ChordDisplay } from '@/music-theory';
 import { ChordName, FlashCard, MusicViewFlip, PlayButton } from '@/ui';
 
 import { ChordHandShapeCue } from './chord-hand-shape-cue';
@@ -26,11 +26,16 @@ import {
 
 const TAB_STROKE_BASE_WIDTH = 96;
 const TAB_STROKE_SCALE = 1.12;
+const STACKED_HAND_KEYBOARD_WIDTH = 250;
+const STACKED_PANEL_GAP = 12;
+const COMPACT_NOTATION_HEIGHT = 136;
+const COMPACT_NOTATION_ROW_GAP = 12;
+const COMPACT_NOTATION_CUE_WIDTH = 140;
+const COMPACT_NOTATION_WIDTH = 168;
 const activeTabStrokeSource = require('@assets/images/stroke.png');
 
 type ChordLearningCardProps = {
   display: ChordDisplay;
-  isPlaying?: boolean;
   onPlayPress: () => void;
   toneStage: ChordToneStage;
 };
@@ -47,12 +52,8 @@ type ChordStageRoute = {
   title: string;
 };
 
-export function ChordLearningCard({
-  display,
-  isPlaying = false,
-  onPlayPress,
-  toneStage,
-}: ChordLearningCardProps) {
+export function ChordLearningCard({ display, onPlayPress, toneStage }: ChordLearningCardProps) {
+  const [isPlaying, setIsPlaying] = useState(false);
   const availableStages = useMemo(() => availableChordToneStages(display), [display]);
   const routes = useMemo<ChordStageRoute[]>(
     () =>
@@ -80,6 +81,10 @@ export function ChordLearningCard({
       selectedStage: stage,
       sourceKey,
     });
+  const handlePlayPress = () => {
+    setIsPlaying((currentIsPlaying) => !currentIsPlaying);
+    onPlayPress();
+  };
 
   const selectedStageIndex = Math.max(
     routes.findIndex((route) => route.key === selectedStage),
@@ -113,18 +118,37 @@ export function ChordLearningCard({
 
   return (
     <FlashCard
+      footer={<ChordToneLegend />}
+      header={
+        <View style={styles.header}>
+          <Text
+            accessibilityRole="header"
+            adjustsFontSizeToFit
+            minimumFontScale={0.65}
+            numberOfLines={2}
+            style={styles.title}
+          >
+            {display.friendlyName}
+          </Text>
+          <View style={styles.playControl}>
+            <PlayButton isPlaying={isPlaying} onPress={handlePlayPress} />
+          </View>
+        </View>
+      }
       heightMode="daily-training"
       shadowColor={museBuddyColors.sky}
       sideA={
         <View style={styles.content}>
-          <View>
-            <PlayButton isPlaying={isPlaying} onPress={onPlayPress} />
-          </View>
           <View style={styles.details}>
             <View style={styles.detailsContent}>
               <View style={styles.heading}>
-                <ChordName colorized display={display} style={styles.chordName} />
-                <Text style={styles.friendlyName}>{display.friendlyName}</Text>
+                <ChordName
+                  adjustsFontSizeToFit
+                  colorized
+                  display={display}
+                  minimumFontScale={0.45}
+                  style={styles.chordName}
+                />
               </View>
               <TabView
                 animationEnabled
@@ -158,12 +182,8 @@ export function ChordLearningCard({
               />
             </View>
           </View>
-          <View style={styles.ledge}>
-            <ChordToneLegend />
-          </View>
         </View>
       }
-      style={styles.card}
       surfaceColor={museBuddyColors.paper}
     />
   );
@@ -243,65 +263,103 @@ function ChordLearningStage({
   return (
     <MusicViewFlip
       keyboard={
-        <View style={styles.handPanels}>
-          <HandPanel
-            display={display}
-            emphasizedKeys={emphasizedNotes
-              .filter((note) => note.hand === 'left')
-              .map((note) => note.pitchClass)}
-            hand="left"
-            notes={leftNotes}
-          />
-          <HandPanel
+        <View style={styles.keyboardPanels}>
+          <KeyboardPanel
             display={display}
             emphasizedKeys={emphasizedNotes
               .filter((note) => note.hand === 'right')
               .map((note) => note.pitchClass)}
-            hand="right"
             notes={rightNotes}
+          />
+          <KeyboardPanel
+            display={display}
+            emphasizedKeys={emphasizedNotes
+              .filter((note) => note.hand === 'left')
+              .map((note) => note.pitchClass)}
+            notes={leftNotes}
           />
         </View>
       }
       notation={
-        <ChordKeyboardCard
-          display={display}
-          displayMode="notation"
-          visibleNotes={normalizedSheetNotes}
-        />
+        <View style={styles.notationHandStack}>
+          <NotationHandRow
+            cueHand="right"
+            cueNotes={rightNotes}
+            display={display}
+            notationClef="treble"
+            sheetNotes={normalizedSheetNotes}
+          />
+          <NotationHandRow
+            cueHand="left"
+            cueNotes={leftNotes}
+            display={display}
+            notationClef="bass"
+            sheetNotes={normalizedSheetNotes}
+          />
+        </View>
       }
       style={styles.study}
     />
   );
 }
 
-function HandPanel({
+function NotationHandRow({
+  cueHand,
+  cueNotes,
+  display,
+  notationClef,
+  sheetNotes,
+}: {
+  cueHand: 'left' | 'right';
+  cueNotes: readonly ChordDisplay['notes'][number][];
+  display: ChordDisplay;
+  notationClef: 'bass' | 'treble';
+  sheetNotes: readonly ChordDisplay['notes'][number][];
+}) {
+  return (
+    <View style={styles.notationHandRow}>
+      <View style={styles.notationPanel}>
+        <ChordKeyboardCard
+          display={display}
+          displayMode="notation"
+          notationClef={notationClef}
+          notationHeight={COMPACT_NOTATION_HEIGHT}
+          notationWidth={COMPACT_NOTATION_WIDTH}
+          visibleNotes={sheetNotes}
+        />
+      </View>
+      <View style={styles.notationCuePanel}>
+        <ChordHandShapeCue align="start" hand={cueHand} notes={cueNotes} size="large" />
+      </View>
+    </View>
+  );
+}
+
+function KeyboardPanel({
   display,
   emphasizedKeys,
-  hand,
   notes,
 }: {
   display: ChordDisplay;
   emphasizedKeys: readonly ChordDisplay['notes'][number]['pitchClass'][];
-  hand: ChordHandSide;
   notes: readonly ChordDisplay['notes'][number][];
 }) {
   return (
-    <View style={styles.handPanel}>
+    <View style={styles.keyboardPanel}>
       <ChordKeyboardCard
         display={display}
         displayMode="keyboard"
         emphasizedKeys={emphasizedKeys}
         fitKeyboardToContainer
+        keyboardWidth={STACKED_HAND_KEYBOARD_WIDTH}
         showKeyHighlightLabels={false}
         visibleNotes={notes}
       />
-      <ChordHandShapeCue hand={hand} notes={notes} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { flex: 1, minHeight: 0 },
   chordName: { lineHeight: 56 },
   content: { alignItems: 'center', flex: 1, minHeight: 0 },
   details: {
@@ -317,19 +375,49 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 0,
   },
-  friendlyName: {
-    color: museBuddyColors.pine,
-    fontSize: 14,
-    fontWeight: '800',
-    textAlign: 'center',
+  header: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    paddingBottom: 3,
   },
-  heading: { alignItems: 'center', minHeight: 74 },
-  handPanel: { flex: 1, minWidth: 0 },
-  handPanels: { alignItems: 'flex-start', flexDirection: 'row', gap: 0, width: '100%' },
-  ledge: { alignSelf: 'stretch' },
-  // Leaves room for the flip toggle's solid bottom shadow inside TabView's clipped scene.
-  stageTabs: { alignSelf: 'stretch', flex: 0, height: 289, minHeight: 289 },
-  study: { alignSelf: 'stretch', flex: 0, height: 244 },
+  heading: { alignItems: 'center', minHeight: 60 },
+  keyboardPanel: { alignSelf: 'stretch' },
+  keyboardPanels: {
+    alignSelf: 'stretch',
+    flex: 1,
+    gap: STACKED_PANEL_GAP,
+    justifyContent: 'center',
+    minHeight: 0,
+  },
+  notationCuePanel: {
+    minWidth: 0,
+    position: 'relative',
+    top: 10,
+    width: COMPACT_NOTATION_CUE_WIDTH,
+  },
+  notationHandRow: {
+    alignItems: 'center',
+    alignSelf: 'center',
+    flexDirection: 'row',
+    height: COMPACT_NOTATION_HEIGHT,
+    width: COMPACT_NOTATION_WIDTH + COMPACT_NOTATION_CUE_WIDTH,
+  },
+  notationHandStack: {
+    alignSelf: 'stretch',
+    flex: 1,
+    gap: COMPACT_NOTATION_ROW_GAP,
+    justifyContent: 'center',
+    minHeight: 0,
+  },
+  notationPanel: { minWidth: 0, width: COMPACT_NOTATION_WIDTH },
+  playControl: { flexShrink: 0 },
+  stageTabs: {
+    alignSelf: 'stretch',
+    flex: 1,
+    minHeight: 0,
+  },
+  study: { alignSelf: 'stretch', flex: 1, minHeight: 0 },
   tab: { height: 36, minHeight: 36, paddingHorizontal: 6, paddingVertical: 0, width: 'auto' },
   tabBar: {
     backgroundColor: 'transparent',
@@ -346,7 +434,15 @@ const styles = StyleSheet.create({
     width: TAB_STROKE_BASE_WIDTH,
   },
   tabContent: { alignItems: 'center', flexDirection: 'row', gap: 2, minHeight: 25 },
-  tabLabel: { color: museBuddyColors.pine, fontSize: 11, fontWeight: '700', textAlign: 'center' },
+  tabLabel: { color: museBuddyColors.pine, fontSize: 12, fontWeight: '700', textAlign: 'center' },
+  title: {
+    color: museBuddyColors.pine,
+    flex: 1,
+    fontSize: 20,
+    fontWeight: '900',
+    lineHeight: 24,
+    minWidth: 0,
+  },
   selectedTabLabel: { fontWeight: '900' },
   strokeImage: { height: '100%', tintColor: museBuddyColors.wildflower, width: '100%' },
 });
