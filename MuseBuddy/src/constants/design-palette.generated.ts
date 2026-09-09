@@ -21,7 +21,7 @@ export const museBuddyPalette = {
   notationGray: '#415A77',
   blue: '#0F8B8D',
   pink: '#F038FF',
-  yellow: '#FFBD00',
+  yellow: '#EBAE00',
   cyan: '#5FA8D3',
   coral: '#E56B6F',
   cobaltInk: '#293C9A',

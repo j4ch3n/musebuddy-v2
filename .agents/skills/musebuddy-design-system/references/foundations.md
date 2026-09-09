@@ -50,7 +50,7 @@ the group identifies where a color belongs, rather than creating a new naming co
 | Teaching materials | `notationGray` | `#415A77` | Secondary or muted notation ink. |
 | Teaching materials | `blue` | `#0F8B8D` | Teaching-material category: rhythm rest; supporting chord tone. |
 | Teaching materials | `pink` | `#F038FF` | Teaching-material category: strong rhythm beat; chord root. |
-| Teaching materials | `yellow` | `#FFBD00` | Teaching-material category: weak rhythm beat, correct rhythm response, or chord color tone. |
+| Teaching materials | `yellow` | `#EBAE00` | Teaching-material category: weak rhythm beat, correct rhythm response, or chord color tone. |
 | Teaching materials | `cyan` | `#5FA8D3` | Teaching-material category: held rhythm note; essential chord tone. |
 | Teaching materials | `coral` | `#E56B6F` | Teaching-material category: optional chord tone. |
 | Teaching materials | `cobaltInk` | `#293C9A` | Reserved dark-blue teaching-material ink or category color. |
